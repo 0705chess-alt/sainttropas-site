@@ -501,7 +501,6 @@
   }
 
   function renderMonster() {
-    render();
     const m = state.monster;
     const pct = Math.max(0, (m.curHp / m.hp) * 100);
     el('hpFill').style.width = pct + '%';
