@@ -157,6 +157,37 @@
     20% { transform: translateX(-6px); } 40% { transform: translateX(6px); }
     60% { transform: translateX(-4px); } 80% { transform: translateX(4px); }
   }
+  .hunt-zone {
+    background: radial-gradient(ellipse at 50% 30%, #1c2410 0%, var(--bg-panel) 70%);
+    border: 1px solid #2c3a1c;
+    border-radius: 14px;
+    padding: 18px 16px 16px;
+    margin-top: 16px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: box-shadow 0.3s, border-color 0.3s;
+  }
+  .hunt-zone.boss { border-color: var(--gold); box-shadow: 0 0 24px rgba(232,184,75,0.45); }
+  .monster-name { font-size: 12px; color: var(--text-dim); letter-spacing: 2px; margin-bottom: 4px; }
+  .monster-emoji { font-size: 56px; line-height: 1; display: inline-block; animation: idleBounce 2s ease-in-out infinite; }
+  .monster-emoji.hit { animation: hitShake 0.25s; }
+  @keyframes idleBounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+  @keyframes hitShake {
+    0%,100% { transform: translateX(0) rotate(0); }
+    25% { transform: translateX(-6px) rotate(-5deg); }
+    75% { transform: translateX(6px) rotate(5deg); }
+  }
+  .hp-bar-track { width: 100%; height: 10px; background: #241a10; border-radius: 6px; overflow: hidden; margin-top: 12px; border: 1px solid #3a2c1c; }
+  .hp-bar-fill { height: 100%; background: linear-gradient(90deg, #ff7a3d, #c23b3b); transition: width 0.25s ease; }
+  .hp-text { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+  .btn-attack {
+    width: 100%; margin-top: 14px;
+    background: linear-gradient(135deg, #6fae52, #3f7a34);
+    color: #0d150a;
+    box-shadow: 0 0 16px rgba(111,174,82,0.35);
+  }
+  .btn-attack:hover:not(:disabled) { filter: brightness(1.12); }
 </style>
 </head>
 <body>
@@ -213,13 +244,18 @@
     </div>
   </div>
 
+  <div class="hunt-zone" id="huntZone">
+    <div class="monster-name" id="monsterName">슬라임</div>
+    <div class="monster-emoji" id="monsterEmoji">🟢</div>
+    <div class="hp-bar-track"><div class="hp-bar-fill" id="hpFill" style="width:100%"></div></div>
+    <div class="hp-text" id="hpText">16 / 16</div>
+    <button class="btn-attack" id="attackBtn">⚔ 공격!</button>
+  </div>
+
   <div class="action-row">
     <button class="btn-enhance" id="enhanceBtn">강화하기 (비용: <span id="costDisplay">12</span>G)</button>
     <div class="risk-note" id="riskNote"></div>
-    <div class="btn-pair">
-      <button class="btn-hunt" id="huntBtn">몬스터 사냥 (+5~15G)</button>
-      <button class="btn-sell" id="sellBtn">검 판매 (<span id="sellPrice">0</span>G)</button>
-    </div>
+    <button class="btn-sell" id="sellBtn">검 판매 (<span id="sellPrice">0</span>G)</button>
     <button class="btn-scroll" id="scrollBtn">보호 주문서 구매 (<span id="scrollCost">30</span>G) — 실패 시 파괴 방지</button>
   </div>
 
@@ -322,6 +358,25 @@
     tone(900, 0.05, 0.08, 'square', 0.11);
     tone(1100, 0.1, 0.15, 'square', 0.13);
   }
+  function sfxHit(crit) {
+    tone(crit ? 300 : 220, 0, 0.06, 'square', crit ? 0.16 : 0.1);
+    if (crit) tone(500, 0.04, 0.08, 'square', 0.12);
+  }
+  function sfxKill(boss) {
+    if (boss) {
+      tone(392, 0, 0.15, 'triangle', 0.18);
+      tone(494, 0.1, 0.15, 'triangle', 0.18);
+      tone(587, 0.2, 0.15, 'triangle', 0.18);
+      tone(784, 0.3, 0.3, 'triangle', 0.2);
+    } else {
+      tone(660, 0, 0.08, 'triangle', 0.14);
+      tone(880, 0.06, 0.12, 'triangle', 0.14);
+    }
+  }
+  function sfxBoss() {
+    tone(120, 0, 0.4, 'sawtooth', 0.15);
+    tone(90, 0.15, 0.5, 'sawtooth', 0.15);
+  }
   function toggleMute() {
     muted = !muted;
     el('muteBtn').textContent = muted ? '🔇' : '🔊';
@@ -385,6 +440,108 @@
     t.style.color = color;
     forge.appendChild(t);
     setTimeout(() => t.remove(), 1000);
+  }
+
+  function spawnParticlesIn(containerId, color, count = 10) {
+    const c = el(containerId);
+    for (let i = 0; i < count; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.style.background = color;
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 30 + Math.random() * 45;
+      p.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+      p.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+      c.appendChild(p);
+      setTimeout(() => p.remove(), 700);
+    }
+  }
+
+  function popupTextIn(containerId, text, color) {
+    const c = el(containerId);
+    const t = document.createElement('div');
+    t.className = 'float-text';
+    t.textContent = text;
+    t.style.color = color;
+    c.appendChild(t);
+    setTimeout(() => t.remove(), 900);
+  }
+
+  // ── 몬스터 사냥터 ──
+  const monsters = [
+    { name: '슬라임',       emoji: '🟢', hp: 16,  min: 3,  max: 7,   weight: 30 },
+    { name: '박쥐',         emoji: '🦇', hp: 12,  min: 4,  max: 8,   weight: 25 },
+    { name: '고블린',       emoji: '👺', hp: 28,  min: 7,  max: 13,  weight: 20 },
+    { name: '스켈레톤',     emoji: '💀', hp: 38,  min: 10, max: 17,  weight: 14 },
+    { name: '오크',         emoji: '👹', hp: 55,  min: 15, max: 25,  weight: 8  },
+    { name: '고대 드래곤',  emoji: '🐉', hp: 130, min: 60, max: 100, weight: 3, boss: true },
+  ];
+
+  function pickMonster() {
+    const total = monsters.reduce((s, m) => s + m.weight, 0);
+    let r = Math.random() * total;
+    for (const m of monsters) {
+      if (r < m.weight) return m;
+      r -= m.weight;
+    }
+    return monsters[0];
+  }
+
+  function spawnMonster(announce) {
+    const def = pickMonster();
+    state.monster = { ...def, curHp: def.hp };
+    el('huntZone').classList.toggle('boss', !!def.boss);
+    el('monsterEmoji').textContent = def.emoji;
+    el('monsterName').textContent = def.name + (def.boss ? ' (보스!)' : '');
+    renderMonster();
+    if (announce && def.boss) {
+      popupTextIn('huntZone', '보스 등장!', '#e8b84b');
+      sfxBoss();
+    }
+  }
+
+  function renderMonster() {
+    const m = state.monster;
+    const pct = Math.max(0, (m.curHp / m.hp) * 100);
+    el('hpFill').style.width = pct + '%';
+    el('hpText').textContent = `${Math.max(0, m.curHp)} / ${m.hp}`;
+  }
+
+  function shakeMonster() {
+    const e = el('monsterEmoji');
+    e.classList.remove('hit');
+    void e.offsetWidth;
+    e.classList.add('hit');
+  }
+
+  function attackMonster() {
+    const m = state.monster;
+    if (!m || m.curHp <= 0) return;
+
+    const atk = atkPower(state.level);
+    let dmg = 4 + Math.floor(Math.random() * 6) + Math.floor(atk / 18);
+    const crit = Math.random() < 0.15;
+    if (crit) dmg = Math.round(dmg * 2);
+
+    m.curHp -= dmg;
+    shakeMonster();
+    popupTextIn('huntZone', (crit ? 'CRIT ' : '') + '-' + dmg, crit ? '#ffd75e' : '#ff7a3d');
+    sfxHit(crit);
+
+    if (m.curHp <= 0) {
+      const reward = Math.floor(Math.random() * (m.max - m.min + 1)) + m.min;
+      state.gold += reward;
+      spawnParticlesIn('huntZone', m.boss ? '#e8b84b' : '#4a9d6e', m.boss ? 24 : 12);
+      popupTextIn('huntZone', `+${reward}G`, '#e8b84b');
+      sfxKill(!!m.boss);
+      log(`${m.name}을(를) 처치하고 ${reward}G를 획득했습니다.${m.boss ? ' (보스 처치!)' : ''}`, m.boss ? 'info' : 'success');
+      renderMonster();
+      render();
+      setTimeout(() => spawnMonster(true), 500);
+    } else {
+      renderMonster();
+      render();
+    }
   }
 
   function render() {
@@ -502,14 +659,6 @@
     render();
   }
 
-  function hunt() {
-    const reward = 5 + Math.floor(Math.random() * 11);
-    state.gold += reward;
-    sfxCoin();
-    log(`몬스터를 처치하고 ${reward}G를 획득했습니다.`);
-    render();
-  }
-
   function sell() {
     if (state.level === 0) return;
     const price = sellPrice();
@@ -535,12 +684,13 @@
   }
 
   el('enhanceBtn').addEventListener('click', enhance);
-  el('huntBtn').addEventListener('click', hunt);
+  el('attackBtn').addEventListener('click', attackMonster);
   el('sellBtn').addEventListener('click', sell);
   el('scrollBtn').addEventListener('click', buyScroll);
   el('muteBtn').addEventListener('click', toggleMute);
 
   log('대장간에 오신 것을 환영합니다. 검을 강화해보세요! (최대 +50)');
+  spawnMonster(false);
   render();
 </script>
 </body>
