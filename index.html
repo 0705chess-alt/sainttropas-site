@@ -168,6 +168,7 @@
     <div>골드 <span class="gold" id="goldDisplay">0</span></div>
     <div>투자 골드 <span id="investedDisplay" style="color:var(--gold)">0</span></div>
     <div>주문서 <span id="scrollDisplay" style="color:var(--safe)">0</span>개</div>
+    <button id="muteBtn" style="padding:2px 8px; font-size:14px; background:transparent; color:var(--text-dim); border:none; cursor:pointer;">🔊</button>
   </div>
 
   <div class="forge" id="forge">
@@ -252,6 +253,79 @@
   const tierIndexOf = (lvl) => Math.min(tiers.length - 1, Math.floor(lvl / 5));
 
   const el = id => document.getElementById(id);
+
+  // ── 사운드 엔진 (외부 파일 없이 오실레이터로 직접 합성) ──
+  let audioCtx = null;
+  let muted = false;
+  function ctx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+  function tone(freq, start, dur, type = 'sine', vol = 0.18) {
+    if (muted) return;
+    const c = ctx();
+    const osc = c.createOscillator();
+    const gain = c.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, c.currentTime + start);
+    gain.gain.setValueAtTime(0, c.currentTime + start);
+    gain.gain.linearRampToValueAtTime(vol, c.currentTime + start + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + start + dur);
+    osc.connect(gain).connect(c.destination);
+    osc.start(c.currentTime + start);
+    osc.stop(c.currentTime + start + dur + 0.03);
+  }
+  function noiseBurst(start, dur, vol = 0.3) {
+    if (muted) return;
+    const c = ctx();
+    const size = Math.floor(c.sampleRate * dur);
+    const buffer = c.createBuffer(1, size, c.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < size; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / size);
+    const src = c.createBufferSource();
+    src.buffer = buffer;
+    const gain = c.createGain();
+    gain.gain.setValueAtTime(vol, c.currentTime + start);
+    gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + start + dur);
+    const filter = c.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 700;
+    src.connect(filter).connect(gain).connect(c.destination);
+    src.start(c.currentTime + start);
+  }
+  function sfxSuccess(tierIdx) {
+    const base = 440 + tierIdx * 18;
+    tone(base, 0, 0.12, 'triangle', 0.16);
+    tone(base * 1.25, 0.08, 0.12, 'triangle', 0.15);
+    tone(base * 1.5, 0.16, 0.22, 'triangle', 0.17);
+  }
+  function sfxDestroy() {
+    tone(180, 0, 0.25, 'sawtooth', 0.14);
+    tone(90, 0.06, 0.35, 'sawtooth', 0.14);
+    noiseBurst(0, 0.4, 0.32);
+  }
+  function sfxShield() {
+    tone(660, 0, 0.15, 'sine', 0.14);
+    tone(880, 0.08, 0.18, 'sine', 0.12);
+  }
+  function sfxCoin() {
+    tone(880, 0, 0.08, 'square', 0.1);
+    tone(1320, 0.05, 0.1, 'square', 0.09);
+  }
+  function sfxPurchase() {
+    tone(520, 0, 0.1, 'sine', 0.13);
+    tone(660, 0.06, 0.12, 'sine', 0.11);
+  }
+  function sfxSell() {
+    tone(700, 0, 0.08, 'square', 0.11);
+    tone(900, 0.05, 0.08, 'square', 0.11);
+    tone(1100, 0.1, 0.15, 'square', 0.13);
+  }
+  function toggleMute() {
+    muted = !muted;
+    el('muteBtn').textContent = muted ? '🔇' : '🔊';
+  }
 
   function log(msg, cls) {
     const div = document.createElement('div');
@@ -364,8 +438,10 @@
       const cost = enhanceCost(state.level);
       el('costDisplay').textContent = cost;
       el('chanceDisplay').textContent = successRate(state.level) + '%';
-      el('enhanceBtn').disabled = state.gold < cost;
-      el('enhanceBtn').textContent = `강화하기 (비용: ${cost}G)`;
+      el('enhanceBtn').disabled = false;
+      el('enhanceBtn').textContent = state.gold < cost
+        ? `골드 부족 (필요: ${cost}G)`
+        : `강화하기 (비용: ${cost}G)`;
 
       const note = el('riskNote');
       if (state.scrolls > 0) {
@@ -378,13 +454,17 @@
     }
 
     el('scrollCost').textContent = scrollCost();
-    el('scrollBtn').disabled = state.gold < scrollCost();
+    el('scrollBtn').disabled = false;
   }
 
   function enhance() {
     if (state.level >= maxLevel) return;
     const cost = enhanceCost(state.level);
-    if (state.gold < cost) return;
+    if (state.gold < cost) {
+      popupText('골드 부족!', '#c23b3b');
+      log(`골드가 부족합니다. (필요: ${cost}G / 보유: ${state.gold}G)`, 'fail');
+      return;
+    }
     state.gold -= cost;
     state.invested += cost;
 
@@ -399,6 +479,7 @@
       pulseSword();
       spawnParticles(tier.glow);
       popupText(`+${state.level}`, tier.glow);
+      sfxSuccess(tierIndexOf(state.level));
       log(`+${state.level - 1} -> +${state.level} 강화 성공!`, 'success');
     } else {
       flash('fail');
@@ -406,11 +487,13 @@
       if (state.scrolls > 0) {
         state.scrolls -= 1;
         popupText('방어!', '#4a9d6e');
+        sfxShield();
         log(`강화 실패... 보호 주문서로 검을 지켰습니다.`, 'info');
       } else {
         spawnParticles('#c23b3b', 22);
         shatterSword();
         popupText('파괴!', '#c23b3b');
+        sfxDestroy();
         log(`강화 실패... 검이 파괴되었습니다! (+${state.level} -> +0)`, 'fail');
         state.level = 0;
         state.invested = 0;
@@ -422,6 +505,7 @@
   function hunt() {
     const reward = 5 + Math.floor(Math.random() * 11);
     state.gold += reward;
+    sfxCoin();
     log(`몬스터를 처치하고 ${reward}G를 획득했습니다.`);
     render();
   }
@@ -430,6 +514,7 @@
     if (state.level === 0) return;
     const price = sellPrice();
     state.gold += price;
+    sfxSell();
     log(`+${state.level} 검을 ${price}G에 판매했습니다.`, 'info');
     state.level = 0;
     state.invested = 0;
@@ -438,9 +523,13 @@
 
   function buyScroll() {
     const cost = scrollCost();
-    if (state.gold < cost) return;
+    if (state.gold < cost) {
+      log(`골드가 부족합니다. (필요: ${cost}G)`, 'fail');
+      return;
+    }
     state.gold -= cost;
     state.scrolls += 1;
+    sfxPurchase();
     log(`보호 주문서를 구매했습니다.`, 'info');
     render();
   }
@@ -449,6 +538,7 @@
   el('huntBtn').addEventListener('click', hunt);
   el('sellBtn').addEventListener('click', sell);
   el('scrollBtn').addEventListener('click', buyScroll);
+  el('muteBtn').addEventListener('click', toggleMute);
 
   log('대장간에 오신 것을 환영합니다. 검을 강화해보세요! (최대 +50)');
   render();
