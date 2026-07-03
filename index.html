@@ -2,108 +2,361 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>학교의 괴담</title>
+<title>대장간 - 검 강화</title>
 <style>
-body{
-    background:#111;
-    color:white;
-    font-family:Arial;
-    text-align:center;
-    padding:40px;
-}
-#story{
-    font-size:22px;
-    margin:30px;
-}
-button{
-    display:block;
-    margin:15px auto;
-    padding:12px 30px;
-    font-size:18px;
-    cursor:pointer;
-}
+  :root{
+    --bg-deep: #14100c;
+    --bg-panel: #1f1811;
+    --ember: #ff7a3d;
+    --ember-dim: #a84e22;
+    --gold: #e8b84b;
+    --steel: #9aa5b1;
+    --danger: #c23b3b;
+    --safe: #4a9d6e;
+    --text: #ede4d3;
+    --text-dim: #a89a82;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+      radial-gradient(ellipse at 50% 20%, #2a1c10 0%, var(--bg-deep) 55%),
+      var(--bg-deep);
+    color: var(--text);
+    font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 32px 16px;
+  }
+  .stage {
+    width: 100%;
+    max-width: 480px;
+  }
+  h1 {
+    font-size: 22px;
+    text-align: center;
+    letter-spacing: 4px;
+    color: var(--ember);
+    margin: 0 0 4px;
+    text-shadow: 0 0 18px rgba(255,122,61,0.5);
+  }
+  .sub {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 12px;
+    margin-bottom: 20px;
+    letter-spacing: 2px;
+  }
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    background: var(--bg-panel);
+    border: 1px solid #3a2c1c;
+    border-radius: 10px;
+    padding: 10px 16px;
+    margin-bottom: 18px;
+    font-size: 14px;
+  }
+  .topbar .gold { color: var(--gold); font-weight: bold; }
+  .forge {
+    background: radial-gradient(ellipse at 50% 30%, #2e1c10 0%, var(--bg-panel) 70%);
+    border: 1px solid #3a2c1c;
+    border-radius: 14px;
+    padding: 28px 16px 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .level-badge {
+    font-size: 30px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+    transition: color 0.3s;
+  }
+  .tier-label {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--text-dim);
+    margin-bottom: 14px;
+  }
+  #swordSvg { width: 140px; height: 220px; transition: filter 0.3s; }
+  .stats {
+    display: flex;
+    justify-content: center;
+    gap: 22px;
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .stats b { color: var(--text); }
+  .action-row {
+    margin-top: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  button {
+    font-family: inherit;
+    border: none;
+    border-radius: 8px;
+    padding: 13px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.08s, filter 0.15s;
+    letter-spacing: 1px;
+  }
+  button:active { transform: scale(0.97); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-enhance {
+    background: linear-gradient(135deg, var(--ember), #d9531f);
+    color: #1a0d05;
+    box-shadow: 0 0 20px rgba(255,122,61,0.35);
+  }
+  .btn-enhance:hover:not(:disabled) { filter: brightness(1.1); }
+  .btn-hunt {
+    background: var(--bg-panel);
+    border: 1px solid #4a3a26 !important;
+    color: var(--text);
+  }
+  .btn-hunt:hover { filter: brightness(1.3); }
+  .btn-scroll {
+    background: var(--bg-panel);
+    border: 1px solid #305a44 !important;
+    color: var(--safe);
+    font-size: 12px;
+    padding: 10px;
+  }
+  .risk-note {
+    font-size: 11px;
+    color: var(--danger);
+    margin-top: 4px;
+    min-height: 14px;
+  }
+  .log {
+    margin-top: 18px;
+    background: var(--bg-panel);
+    border: 1px solid #3a2c1c;
+    border-radius: 10px;
+    padding: 10px 14px;
+    height: 110px;
+    overflow-y: auto;
+    font-size: 12px;
+    color: var(--text-dim);
+    display: flex;
+    flex-direction: column-reverse;
+  }
+  .log div { padding: 3px 0; border-bottom: 1px solid #2a2117; }
+  .log .success { color: var(--safe); }
+  .log .fail { color: var(--danger); }
+  .log .info { color: var(--gold); }
+  .flash {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+  }
+  .flash.success { background: radial-gradient(circle, rgba(232,184,75,0.35), transparent 70%); animation: pulse 0.5s ease-out; }
+  .flash.fail { background: radial-gradient(circle, rgba(194,59,59,0.35), transparent 70%); animation: pulse 0.5s ease-out; }
+  @keyframes pulse { from { opacity: 1; } to { opacity: 0; } }
+  .shake { animation: shake 0.35s; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
 </style>
 </head>
 <body>
+<div class="stage">
+  <h1>대 장 간</h1>
+  <div class="sub">SWORD ENHANCEMENT</div>
 
-<h1>📖 학교의 괴담</h1>
+  <div class="topbar">
+    <div>골드 <span class="gold" id="goldDisplay">0</span></div>
+    <div>보호 주문서 <span id="scrollDisplay" style="color:var(--safe)">0</span>개</div>
+  </div>
 
-<div id="story"></div>
-<div id="choices"></div>
+  <div class="forge" id="forge">
+    <div class="flash" id="flash"></div>
+    <div class="level-badge" id="levelBadge">+0</div>
+    <div class="tier-label" id="tierLabel">평범한 검</div>
+    <svg id="swordSvg" viewBox="0 0 100 160">
+      <defs>
+        <linearGradient id="bladeGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#dfe6ec"/>
+          <stop offset="100%" stop-color="#8a94a6"/>
+        </linearGradient>
+      </defs>
+      <polygon id="blade" points="50,5 60,20 57,110 50,125 43,110 40,20" fill="url(#bladeGrad)" stroke="#556070" stroke-width="1.5"/>
+      <rect x="38" y="118" width="24" height="8" rx="2" fill="#3a2c1c"/>
+      <rect x="47" y="126" width="6" height="28" rx="2" fill="#5c4326"/>
+      <circle cx="50" cy="154" r="7" fill="#e8b84b"/>
+    </svg>
+    <div class="stats">
+      <div>공격력 <b id="atkDisplay">10</b></div>
+      <div>성공확률 <b id="chanceDisplay">95%</b></div>
+      <div>최고기록 <b id="bestDisplay">+0</b></div>
+    </div>
+  </div>
+
+  <div class="action-row">
+    <button class="btn-enhance" id="enhanceBtn">강화하기 (비용: <span id="costDisplay">10</span>G)</button>
+    <div class="risk-note" id="riskNote"></div>
+    <button class="btn-hunt" id="huntBtn">몬스터 사냥 (+5~15G)</button>
+    <button class="btn-scroll" id="scrollBtn">보호 주문서 구매 (<span id="scrollCost">30</span>G) — 다음 실패 시 파괴/하락 방지</button>
+  </div>
+
+  <div class="log" id="log"></div>
+</div>
 
 <script>
-const scenes = {
-    start:{
-        text:"방과 후, 학교에 혼자 남았다. 어디로 갈까?",
-        choices:[
-            {text:"🏫 교실",next:"class"},
-            {text:"🌙 옥상",next:"roof"}
-        ]
-    },
+  const state = {
+    gold: 50,
+    level: 0,
+    best: 0,
+    scrolls: 0,
+  };
 
-    class:{
-        text:"교실에서 이상한 소리가 들린다.",
-        choices:[
-            {text:"조사한다",next:"ghost"},
-            {text:"도망친다",next:"escape"}
-        ]
-    },
+  // 강화 성공 확률 (레벨 -> 다음 레벨 성공률)
+  const successRates = [95,90,85,80,75,70,65,60,55,50,45,40,35,30,25,20,15,12,10,8];
+  const maxLevel = successRates.length;
 
-    roof:{
-        text:"옥상에서 검은 그림자를 발견했다.",
-        choices:[
-            {text:"다가간다",next:"boss"},
-            {text:"계단으로 내려간다",next:"escape"}
-        ]
-    },
+  const tierInfo = (lvl) => {
+    if (lvl < 5) return { name: "평범한 검", color: "#dfe6ec", risk: "safe" };
+    if (lvl < 10) return { name: "빛나는 검", color: "#6fb8ff", risk: "downgrade" };
+    if (lvl < 15) return { name: "정령의 검", color: "#c46bff", risk: "destroy" };
+    return { name: "전설의 검", color: "#ff7a3d", risk: "destroy" };
+  };
 
-    ghost:{
-        text:"👻 귀신을 만났다... GAME OVER",
-        choices:[
-            {text:"다시 시작",next:"start"}
-        ]
-    },
+  const enhanceCost = (lvl) => Math.round(10 * Math.pow(1.55, lvl));
+  const scrollCost = () => Math.round(20 + state.level * 8);
+  const atkPower = (lvl) => 10 + lvl * lvl * 4;
 
-    boss:{
-        text:"😈 학교의 보스를 만났다!",
-        choices:[
-            {text:"싸운다",next:"win"},
-            {text:"도망친다",next:"escape"}
-        ]
-    },
+  const el = id => document.getElementById(id);
 
-    win:{
-        text:"🏆 보스를 물리쳤다! 엔딩 1",
-        choices:[
-            {text:"다시 시작",next:"start"}
-        ]
-    },
+  function log(msg, cls) {
+    const div = document.createElement('div');
+    div.textContent = msg;
+    if (cls) div.className = cls;
+    el('log').prepend(div);
+  }
 
-    escape:{
-        text:"🚪 무사히 학교를 탈출했다. 엔딩 2",
-        choices:[
-            {text:"다시 시작",next:"start"}
-        ]
+  function flash(type) {
+    const f = el('flash');
+    f.className = 'flash ' + type;
+    void f.offsetWidth;
+    f.className = 'flash ' + type;
+  }
+
+  function shake() {
+    const forge = el('forge');
+    forge.classList.remove('shake');
+    void forge.offsetWidth;
+    forge.classList.add('shake');
+  }
+
+  function render() {
+    el('goldDisplay').textContent = state.gold;
+    el('scrollDisplay').textContent = state.scrolls;
+    el('levelBadge').textContent = '+' + state.level;
+    el('bestDisplay').textContent = '+' + state.best;
+    el('atkDisplay').textContent = atkPower(state.level);
+
+    const tier = tierInfo(state.level);
+    el('tierLabel').textContent = tier.name;
+    el('levelBadge').style.color = tier.color;
+    el('blade').setAttribute('fill', state.level >= 10 ? tier.color : 'url(#bladeGrad)');
+    el('swordSvg').style.filter = state.level >= 5
+      ? `drop-shadow(0 0 ${6 + state.level}px ${tier.color})`
+      : 'none';
+
+    if (state.level >= maxLevel) {
+      el('enhanceBtn').disabled = true;
+      el('enhanceBtn').textContent = '최고 강화 달성!';
+      el('chanceDisplay').textContent = '-';
+      el('costDisplay').textContent = '-';
+      el('riskNote').textContent = '';
+    } else {
+      const cost = enhanceCost(state.level);
+      el('costDisplay').textContent = cost;
+      el('chanceDisplay').textContent = successRates[state.level] + '%';
+      el('enhanceBtn').disabled = state.gold < cost;
+      el('enhanceBtn').textContent = `강화하기 (비용: ${cost}G)`;
+
+      if (tier.risk === 'downgrade') {
+        el('riskNote').textContent = '⚠ 실패 시 검이 1단계 하락합니다';
+      } else if (tier.risk === 'destroy') {
+        el('riskNote').textContent = '☠ 실패 시 검이 파괴됩니다 (+0으로 초기화)';
+      } else {
+        el('riskNote').textContent = '';
+      }
     }
-};
 
-function showScene(name){
-    const scene=scenes[name];
-    document.getElementById("story").textContent=scene.text;
+    el('scrollCost').textContent = scrollCost();
+    el('scrollBtn').disabled = state.gold < scrollCost();
+  }
 
-    const choices=document.getElementById("choices");
-    choices.innerHTML="";
+  function enhance() {
+    if (state.level >= maxLevel) return;
+    const cost = enhanceCost(state.level);
+    if (state.gold < cost) return;
+    state.gold -= cost;
 
-    scene.choices.forEach(choice=>{
-        const btn=document.createElement("button");
-        btn.textContent=choice.text;
-        btn.onclick=()=>showScene(choice.next);
-        choices.appendChild(btn);
-    });
-}
+    const rate = successRates[state.level];
+    const roll = Math.random() * 100;
 
-showScene("start");
+    if (roll < rate) {
+      state.level += 1;
+      state.best = Math.max(state.best, state.level);
+      flash('success');
+      log(`+${state.level - 1} → +${state.level} 강화 성공!`, 'success');
+    } else {
+      const tier = tierInfo(state.level);
+      flash('fail');
+      shake();
+      if (state.scrolls > 0 && tier.risk !== 'safe') {
+        state.scrolls -= 1;
+        log(`강화 실패... 보호 주문서로 검을 지켰습니다.`, 'info');
+      } else if (tier.risk === 'downgrade') {
+        state.level = Math.max(0, state.level - 1);
+        log(`강화 실패... 검이 +${state.level}로 하락했습니다.`, 'fail');
+      } else if (tier.risk === 'destroy') {
+        log(`강화 실패... 검이 파괴되었습니다!`, 'fail');
+        state.level = 0;
+      } else {
+        log(`강화 실패... 다행히 검에는 이상 없습니다.`, 'fail');
+      }
+    }
+    render();
+  }
+
+  function hunt() {
+    const reward = 5 + Math.floor(Math.random() * 11);
+    state.gold += reward;
+    log(`몬스터를 처치하고 ${reward}G를 획득했습니다.`);
+    render();
+  }
+
+  function buyScroll() {
+    const cost = scrollCost();
+    if (state.gold < cost) return;
+    state.gold -= cost;
+    state.scrolls += 1;
+    log(`보호 주문서를 구매했습니다.`, 'info');
+    render();
+  }
+
+  el('enhanceBtn').addEventListener('click', enhance);
+  el('huntBtn').addEventListener('click', hunt);
+  el('scrollBtn').addEventListener('click', buyScroll);
+
+  log('대장간에 오신 것을 환영합니다. 검을 강화해보세요!');
+  render();
 </script>
-
 </body>
 </html>
