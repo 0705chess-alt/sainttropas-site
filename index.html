@@ -2,15 +2,13 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>검 강화 게임</title>
+<title>대장간 - 검 강화</title>
 <style>
   :root{
     --bg-deep: #14100c;
     --bg-panel: #1f1811;
     --ember: #ff7a3d;
-    --ember-dim: #a84e22;
     --gold: #e8b84b;
-    --steel: #9aa5b1;
     --danger: #c23b3b;
     --safe: #4a9d6e;
     --text: #ede4d3;
@@ -29,10 +27,7 @@
     justify-content: center;
     padding: 32px 16px;
   }
-  .stage {
-    width: 100%;
-    max-width: 480px;
-  }
+  .stage { width: 100%; max-width: 480px; }
   h1 {
     font-size: 22px;
     text-align: center;
@@ -41,13 +36,7 @@
     margin: 0 0 4px;
     text-shadow: 0 0 18px rgba(255,122,61,0.5);
   }
-  .sub {
-    text-align: center;
-    color: var(--text-dim);
-    font-size: 12px;
-    margin-bottom: 20px;
-    letter-spacing: 2px;
-  }
+  .sub { text-align: center; color: var(--text-dim); font-size: 12px; margin-bottom: 20px; letter-spacing: 2px; }
   .topbar {
     display: flex;
     justify-content: space-between;
@@ -56,38 +45,37 @@
     border-radius: 10px;
     padding: 10px 16px;
     margin-bottom: 18px;
-    font-size: 14px;
+    font-size: 13px;
   }
   .topbar .gold { color: var(--gold); font-weight: bold; }
   .forge {
     background: radial-gradient(ellipse at 50% 30%, #2e1c10 0%, var(--bg-panel) 70%);
     border: 1px solid #3a2c1c;
     border-radius: 14px;
-    padding: 28px 16px 20px;
+    padding: 30px 16px 20px;
     text-align: center;
     position: relative;
-    overflow: hidden;
+    min-height: 330px;
   }
-  .level-badge {
-    font-size: 30px;
-    font-weight: 900;
-    letter-spacing: 1px;
-    margin-bottom: 6px;
-    transition: color 0.3s;
-  }
-  .tier-label {
-    font-size: 11px;
-    letter-spacing: 3px;
-    color: var(--text-dim);
-    margin-bottom: 14px;
-  }
-  #swordSvg { width: 140px; height: 220px; transition: filter 0.3s, transform 0.4s ease; overflow: visible; }
+  .level-badge { font-size: 30px; font-weight: 900; letter-spacing: 1px; margin-bottom: 6px; transition: color 0.3s; }
+  .tier-label { font-size: 11px; letter-spacing: 3px; color: var(--text-dim); margin-bottom: 10px; }
+  .tier-track { font-size: 10px; color: var(--text-dim); margin-bottom: 14px; }
+  #swordWrap { height: 200px; display: flex; align-items: flex-end; justify-content: center; }
+  #swordSvg { width: 130px; height: 200px; transition: filter 0.3s, transform 0.4s ease; overflow: visible; }
   #swordSvg.level-up-pulse { animation: levelPulse 0.55s ease; }
   @keyframes levelPulse {
     0% { transform: scale(var(--sword-scale, 1)); }
-    35% { transform: scale(calc(var(--sword-scale, 1) * 1.28)) rotate(-4deg); }
+    35% { transform: scale(calc(var(--sword-scale, 1) * 1.25)) rotate(-4deg); }
     60% { transform: scale(calc(var(--sword-scale, 1) * 0.95)) rotate(3deg); }
     100% { transform: scale(var(--sword-scale, 1)) rotate(0deg); }
+  }
+  #swordSvg.shatter { animation: shatterShake 0.5s ease; }
+  @keyframes shatterShake {
+    0%,100% { transform: scale(var(--sword-scale,1)) translateX(0); }
+    20% { transform: scale(calc(var(--sword-scale,1)*0.9)) translateX(-8px) rotate(-6deg); }
+    40% { transform: scale(calc(var(--sword-scale,1)*0.9)) translateX(8px) rotate(6deg); }
+    60% { transform: scale(calc(var(--sword-scale,1)*0.85)) translateX(-5px) rotate(-3deg); }
+    80% { transform: scale(calc(var(--sword-scale,1)*0.95)) translateX(5px) rotate(2deg); }
   }
   .flame { animation: flicker 0.6s ease-in-out infinite alternate; transform-origin: 50px 30px; }
   .flame.f2 { animation-delay: 0.15s; }
@@ -99,197 +87,169 @@
   #aura { animation: auraPulse 2.2s ease-in-out infinite; transform-origin: 50px 80px; }
   @keyframes auraPulse {
     0%, 100% { opacity: 0.15; transform: scale(1); }
-    50% { opacity: 0.4; transform: scale(1.08); }
+    50% { opacity: 0.45; transform: scale(1.1); }
   }
   .particle {
     position: absolute;
-    width: 6px;
-    height: 6px;
+    width: 6px; height: 6px;
     border-radius: 50%;
     pointer-events: none;
-    left: 50%;
-    top: 52%;
+    left: 50%; top: 46%;
     animation: particleFly 0.75s ease-out forwards;
   }
-  @keyframes particleFly {
-    to { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
+  @keyframes particleFly { to { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; } }
+  .float-text {
+    position: absolute;
+    left: 50%; top: 40%;
+    transform: translateX(-50%);
+    font-size: 20px;
+    font-weight: 900;
+    pointer-events: none;
+    animation: floatUp 1s ease-out forwards;
+    text-shadow: 0 0 10px rgba(0,0,0,0.6);
+    white-space: nowrap;
+  }
+  @keyframes floatUp {
+    0% { opacity: 0; transform: translate(-50%, 10px) scale(0.8); }
+    20% { opacity: 1; transform: translate(-50%, -10px) scale(1.1); }
+    100% { opacity: 0; transform: translate(-50%, -55px) scale(1); }
   }
   .stats {
-    display: flex;
-    justify-content: center;
-    gap: 22px;
-    margin-top: 12px;
-    font-size: 12px;
-    color: var(--text-dim);
+    display: flex; justify-content: center; gap: 18px;
+    margin-top: 10px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap;
   }
   .stats b { color: var(--text); }
-  .action-row {
-    margin-top: 22px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
+  .action-row { margin-top: 22px; display: flex; flex-direction: column; gap: 10px; }
+  .btn-pair { display: flex; gap: 10px; }
+  .btn-pair button { flex: 1; }
   button {
-    font-family: inherit;
-    border: none;
-    border-radius: 8px;
-    padding: 13px;
-    font-size: 14px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: transform 0.08s, filter 0.15s;
-    letter-spacing: 1px;
+    font-family: inherit; border: none; border-radius: 8px; padding: 13px;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    transition: transform 0.08s, filter 0.15s; letter-spacing: 1px;
   }
   button:active { transform: scale(0.97); }
   button:disabled { opacity: 0.4; cursor: not-allowed; }
-  .btn-enhance {
-    background: linear-gradient(135deg, var(--ember), #d9531f);
-    color: #1a0d05;
-    box-shadow: 0 0 20px rgba(255,122,61,0.35);
-  }
+  .btn-enhance { background: linear-gradient(135deg, var(--ember), #d9531f); color: #1a0d05; box-shadow: 0 0 20px rgba(255,122,61,0.35); }
   .btn-enhance:hover:not(:disabled) { filter: brightness(1.1); }
-  .btn-hunt {
-    background: var(--bg-panel);
-    border: 1px solid #4a3a26 !important;
-    color: var(--text);
-  }
-  .btn-hunt:hover { filter: brightness(1.3); }
-  .btn-scroll {
-    background: var(--bg-panel);
-    border: 1px solid #305a44 !important;
-    color: var(--safe);
-    font-size: 12px;
-    padding: 10px;
-  }
-  .risk-note {
-    font-size: 11px;
-    color: var(--danger);
-    margin-top: 4px;
-    min-height: 14px;
-  }
+  .btn-hunt { background: var(--bg-panel); border: 1px solid #4a3a26 !important; color: var(--text); font-size: 13px; }
+  .btn-hunt:hover:not(:disabled) { filter: brightness(1.3); }
+  .btn-sell { background: var(--bg-panel); border: 1px solid #5a4326 !important; color: var(--gold); font-size: 13px; }
+  .btn-sell:hover:not(:disabled) { filter: brightness(1.3); }
+  .btn-scroll { background: var(--bg-panel); border: 1px solid #305a44 !important; color: var(--safe); font-size: 12px; padding: 10px; }
+  .risk-note { font-size: 11px; color: var(--danger); margin-top: 4px; min-height: 14px; }
+  .risk-note.protected { color: var(--safe); }
   .log {
-    margin-top: 18px;
-    background: var(--bg-panel);
-    border: 1px solid #3a2c1c;
-    border-radius: 10px;
-    padding: 10px 14px;
-    height: 110px;
-    overflow-y: auto;
-    font-size: 12px;
-    color: var(--text-dim);
-    display: flex;
-    flex-direction: column-reverse;
+    margin-top: 18px; background: var(--bg-panel); border: 1px solid #3a2c1c; border-radius: 10px;
+    padding: 10px 14px; height: 110px; overflow-y: auto; font-size: 12px; color: var(--text-dim);
+    display: flex; flex-direction: column-reverse;
   }
   .log div { padding: 3px 0; border-bottom: 1px solid #2a2117; }
   .log .success { color: var(--safe); }
   .log .fail { color: var(--danger); }
   .log .info { color: var(--gold); }
-  .flash {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    opacity: 0;
-  }
+  .flash { position: absolute; inset: 0; pointer-events: none; opacity: 0; border-radius: 14px; }
   .flash.success { background: radial-gradient(circle, rgba(232,184,75,0.35), transparent 70%); animation: pulse 0.5s ease-out; }
-  .flash.fail { background: radial-gradient(circle, rgba(194,59,59,0.35), transparent 70%); animation: pulse 0.5s ease-out; }
+  .flash.fail { background: radial-gradient(circle, rgba(194,59,59,0.4), transparent 70%); animation: pulse 0.5s ease-out; }
   @keyframes pulse { from { opacity: 1; } to { opacity: 0; } }
   .shake { animation: shake 0.35s; }
   @keyframes shake {
     0%,100% { transform: translateX(0); }
-    20% { transform: translateX(-6px); }
-    40% { transform: translateX(6px); }
-    60% { transform: translateX(-4px); }
-    80% { transform: translateX(4px); }
+    20% { transform: translateX(-6px); } 40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); } 80% { transform: translateX(4px); }
   }
 </style>
 </head>
 <body>
 <div class="stage">
   <h1>대 장 간</h1>
-  <div class="sub">SWORD ENHANCEMENT</div>
+  <div class="sub">SWORD ENHANCEMENT · MAX +50</div>
 
   <div class="topbar">
     <div>골드 <span class="gold" id="goldDisplay">0</span></div>
-    <div>보호 주문서 <span id="scrollDisplay" style="color:var(--safe)">0</span>개</div>
+    <div>투자 골드 <span id="investedDisplay" style="color:var(--gold)">0</span></div>
+    <div>주문서 <span id="scrollDisplay" style="color:var(--safe)">0</span>개</div>
   </div>
 
   <div class="forge" id="forge">
     <div class="flash" id="flash"></div>
     <div class="level-badge" id="levelBadge">+0</div>
     <div class="tier-label" id="tierLabel">평범한 검</div>
-    <svg id="swordSvg" viewBox="0 0 100 160">
-      <defs>
-        <linearGradient id="bladeGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop id="gradTop" offset="0%" stop-color="#dfe6ec"/>
-          <stop id="gradBottom" offset="100%" stop-color="#8a94a6"/>
-        </linearGradient>
-      </defs>
+    <div class="tier-track" id="tierTrack">1 / 10 단계</div>
+    <div id="swordWrap">
+      <svg id="swordSvg" viewBox="0 0 100 160">
+        <defs>
+          <linearGradient id="bladeGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop id="gradTop" offset="0%" stop-color="#dfe6ec"/>
+            <stop id="gradBottom" offset="100%" stop-color="#8a94a6"/>
+          </linearGradient>
+        </defs>
 
-      <!-- 최고 강화 오라 -->
-      <circle id="aura" cx="50" cy="80" r="65" fill="none" stroke="#e8b84b" stroke-width="2" opacity="0"/>
+        <circle id="aura" cx="50" cy="80" r="65" fill="none" stroke="#e8b84b" stroke-width="2" opacity="0"/>
 
-      <!-- 검 끝 불꽃 -->
-      <g id="flameTip" opacity="0">
-        <path class="flame f1" d="M50 5 Q45 -10 50 -20 Q55 -10 50 5 Z" fill="#ff7a3d"/>
-        <path class="flame f2" d="M42 9 Q37 -1 41 -9 Q45 -1 42 9 Z" fill="#ffb347"/>
-        <path class="flame f3" d="M58 9 Q63 -1 59 -9 Q55 -1 58 9 Z" fill="#ffb347"/>
-      </g>
+        <g id="flameTip" opacity="0">
+          <path class="flame f1" d="M50 5 Q45 -10 50 -20 Q55 -10 50 5 Z" fill="#ff7a3d"/>
+          <path class="flame f2" d="M42 9 Q37 -1 41 -9 Q45 -1 42 9 Z" fill="#ffb347"/>
+          <path class="flame f3" d="M58 9 Q63 -1 59 -9 Q55 -1 58 9 Z" fill="#ffb347"/>
+        </g>
 
-      <polygon id="blade" points="50,5 60,20 57,110 50,125 43,110 40,20" fill="url(#bladeGrad)" stroke="#556070" stroke-width="1.5"/>
+        <polygon id="blade" points="50,5 60,20 57,110 50,125 43,110 40,20" fill="url(#bladeGrad)" stroke="#556070" stroke-width="1.5"/>
 
-      <!-- 날개 장식 (+10 이상) -->
-      <g id="wings" opacity="0">
-        <path d="M38 118 L18 110 L25 124 L38 122 Z" fill="#c46bff" stroke="#8a3fd1" stroke-width="1"/>
-        <path d="M62 118 L82 110 L75 124 L62 122 Z" fill="#c46bff" stroke="#8a3fd1" stroke-width="1"/>
-      </g>
+        <g id="wings" opacity="0">
+          <path d="M38 118 L18 110 L25 124 L38 122 Z" fill="#c46bff" stroke="#8a3fd1" stroke-width="1"/>
+          <path d="M62 118 L82 110 L75 124 L62 122 Z" fill="#c46bff" stroke="#8a3fd1" stroke-width="1"/>
+        </g>
 
-      <rect x="38" y="118" width="24" height="8" rx="2" fill="#3a2c1c"/>
-
-      <!-- 보석 (+5 이상) -->
-      <circle id="gem" cx="50" cy="122" r="4.5" fill="#6fb8ff" opacity="0"/>
-
-      <rect x="47" y="126" width="6" height="28" rx="2" fill="#5c4326"/>
-      <circle cx="50" cy="154" r="7" fill="#e8b84b"/>
-    </svg>
+        <rect x="38" y="118" width="24" height="8" rx="2" fill="#3a2c1c"/>
+        <circle id="gem" cx="50" cy="122" r="4.5" fill="#6fb8ff" opacity="0"/>
+        <rect x="47" y="126" width="6" height="28" rx="2" fill="#5c4326"/>
+        <circle cx="50" cy="154" r="7" fill="#e8b84b"/>
+      </svg>
+    </div>
     <div class="stats">
       <div>공격력 <b id="atkDisplay">10</b></div>
-      <div>성공확률 <b id="chanceDisplay">95%</b></div>
+      <div>성공확률 <b id="chanceDisplay">92%</b></div>
       <div>최고기록 <b id="bestDisplay">+0</b></div>
     </div>
   </div>
 
   <div class="action-row">
-    <button class="btn-enhance" id="enhanceBtn">강화하기 (비용: <span id="costDisplay">10</span>G)</button>
+    <button class="btn-enhance" id="enhanceBtn">강화하기 (비용: <span id="costDisplay">12</span>G)</button>
     <div class="risk-note" id="riskNote"></div>
-    <button class="btn-hunt" id="huntBtn">몬스터 사냥 (+5~15G)</button>
-    <button class="btn-scroll" id="scrollBtn">보호 주문서 구매 (<span id="scrollCost">30</span>G) — 다음 실패 시 파괴/하락 방지</button>
+    <div class="btn-pair">
+      <button class="btn-hunt" id="huntBtn">몬스터 사냥 (+5~15G)</button>
+      <button class="btn-sell" id="sellBtn">검 판매 (<span id="sellPrice">0</span>G)</button>
+    </div>
+    <button class="btn-scroll" id="scrollBtn">보호 주문서 구매 (<span id="scrollCost">30</span>G) — 실패 시 파괴 방지</button>
   </div>
 
   <div class="log" id="log"></div>
 </div>
 
 <script>
-  const state = {
-    gold: 50,
-    level: 0,
-    best: 0,
-    scrolls: 0,
-  };
+  const state = { gold: 60, level: 0, best: 0, scrolls: 0, invested: 0 };
 
-  // 강화 성공 확률 (레벨 -> 다음 레벨 성공률)
-  const successRates = [95,90,85,80,75,70,65,60,55,50,45,40,35,30,25,20,15,12,10,8];
-  const maxLevel = successRates.length;
+  const maxLevel = 50;
 
-  const tierInfo = (lvl) => {
-    if (lvl < 5) return { name: "평범한 검", color: "#dfe6ec", risk: "safe" };
-    if (lvl < 10) return { name: "빛나는 검", color: "#6fb8ff", risk: "downgrade" };
-    if (lvl < 15) return { name: "정령의 검", color: "#c46bff", risk: "destroy" };
-    return { name: "전설의 검", color: "#ff7a3d", risk: "destroy" };
-  };
-
-  const enhanceCost = (lvl) => Math.round(10 * Math.pow(1.55, lvl));
-  const scrollCost = () => Math.round(20 + state.level * 8);
+  const successRate = (lvl) => Math.max(3, Math.round(90 - lvl * 1.9));
+  const enhanceCost = (lvl) => Math.round(12 * Math.pow(1.62, lvl));
+  const scrollCost = () => Math.round(25 + state.level * 9);
   const atkPower = (lvl) => 10 + lvl * lvl * 4;
+  const sellPrice = () => Math.round(state.invested * 0.55);
+
+  const tiers = [
+    { name: "평범한 검",   top: "#dfe6ec", bottom: "#8a94a6", glow: "#dfe6ec" },
+    { name: "빛나는 검",   top: "#bfe0ff", bottom: "#5a8fd6", glow: "#6fb8ff" },
+    { name: "정령의 검",   top: "#e6c7ff", bottom: "#9a4fd1", glow: "#c46bff" },
+    { name: "화염의 검",   top: "#ffdca0", bottom: "#e8760f", glow: "#ff7a3d" },
+    { name: "얼음의 검",   top: "#d8f6ff", bottom: "#4fb8d9", glow: "#7fe0ff" },
+    { name: "뇌전의 검",   top: "#fff6b0", bottom: "#e0c020", glow: "#ffe45c" },
+    { name: "암흑의 검",   top: "#b6a6f0", bottom: "#2a1f4a", glow: "#8a5cff" },
+    { name: "천상의 검",   top: "#ffffff", bottom: "#cfd8ff", glow: "#eaf1ff" },
+    { name: "용의 검",     top: "#ff9a6a", bottom: "#8f1d1d", glow: "#ff4d4d" },
+    { name: "신화의 검",   top: "#fff2c2", bottom: "#e8b84b", glow: "#ffd75e" },
+  ];
+  const tierOf = (lvl) => tiers[Math.min(tiers.length - 1, Math.floor(lvl / 5))];
+  const tierIndexOf = (lvl) => Math.min(tiers.length - 1, Math.floor(lvl / 5));
 
   const el = id => document.getElementById(id);
 
@@ -321,6 +281,13 @@
     sword.classList.add('level-up-pulse');
   }
 
+  function shatterSword() {
+    const sword = el('swordSvg');
+    sword.classList.remove('shatter');
+    void sword.offsetWidth;
+    sword.classList.add('shatter');
+  }
+
   function spawnParticles(color, count = 14) {
     const forge = el('forge');
     for (let i = 0; i < count; i++) {
@@ -336,50 +303,56 @@
     }
   }
 
+  function popupText(text, color) {
+    const forge = el('forge');
+    const t = document.createElement('div');
+    t.className = 'float-text';
+    t.textContent = text;
+    t.style.color = color;
+    forge.appendChild(t);
+    setTimeout(() => t.remove(), 1000);
+  }
+
   function render() {
     el('goldDisplay').textContent = state.gold;
+    el('investedDisplay').textContent = state.invested;
     el('scrollDisplay').textContent = state.scrolls;
     el('levelBadge').textContent = '+' + state.level;
     el('bestDisplay').textContent = '+' + state.best;
     el('atkDisplay').textContent = atkPower(state.level);
 
-    const tier = tierInfo(state.level);
+    const tier = tierOf(state.level);
+    const tIdx = tierIndexOf(state.level);
     el('tierLabel').textContent = tier.name;
-    el('levelBadge').style.color = tier.color;
+    el('tierTrack').textContent = `${tIdx + 1} / ${tiers.length} 단계`;
+    el('levelBadge').style.color = tier.glow;
 
-    // 블레이드 색상: 티어별 그라디언트 색상 전환
-    const gradPairs = {
-      "평범한 검": ["#dfe6ec", "#8a94a6"],
-      "빛나는 검": ["#bfe0ff", "#5a8fd6"],
-      "정령의 검": ["#e6c7ff", "#9a4fd1"],
-      "전설의 검": ["#ffdca0", "#e8760f"],
-    };
-    const [top, bottom] = gradPairs[tier.name];
-    el('gradTop').setAttribute('stop-color', top);
-    el('gradBottom').setAttribute('stop-color', bottom);
+    el('gradTop').setAttribute('stop-color', tier.top);
+    el('gradBottom').setAttribute('stop-color', tier.bottom);
 
-    // 검 크기: 레벨이 오를수록 커짐
-    const scale = 1 + Math.min(state.level, maxLevel) * 0.035;
+    const scale = 1 + Math.min(state.level, maxLevel) * 0.016;
     el('swordSvg').style.setProperty('--sword-scale', scale);
     el('swordSvg').style.transform = `scale(${scale})`;
 
-    // 글로우
     el('swordSvg').style.filter = state.level >= 5
-      ? `drop-shadow(0 0 ${6 + state.level}px ${tier.color})`
+      ? `drop-shadow(0 0 ${6 + tIdx * 3}px ${tier.glow})`
       : 'none';
 
-    // 보석 (+5~)
     el('gem').style.opacity = state.level >= 5 ? 1 : 0;
-    el('gem').setAttribute('fill', tier.color);
+    el('gem').setAttribute('fill', tier.glow);
 
-    // 날개 (+10~)
     el('wings').style.opacity = state.level >= 10 ? 1 : 0;
 
-    // 불꽃 (+15~)
-    el('flameTip').style.opacity = state.level >= 15 ? 1 : 0;
+    el('flameTip').style.opacity = state.level >= 20 ? 1 : 0;
+    el('flameTip').querySelectorAll('.flame').forEach((f, i) => {
+      f.setAttribute('fill', i === 0 ? tier.glow : tier.top);
+    });
 
-    // 오라 (+20 만렙)
-    el('aura').style.opacity = state.level >= maxLevel ? 1 : 0;
+    el('aura').style.opacity = state.level >= 35 ? 1 : 0;
+    el('aura').setAttribute('stroke', tier.glow);
+
+    el('sellPrice').textContent = sellPrice();
+    el('sellBtn').disabled = state.level === 0;
 
     if (state.level >= maxLevel) {
       el('enhanceBtn').disabled = true;
@@ -390,16 +363,17 @@
     } else {
       const cost = enhanceCost(state.level);
       el('costDisplay').textContent = cost;
-      el('chanceDisplay').textContent = successRates[state.level] + '%';
+      el('chanceDisplay').textContent = successRate(state.level) + '%';
       el('enhanceBtn').disabled = state.gold < cost;
       el('enhanceBtn').textContent = `강화하기 (비용: ${cost}G)`;
 
-      if (tier.risk === 'downgrade') {
-        el('riskNote').textContent = '⚠ 실패 시 검이 1단계 하락합니다';
-      } else if (tier.risk === 'destroy') {
-        el('riskNote').textContent = '☠ 실패 시 검이 파괴됩니다 (+0으로 초기화)';
+      const note = el('riskNote');
+      if (state.scrolls > 0) {
+        note.textContent = `보호 주문서 보유 중 (실패해도 파괴 방지, ${state.scrolls}개)`;
+        note.className = 'risk-note protected';
       } else {
-        el('riskNote').textContent = '';
+        note.textContent = '실패 시 검이 파괴됩니다 (+0으로 초기화)';
+        note.className = 'risk-note';
       }
     }
 
@@ -412,33 +386,34 @@
     const cost = enhanceCost(state.level);
     if (state.gold < cost) return;
     state.gold -= cost;
+    state.invested += cost;
 
-    const rate = successRates[state.level];
+    const rate = successRate(state.level);
     const roll = Math.random() * 100;
 
     if (roll < rate) {
       state.level += 1;
       state.best = Math.max(state.best, state.level);
+      const tier = tierOf(state.level);
       flash('success');
       pulseSword();
-      spawnParticles(tierInfo(state.level).color);
-      log(`+${state.level - 1} → +${state.level} 강화 성공!`, 'success');
+      spawnParticles(tier.glow);
+      popupText(`+${state.level}`, tier.glow);
+      log(`+${state.level - 1} -> +${state.level} 강화 성공!`, 'success');
     } else {
-      const tier = tierInfo(state.level);
       flash('fail');
       shake();
-      if (state.scrolls > 0 && tier.risk !== 'safe') {
+      if (state.scrolls > 0) {
         state.scrolls -= 1;
+        popupText('방어!', '#4a9d6e');
         log(`강화 실패... 보호 주문서로 검을 지켰습니다.`, 'info');
-      } else if (tier.risk === 'downgrade') {
-        state.level = Math.max(0, state.level - 1);
-        log(`강화 실패... 검이 +${state.level}로 하락했습니다.`, 'fail');
-      } else if (tier.risk === 'destroy') {
-        spawnParticles('#c23b3b', 20);
-        log(`강화 실패... 검이 파괴되었습니다!`, 'fail');
-        state.level = 0;
       } else {
-        log(`강화 실패... 다행히 검에는 이상 없습니다.`, 'fail');
+        spawnParticles('#c23b3b', 22);
+        shatterSword();
+        popupText('파괴!', '#c23b3b');
+        log(`강화 실패... 검이 파괴되었습니다! (+${state.level} -> +0)`, 'fail');
+        state.level = 0;
+        state.invested = 0;
       }
     }
     render();
@@ -448,6 +423,16 @@
     const reward = 5 + Math.floor(Math.random() * 11);
     state.gold += reward;
     log(`몬스터를 처치하고 ${reward}G를 획득했습니다.`);
+    render();
+  }
+
+  function sell() {
+    if (state.level === 0) return;
+    const price = sellPrice();
+    state.gold += price;
+    log(`+${state.level} 검을 ${price}G에 판매했습니다.`, 'info');
+    state.level = 0;
+    state.invested = 0;
     render();
   }
 
@@ -462,9 +447,10 @@
 
   el('enhanceBtn').addEventListener('click', enhance);
   el('huntBtn').addEventListener('click', hunt);
+  el('sellBtn').addEventListener('click', sell);
   el('scrollBtn').addEventListener('click', buyScroll);
 
-  log('대장간에 오신 것을 환영합니다. 검을 강화해보세요!');
+  log('대장간에 오신 것을 환영합니다. 검을 강화해보세요! (최대 +50)');
   render();
 </script>
 </body>
