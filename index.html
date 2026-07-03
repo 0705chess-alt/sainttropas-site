@@ -1,33 +1,109 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>Sainttropas</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial;
-      background: black;
-      color: white;
-      text-align: center;
-    }
-    header {
-      padding: 100px 20px;
-    }
-    h1 {
-      font-size: 60px;
-      letter-spacing: 5px;
-    }
-    p {
-      font-size: 18px;
-      opacity: 0.7;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>학교의 괴담</title>
+<style>
+body{
+    background:#111;
+    color:white;
+    font-family:Arial;
+    text-align:center;
+    padding:40px;
+}
+#story{
+    font-size:22px;
+    margin:30px;
+}
+button{
+    display:block;
+    margin:15px auto;
+    padding:12px 30px;
+    font-size:18px;
+    cursor:pointer;
+}
+</style>
 </head>
 <body>
-  <header>
-    <h1>SAINTTROPAS</h1>
-    <p>Luxury Brand Website</p>
-  </header>
+
+<h1>📖 학교의 괴담</h1>
+
+<div id="story"></div>
+<div id="choices"></div>
+
+<script>
+const scenes = {
+    start:{
+        text:"방과 후, 학교에 혼자 남았다. 어디로 갈까?",
+        choices:[
+            {text:"🏫 교실",next:"class"},
+            {text:"🌙 옥상",next:"roof"}
+        ]
+    },
+
+    class:{
+        text:"교실에서 이상한 소리가 들린다.",
+        choices:[
+            {text:"조사한다",next:"ghost"},
+            {text:"도망친다",next:"escape"}
+        ]
+    },
+
+    roof:{
+        text:"옥상에서 검은 그림자를 발견했다.",
+        choices:[
+            {text:"다가간다",next:"boss"},
+            {text:"계단으로 내려간다",next:"escape"}
+        ]
+    },
+
+    ghost:{
+        text:"👻 귀신을 만났다... GAME OVER",
+        choices:[
+            {text:"다시 시작",next:"start"}
+        ]
+    },
+
+    boss:{
+        text:"😈 학교의 보스를 만났다!",
+        choices:[
+            {text:"싸운다",next:"win"},
+            {text:"도망친다",next:"escape"}
+        ]
+    },
+
+    win:{
+        text:"🏆 보스를 물리쳤다! 엔딩 1",
+        choices:[
+            {text:"다시 시작",next:"start"}
+        ]
+    },
+
+    escape:{
+        text:"🚪 무사히 학교를 탈출했다. 엔딩 2",
+        choices:[
+            {text:"다시 시작",next:"start"}
+        ]
+    }
+};
+
+function showScene(name){
+    const scene=scenes[name];
+    document.getElementById("story").textContent=scene.text;
+
+    const choices=document.getElementById("choices");
+    choices.innerHTML="";
+
+    scene.choices.forEach(choice=>{
+        const btn=document.createElement("button");
+        btn.textContent=choice.text;
+        btn.onclick=()=>showScene(choice.next);
+        choices.appendChild(btn);
+    });
+}
+
+showScene("start");
+</script>
+
 </body>
 </html>
