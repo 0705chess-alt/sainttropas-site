@@ -81,7 +81,39 @@
     color: var(--text-dim);
     margin-bottom: 14px;
   }
-  #swordSvg { width: 140px; height: 220px; transition: filter 0.3s; }
+  #swordSvg { width: 140px; height: 220px; transition: filter 0.3s, transform 0.4s ease; overflow: visible; }
+  #swordSvg.level-up-pulse { animation: levelPulse 0.55s ease; }
+  @keyframes levelPulse {
+    0% { transform: scale(var(--sword-scale, 1)); }
+    35% { transform: scale(calc(var(--sword-scale, 1) * 1.28)) rotate(-4deg); }
+    60% { transform: scale(calc(var(--sword-scale, 1) * 0.95)) rotate(3deg); }
+    100% { transform: scale(var(--sword-scale, 1)) rotate(0deg); }
+  }
+  .flame { animation: flicker 0.6s ease-in-out infinite alternate; transform-origin: 50px 30px; }
+  .flame.f2 { animation-delay: 0.15s; }
+  .flame.f3 { animation-delay: 0.3s; }
+  @keyframes flicker {
+    from { transform: scaleY(1) translateY(0); opacity: 0.85; }
+    to { transform: scaleY(1.18) translateY(-3px); opacity: 1; }
+  }
+  #aura { animation: auraPulse 2.2s ease-in-out infinite; transform-origin: 50px 80px; }
+  @keyframes auraPulse {
+    0%, 100% { opacity: 0.15; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(1.08); }
+  }
+  .particle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    pointer-events: none;
+    left: 50%;
+    top: 52%;
+    animation: particleFly 0.75s ease-out forwards;
+  }
+  @keyframes particleFly {
+    to { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
+  }
   .stats {
     display: flex;
     justify-content: center;
@@ -188,12 +220,34 @@
     <svg id="swordSvg" viewBox="0 0 100 160">
       <defs>
         <linearGradient id="bladeGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#dfe6ec"/>
-          <stop offset="100%" stop-color="#8a94a6"/>
+          <stop id="gradTop" offset="0%" stop-color="#dfe6ec"/>
+          <stop id="gradBottom" offset="100%" stop-color="#8a94a6"/>
         </linearGradient>
       </defs>
+
+      <!-- 최고 강화 오라 -->
+      <circle id="aura" cx="50" cy="80" r="65" fill="none" stroke="#e8b84b" stroke-width="2" opacity="0"/>
+
+      <!-- 검 끝 불꽃 -->
+      <g id="flameTip" opacity="0">
+        <path class="flame f1" d="M50 5 Q45 -10 50 -20 Q55 -10 50 5 Z" fill="#ff7a3d"/>
+        <path class="flame f2" d="M42 9 Q37 -1 41 -9 Q45 -1 42 9 Z" fill="#ffb347"/>
+        <path class="flame f3" d="M58 9 Q63 -1 59 -9 Q55 -1 58 9 Z" fill="#ffb347"/>
+      </g>
+
       <polygon id="blade" points="50,5 60,20 57,110 50,125 43,110 40,20" fill="url(#bladeGrad)" stroke="#556070" stroke-width="1.5"/>
+
+      <!-- 날개 장식 (+10 이상) -->
+      <g id="wings" opacity="0">
+        <path d="M38 118 L18 110 L25 124 L38 122 Z" fill="#c46bff" stroke="#8a3fd1" stroke-width="1"/>
+        <path d="M62 118 L82 110 L75 124 L62 122 Z" fill="#c46bff" stroke="#8a3fd1" stroke-width="1"/>
+      </g>
+
       <rect x="38" y="118" width="24" height="8" rx="2" fill="#3a2c1c"/>
+
+      <!-- 보석 (+5 이상) -->
+      <circle id="gem" cx="50" cy="122" r="4.5" fill="#6fb8ff" opacity="0"/>
+
       <rect x="47" y="126" width="6" height="28" rx="2" fill="#5c4326"/>
       <circle cx="50" cy="154" r="7" fill="#e8b84b"/>
     </svg>
