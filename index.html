@@ -288,47 +288,61 @@
   const tierOf = (lvl) => tiers[Math.min(tiers.length - 1, Math.floor(lvl / 5))];
   const tierIndexOf = (lvl) => Math.min(tiers.length - 1, Math.floor(lvl / 5));
 
-  const el = id => document.getElementById(id);
+  const _dummyEl = { style:{}, classList:{add(){},remove(){},toggle(){},contains(){return false;}}, setAttribute(){}, querySelectorAll(){return [];}, appendChild(){}, prepend(){}, remove(){} };
+  const el = id => document.getElementById(id) || _dummyEl;
 
   // ── 사운드 엔진 (외부 파일 없이 오실레이터로 직접 합성) ──
   let audioCtx = null;
   let muted = false;
+  let audioDisabled = false;
   function ctx() {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    return audioCtx;
+    if (audioDisabled) return null;
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    } catch (e) {
+      audioDisabled = true; // 이 환경에서는 오디오 미지원 - 이후 조용히 건너뜀
+      return null;
+    }
   }
   function tone(freq, start, dur, type = 'sine', vol = 0.18) {
     if (muted) return;
-    const c = ctx();
-    const osc = c.createOscillator();
-    const gain = c.createGain();
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, c.currentTime + start);
-    gain.gain.setValueAtTime(0, c.currentTime + start);
-    gain.gain.linearRampToValueAtTime(vol, c.currentTime + start + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + start + dur);
-    osc.connect(gain).connect(c.destination);
-    osc.start(c.currentTime + start);
-    osc.stop(c.currentTime + start + dur + 0.03);
+    try {
+      const c = ctx();
+      if (!c) return;
+      const osc = c.createOscillator();
+      const gain = c.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, c.currentTime + start);
+      gain.gain.setValueAtTime(0, c.currentTime + start);
+      gain.gain.linearRampToValueAtTime(vol, c.currentTime + start + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + start + dur);
+      osc.connect(gain).connect(c.destination);
+      osc.start(c.currentTime + start);
+      osc.stop(c.currentTime + start + dur + 0.03);
+    } catch (e) { /* 소리 재생 실패가 게임 진행을 막지 않도록 함 */ }
   }
   function noiseBurst(start, dur, vol = 0.3) {
     if (muted) return;
-    const c = ctx();
-    const size = Math.floor(c.sampleRate * dur);
-    const buffer = c.createBuffer(1, size, c.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < size; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / size);
-    const src = c.createBufferSource();
-    src.buffer = buffer;
-    const gain = c.createGain();
-    gain.gain.setValueAtTime(vol, c.currentTime + start);
-    gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + start + dur);
-    const filter = c.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.value = 700;
-    src.connect(filter).connect(gain).connect(c.destination);
-    src.start(c.currentTime + start);
+    try {
+      const c = ctx();
+      if (!c) return;
+      const size = Math.floor(c.sampleRate * dur);
+      const buffer = c.createBuffer(1, size, c.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < size; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / size);
+      const src = c.createBufferSource();
+      src.buffer = buffer;
+      const gain = c.createGain();
+      gain.gain.setValueAtTime(vol, c.currentTime + start);
+      gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + start + dur);
+      const filter = c.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 700;
+      src.connect(filter).connect(gain).connect(c.destination);
+      src.start(c.currentTime + start);
+    } catch (e) { /* 소리 재생 실패가 게임 진행을 막지 않도록 함 */ }
   }
   function sfxSuccess(tierIdx) {
     const base = 440 + tierIdx * 18;
@@ -488,15 +502,22 @@
   }
 
   function spawnMonster(announce) {
-    const def = pickMonster();
-    state.monster = { ...def, curHp: def.hp };
-    el('huntZone').classList.toggle('boss', !!def.boss);
-    el('monsterEmoji').textContent = def.emoji;
-    el('monsterName').textContent = def.name + (def.boss ? ' (보스!)' : '');
-    renderMonster();
-    if (announce && def.boss) {
-      popupTextIn('huntZone', '보스 등장!', '#e8b84b');
-      sfxBoss();
+    try {
+      const def = pickMonster();
+      state.monster = { ...def, curHp: def.hp };
+      el('huntZone').classList.toggle('boss', !!def.boss);
+      el('monsterEmoji').textContent = def.emoji;
+      el('monsterName').textContent = def.name + (def.boss ? ' (보스!)' : '');
+      renderMonster();
+      if (announce && def.boss) {
+        popupTextIn('huntZone', '보스 등장!', '#e8b84b');
+        sfxBoss();
+      }
+    } catch (e) {
+      // 리스폰 중 오류가 나도 최소한 몬스터 객체는 항상 살아있게 보장
+      if (!state.monster || state.monster.curHp <= 0) {
+        state.monster = { name: '슬라임', emoji: '🟢', hp: 16, curHp: 16, min: 3, max: 7 };
+      }
     }
   }
 
@@ -526,21 +547,27 @@
     m.curHp -= dmg;
     shakeMonster();
     popupTextIn('huntZone', (crit ? 'CRIT ' : '') + '-' + dmg, crit ? '#ffd75e' : '#ff7a3d');
-    sfxHit(crit);
 
     if (m.curHp <= 0) {
-      const reward = Math.floor(Math.random() * (m.max - m.min + 1)) + m.min;
-      state.gold += reward;
-      spawnParticlesIn('huntZone', m.boss ? '#e8b84b' : '#4a9d6e', m.boss ? 24 : 12);
-      popupTextIn('huntZone', `+${reward}G`, '#e8b84b');
-      sfxKill(!!m.boss);
-      log(`${m.name}을(를) 처치하고 ${reward}G를 획득했습니다.${m.boss ? ' (보스 처치!)' : ''}`, m.boss ? 'info' : 'success');
-      renderMonster();
-      render();
+      // 리스폰을 가장 먼저 예약: 아래 이펙트/사운드/로그에서 문제가 생겨도 리스폰은 반드시 실행됨
       setTimeout(() => spawnMonster(true), 500);
+      try {
+        const reward = Math.floor(Math.random() * (m.max - m.min + 1)) + m.min;
+        state.gold += reward;
+        spawnParticlesIn('huntZone', m.boss ? '#e8b84b' : '#4a9d6e', m.boss ? 24 : 12);
+        popupTextIn('huntZone', `+${reward}G`, '#e8b84b');
+        log(`${m.name}을(를) 처치하고 ${reward}G를 획득했습니다.${m.boss ? ' (보스 처치!)' : ''}`, m.boss ? 'info' : 'success');
+        renderMonster();
+        render();
+        sfxHit(crit);
+        sfxKill(!!m.boss);
+      } catch (e) { /* 이펙트/사운드 오류가 리스폰을 막지 않도록 함 */ }
     } else {
-      renderMonster();
-      render();
+      try {
+        renderMonster();
+        render();
+        sfxHit(crit);
+      } catch (e) { /* 이펙트/사운드 오류가 다음 공격을 막지 않도록 함 */ }
     }
   }
 
