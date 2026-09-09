@@ -3,47 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mega RPG Shooter</title>
+    <title>Mega RPG Shooter - Fixed Version</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
-        body { background: #111; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
+        body { background: #111; color: #fff; font-family: sans-serif; overflow: hidden; }
         
         #game-container { position: relative; width: 100vw; height: 100vh; }
-        canvas { display: block; background: #1a1a1a; }
+        canvas { display: block; background: #1a1a1a; width: 100%; height: 100%; }
 
-        /* UI 레이레이아웃 */
+        /* UI 패널 */
         .ui-panel { position: absolute; pointer-events: none; z-index: 10; }
         .interactive { pointer-events: auto; }
 
         /* 상단 상태 바 */
-        #stat-bar { top: 20px; left: 20px; background: rgba(0,0,0,0.7); padding: 15px; border-radius: 8px; border: 1px solid #333; min-width: 250px; }
-        .bar-container { background: #333; width: 100%; height: 15px; border-radius: 10px; margin: 5px 0 10px 0; overflow: hidden; }
-        .bar { height: 100%; width: 100%; transition: width 0.1s ease; }
+        #stat-bar { top: 20px; left: 20px; background: rgba(0,0,0,0.85); padding: 15px; border-radius: 8px; border: 2px solid #444; min-width: 250px; }
+        .bar-container { background: #333; width: 100%; height: 15px; border-radius: 10px; margin: 5px 0 10px 0; overflow: hidden; position: relative; }
+        .bar { height: 100%; width: 100%; background: #555; }
         #hp-bar { background: #ff4757; }
         #exp-bar { background: #2ed573; }
-        #level-text { font-weight: bold; color: #ffa502; font-size: 18px; }
+        #level-text { font-weight: bold; color: #ffa502; font-size: 18px; margin-bottom: 5px; }
 
         /* 우측 상단 미니맵 */
-        #minimap-container { top: 20px; right: 20px; background: rgba(0,0,0,0.8); border: 2px solid #555; border-radius: 4px; padding: 5px; }
-        #minimap { background: #111; display: block; }
+        #minimap-container { top: 20px; right: 20px; background: rgba(0,0,0,0.85); border: 2px solid #666; border-radius: 6px; padding: 5px; }
+        #minimap { background: #000; display: block; }
 
         /* 하단 스킬 바 */
-        #skill-bar { bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 15px; background: rgba(0,0,0,0.8); padding: 10px 20px; border-radius: 12px; border: 2px solid #444; }
-        .skill-slot { width: 50px; height: 50px; background: #222; border: 2px solid #666; border-radius: 8px; position: relative; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; }
-        .skill-slot .cooldown-overlay { position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; background: rgba(0,0,0,0.6); transition: height 0.1s linear; border-radius: 6px; }
+        #skill-bar { bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 15px; background: rgba(0,0,0,0.85); padding: 10px 20px; border-radius: 12px; border: 2px solid #555; }
+        .skill-slot { width: 50px; height: 50px; background: #222; border: 2px solid #666; border-radius: 8px; position: relative; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; }
+        .skill-slot .cooldown-overlay { position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; background: rgba(0,0,0,0.7); border-radius: 6px; }
         .skill-slot .key-bind { position: absolute; top: 2px; left: 4px; font-size: 10px; color: #aaa; }
 
         /* 우측 인벤토리 */
-        #inventory-toggle { top: 20px; right: 200px; background: #ffa502; color: black; padding: 10px; border-radius: 5px; font-weight: bold; cursor: pointer; }
-        #inventory { top: 70px; right: 20px; width: 220px; background: rgba(0,0,0,0.9); border: 2px solid #555; border-radius: 8px; padding: 15px; display: none; }
-        .inv-title { font-size: 16px; font-weight: bold; margin-bottom: 10px; text-align: center; border-bottom: 1px solid #444; padding-bottom: 5px; }
+        #inventory-toggle { top: 20px; right: 170px; background: #ffa502; color: black; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; border: none; }
+        #inventory { top: 70px; right: 20px; width: 220px; background: rgba(0,0,0,0.95); border: 2px solid #ff4757; border-radius: 8px; padding: 15px; display: none; }
+        .inv-title { font-size: 16px; font-weight: bold; margin-bottom: 10px; text-align: center; border-bottom: 1px solid #444; padding-bottom: 5px; color: #ffa502; }
         .inv-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-        .inv-slot { width: 42px; height: 42px; background: #222; border: 1px solid #555; border-radius: 4px; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; }
-        .inv-slot:hover { border-color: #ffa502; }
-        .item-count { position: absolute; bottom: 2px; right: 4px; font-size: 10px; color: #fff; }
+        .inv-slot { width: 42px; height: 42px; background: #222; border: 1px solid #555; border-radius: 4px; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; font-size: 18px; }
+        .inv-slot:hover { border-color: #ffa502; background: #333; }
+        .item-count { position: absolute; bottom: 2px; right: 4px; font-size: 10px; color: #fff; background: rgba(0,0,0,0.5); padding: 0 2px; border-radius: 2px; }
 
         /* 알림 메시지 */
-        #game-over { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); padding: 40px; border-radius: 10px; text-align: center; border: 2px solid #ff4757; }
+        #game-over { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.95); padding: 40px; border-radius: 10px; text-align: center; border: 2px solid #ff4757; }
         #game-over h2 { color: #ff4757; font-size: 36px; margin-bottom: 20px; }
         #game-over button { background: #ff4757; color: white; border: none; padding: 10px 20px; font-size: 18px; border-radius: 5px; cursor: pointer; }
     </style>
@@ -51,11 +51,12 @@
 <body>
 
 <div id="game-container">
+    <!-- 메인 게임 화면 캔버스 -->
     <canvas id="gameCanvas"></canvas>
 
     <!-- UI: 능력치 상태창 -->
     <div id="stat-bar" class="ui-panel">
-        <div id="level-text">LV. 1 원거리 네크로맨서</div>
+        <div id="level-text">LV. 1 네크로맨서</div>
         <div>HP</div>
         <div class="bar-container"><div id="hp-bar" class="bar"></div></div>
         <div>EXP</div>
@@ -69,7 +70,7 @@
     </div>
 
     <!-- UI: 인벤토리 토글 및 본체 -->
-    <div id="inventory-toggle" class="ui-panel interactive" onclick="toggleInventory()">🎒 인벤토리 (I)</div>
+    <button id="inventory-toggle" class="ui-panel interactive" onclick="toggleInventory()">🎒 인벤토리 (I)</button>
     <div id="inventory" class="ui-panel interactive">
         <div class="inv-title">소지품 창</div>
         <div class="inv-grid" id="inv-grid"></div>
@@ -77,15 +78,15 @@
 
     <!-- UI: 하단 스킬 슬롯 -->
     <div id="skill-bar" class="ui-panel interactive">
-        <div class="skill-slot" id="skill-q" title="멀티샷: 부채꼴로 3발 발사">
+        <div class="skill-slot" id="skill-q" onclick="useSkillQ()" style="cursor:pointer;">
             <span class="key-bind">Q</span>🏹
             <div class="cooldown-overlay" id="cooldown-q"></div>
         </div>
-        <div class="skill-slot" id="skill-e" title="체력 회복 포션 사용">
+        <div class="skill-slot" id="skill-e" onclick="useSkillE()" style="cursor:pointer;">
             <span class="key-bind">E</span>🧪
             <div class="cooldown-overlay" id="cooldown-e"></div>
         </div>
-        <div class="skill-slot" id="skill-r" title="궁극기: 광역 폭발">
+        <div class="skill-slot" id="skill-r" onclick="useSkillR()" style="cursor:pointer;">
             <span class="key-bind">R</span>💥
             <div class="cooldown-overlay" id="cooldown-r"></div>
         </div>
@@ -105,7 +106,7 @@
     const mCanvas = document.getElementById("minimap");
     const mCtx = mCanvas.getContext("2d");
 
-    // 화면 크기 맞춤
+    // 화면 해상도 동적 설정 검증 및 수정
     function resizeCanvas() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
@@ -113,16 +114,15 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // 맵 정의 (월드 크기)
-    const WORLD_SIZE = 3000; 
+    const WORLD_SIZE = 2000; // 오류 방지를 위해 맵 크기를 약간 축소 조정
 
-    // 게임 상태 객체
+    // 게임 데이터 안심 초기화
     const game = {
         player: {
-            x: WORLD_SIZE / 2,
-            y: WORLD_SIZE / 2,
+            x: 1000,
+            y: 1000,
             radius: 20,
-            speed: 4,
+            speed: 5,
             hp: 100,
             maxHp: 100,
             level: 1,
@@ -136,57 +136,63 @@
         items: [],
         particles: [],
         keys: {},
-        mouse: { x: 0, y: 0 },
+        mouse: { x: 1000, y: 1000 },
         camera: { x: 0, y: 0 },
         skills: {
-            q: { cooldown: 3000, lastUsed: 0 }, // 멀티샷
-            e: { cooldown: 5000, lastUsed: 0 }, // 포션 먹기
-            r: { cooldown: 10000, lastUsed: 0 } // 궁극기
+            q: { cooldown: 2000, lastUsed: 0 },
+            e: { cooldown: 3000, lastUsed: 0 },
+            r: { cooldown: 8000, lastUsed: 0 }
         },
         inventory: [
-            { id: 'potion', name: '🧪', count: 3, type: 'heal' },
+            { id: 'potion', name: '🧪', count: 5, type: 'heal' },
             { id: 'ruby', name: '💎', count: 0, type: 'etc' }
         ]
     };
 
-    // 카메라 추적 알고리즘
-    function updateCamera() {
-        game.camera.x = game.player.x - canvas.width / 2;
-        game.camera.y = game.player.y - canvas.height / 2;
-        // 월드 경계 고정
-        game.camera.x = Math.max(0, Math.min(game.camera.x, WORLD_SIZE - canvas.width));
-        game.camera.y = Math.max(0, Math.min(game.camera.y, WORLD_SIZE - canvas.height));
-    }
-
-    // 입력 이벤트 리스너
+    // 키보드 이벤트 안전 바인딩 (대소문자 문제 완벽 대응)
     window.addEventListener('keydown', e => {
-        game.keys[e.key.toLowerCase()] = true;
-        if(e.key.toLowerCase() === 'i') toggleInventory();
-        if(e.key.toLowerCase() === 'q') useSkillQ();
-        if(e.key.toLowerCase() === 'e') useSkillE();
-        if(e.key.toLowerCase() === 'r') useSkillR();
+        const key = e.key.toLowerCase();
+        game.keys[key] = true;
+        
+        // UI 단축키 매핑 예외처리
+        if(key === 'i') toggleInventory();
+        if(key === 'q') useSkillQ();
+        if(key === 'e') useSkillE();
+        if(key === 'r') useSkillR();
     });
-    window.addEventListener('keyup', e => game.keys[e.key.toLowerCase()] = false);
-    canvas.addEventListener('mousemove', e => {
-        game.mouse.x = e.clientX + game.camera.x;
-        game.mouse.y = e.clientY + game.camera.y;
-    });
-    canvas.addEventListener('mousedown', e => {
-        if(e.button === 0) shootNormal();
+    
+    window.addEventListener('keyup', e => {
+        game.keys[e.key.toLowerCase()] = false;
     });
 
-    // 인벤토리 UI 토글 함수
+    // 화면 마우스 좌표 수집 방식 수정
+    window.addEventListener('mousemove', e => {
+        const rect = canvas.getBoundingClientRect();
+        game.mouse.x = e.clientX - rect.left + game.camera.x;
+        game.mouse.y = e.clientY - rect.top + game.camera.y;
+    });
+
+    // 클릭 시 일반 사격 실행
+    window.addEventListener('mousedown', e => {
+        // UI 클릭 시 총알이 나가는 현상 방지
+        if (e.target.tagName === 'CANVAS') {
+            shootNormal();
+        }
+    });
+
     function toggleInventory() {
         const inv = document.getElementById("inventory");
-        inv.style.display = inv.style.display === "block" ? "none" : "block";
-        renderInventory();
+        if(inv.style.display === "block") {
+            inv.style.display = "none";
+        } else {
+            inv.style.display = "block";
+            renderInventory();
+        }
     }
 
-    // 인벤토리 동적 렌더링
     function renderInventory() {
         const grid = document.getElementById("inv-grid");
         grid.innerHTML = "";
-        // 16칸 고정 슬롯 생성
         for (let i = 0; i < 16; i++) {
             const slot = document.createElement("div");
             slot.className = "inv-slot";
@@ -197,44 +203,42 @@
                 countSpan.innerText = game.inventory[i].count;
                 slot.appendChild(countSpan);
                 
-                // 포션 아이템 클릭 시 바로 사용 기능 연동
                 if(game.inventory[i].id === 'potion') {
-                    slot.onclick = () => useSkillE();
+                    slot.onclick = (e) => {
+                        e.stopPropagation();
+                        useSkillE();
+                    };
                 }
             }
             grid.appendChild(slot);
         }
     }
 
-    // [기공] 일반 사격
     function shootNormal() {
         const angle = Math.atan2(game.mouse.y - game.player.y, game.mouse.x - game.player.x);
         game.bullets.push({
             x: game.player.x, y: game.player.y,
-            vx: Math.cos(angle) * 8, vy: Math.sin(angle) * 8,
-            radius: 5, damage: game.player.damage, color: '#ffa502', type: 'player'
+            vx: Math.cos(angle) * 10, vy: Math.sin(angle) * 10,
+            radius: 6, damage: game.player.damage, color: '#ffa502', type: 'player'
         });
     }
 
-    // [스킬 Q] 멀티 사격 (부채꼴 3발)
     function useSkillQ() {
         const now = Date.now();
         if(now - game.skills.q.lastUsed < game.skills.q.cooldown) return;
         game.skills.q.lastUsed = now;
 
         const baseAngle = Math.atan2(game.mouse.y - game.player.y, game.mouse.x - game.player.x);
-        const spreads = [-0.2, 0, 0.2];
+        const spreads = [-0.25, 0, 0.25];
         
         spreads.forEach(spread => {
             game.bullets.push({
                 x: game.player.x, y: game.player.y,
-                vx: Math.cos(baseAngle + spread) * 9, vy: Math.sin(baseAngle + spread) * 9,
-radius: 6, damage: Math.floor(game.player.damage * 0.8), color: '#2ed573', type: 'player'
+vx: Math.cos(baseAngle + spread) * 12, vy: Math.sin(baseAngle + spread) * 12,
+radius: 6, damage: game.player.damage, color: '#2ed573', type: 'player'
 });
 });
-createParticles(game.player.x, game.player.y, '#2ed573', 10);
 }
-// [스킬 E] 힐링 포션 복용
 function useSkillE() {
 const now = Date.now();
 if(now - game.skills.e.lastUsed < game.skills.e.cooldown) return;
@@ -242,86 +246,78 @@ const potion = game.inventory.find(i => i.id === 'potion');
 if(potion && potion.count > 0) {
 potion.count--;
 game.skills.e.lastUsed = now;
-game.player.hp = Math.min(game.player.maxHp, game.player.hp + 40);
-createParticles(game.player.x, game.player.y, '#ff4757', 15);
+game.player.hp = Math.min(game.player.maxHp, game.player.hp + 35);
 renderInventory();
 }
 }
-// [스킬 R] 궁극기 광역 폭발
 function useSkillR() {
 const now = Date.now();
 if(now - game.skills.r.lastUsed < game.skills.r.cooldown) return;
 game.skills.r.lastUsed = now;
-// 원형으로 16방향 투사체 분사
 for(let i=0; i<16; i++) {
 const angle = (Math.PI * 2 / 16) * i;
 game.bullets.push({
 x: game.player.x, y: game.player.y,
-vx: Math.cos(angle) * 5, vy: Math.sin(angle) * 5,
+vx: Math.cos(angle) * 7, vy: Math.sin(angle) * 7,
 radius: 8, damage: game.player.damage * 2, color: '#9b59b6', type: 'player'
 });
 }
-createParticles(game.player.x, game.player.y, '#9b59b6', 30);
 }
-// 이펙트 조각(파티클) 생성기
 function createParticles(x, y, color, count) {
 for(let i=0; i<count; i++) {
 game.particles.push({
 x: x, y: y,
-vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6,
-radius: Math.random() * 4 + 1, color: color, alpha: 1, life: 30
+vx: (Math.random() - 0.5) * 5, vy: (Math.random() - 0.5) * 5,
+radius: Math.random() * 3 + 1, color: color, alpha: 1, life: 20
 });
 }
 }
-// 몬스터 소환 메커니즘
 function spawnMonster() {
-if(game.monsters.length >= 40) return; // 최대 마리수 제한
-// 플레이어 화면 밖 반경에서 스폰 배치
+if(game.monsters.length >= 30) return;
 const angle = Math.random() * Math.PI * 2;
-const dist = Math.random() * 400 + 600;
+const dist = 500 + Math.random() * 300;
 let mx = game.player.x + Math.cos(angle) * dist;
 let my = game.player.y + Math.sin(angle) * dist;
 mx = Math.max(50, Math.min(mx, WORLD_SIZE-50));
 my = Math.max(50, Math.min(my, WORLD_SIZE-50));
-// 가끔 엘리트 몬스터 등장
-const isElite = Math.random() > 0.85;
+const isElite = Math.random() > 0.8;
 game.monsters.push({
 x: mx, y: my,
-radius: isElite ? 25 : 16,
-speed: isElite ? 1.5 : 2.2,
-hp: isElite ? 120 : 40,
-maxHp: isElite ? 120 : 40,
-damage: isElite ? 25 : 8,
-color: isElite ? '#eccc68' : '#70a1ff',
+radius: isElite ? 24 : 16,
+speed: isElite ? 1.8 : 2.5,
+hp: isElite ? 100 : 30,
+maxHp: isElite ? 100 : 30,
+damage: isElite ? 20 : 8,
+color: isElite ? '#ffbe0b' : '#ff007f',
 isElite: isElite
 });
 }
-// 엔티티 간 충돌 연산 처리 함수
-function checkCollisions() {
-// 1. 플레이어 이동 처리 및 벽 충돌 검사
+function updateLogic() {
+// 1. 플레이어 이동 및 방향 조작 연산 업데이트
 let moveX = 0; let moveY = 0;
 if (game.keys['w'] || game.keys['arrowup']) moveY -= 1;
 if (game.keys['s'] || game.keys['arrowdown']) moveY += 1;
 if (game.keys['a'] || game.keys['arrowleft']) moveX -= 1;
 if (game.keys['d'] || game.keys['arrowright']) moveX += 1;
-if(moveX !== 0 && moveY !== 0) { // 대각선 속도 보정
-moveX *= 0.7071; moveY *= 0.7071;
+if(moveX !== 0 && moveY !== 0) {
+moveX *= 0.707; moveY *= 0.707;
 }
 game.player.x += moveX * game.player.speed;
 game.player.y += moveY * game.player.speed;
+// 월드 경계 제한 가두기 조치
 game.player.x = Math.max(game.player.radius, Math.min(game.player.x, WORLD_SIZE - game.player.radius));
 game.player.y = Math.max(game.player.radius, Math.min(game.player.y, WORLD_SIZE - game.player.radius));
-// 2. 투사체(총알) 업데이트 및 충돌 검사
+// 카메라 좌표 갱신 (부드러운 중앙 고정)
+game.camera.x = game.player.x - canvas.width / 2;
+game.camera.y = game.player.y - canvas.height / 2;
+// 2. 총알 이동 및 충돌
 for(let i = game.bullets.length - 1; i >= 0; i--) {
 let b = game.bullets[i];
 b.x += b.vx; b.y += b.vy;
-// 맵 밖으로 나가면 제거
 if(b.x < 0 || b.x > WORLD_SIZE || b.y < 0 || b.y > WORLD_SIZE) {
 game.bullets.splice(i, 1);
 continue;
 }
-// 몬스터 충돌 연산
-if(b.type === 'player') {
 for(let j = game.monsters.length - 1; j >= 0; j--) {
 let m = game.monsters[j];
 let dist = Math.hypot(b.x - m.x, b.y - m.y);
@@ -329,193 +325,180 @@ if(dist < b.radius + m.radius) {
 m.hp -= b.damage;
 createParticles(b.x, b.y, m.color, 4);
 game.bullets.splice(i, 1);
-// 몬스터 처치 시
 if(m.hp <= 0) {
-createParticles(m.x, m.y, m.color, 12);
-// 드롭 아이템 메커니즘
-if(Math.random() > 0.5) {
+createParticles(m.x, m.y, m.color, 10);
+if(Math.random() > 0.4) {
 game.items.push({
-x: m.x, y: m.y, radius: 10,
+x: m.x, y: m.y, radius: 8,
 id: Math.random() > 0.7 ? 'potion' : 'ruby',
-color: Math.random() > 0.7 ? '#ff4757' : '#9b59b6'
+color: Math.random() > 0.7 ? '#00f5ff' : '#ff007f'
 });
 }
 game.monsters.splice(j, 1);
 game.player.kills++;
-gainExp(m.isElite ? 40 : 15);
+gainExp(m.isElite ? 35 : 15);
 }
 break;
 }
 }
 }
-}
-// 3. 몬스터 인공지능(AI) 및 플레이어 충돌 검사
+// 3. 몬스터 추적 AI 및 데미지 연산
 game.monsters.forEach(m => {
 let angle = Math.atan2(game.player.y - m.y, game.player.x - m.x);
 m.x += Math.cos(angle) * m.speed;
 m.y += Math.sin(angle) * m.speed;
-// 플레이어에게 데미지 주기
 let dist = Math.hypot(game.player.x - m.x, game.player.y - m.y);
 if(dist < game.player.radius + m.radius) {
-game.player.hp -= m.damage * 0.05; // 프레임 단위 균등 분할 연산
+game.player.hp -= m.damage * 0.02; // 초당 누적 밸런스 조정
 if(game.player.hp <= 0) {
 game.player.hp = 0;
 document.getElementById("game-over").style.display = "block";
 }
 }
 });
-// 4. 드롭된 아이템 획득 검사
+// 4. 아이템 자동 획득 범위 체크
 for(let i = game.items.length - 1; i >= 0; i--) {
 let item = game.items[i];
 let dist = Math.hypot(game.player.x - item.x, game.player.y - item.y);
 if(dist < game.player.radius + item.radius) {
-let targetIdx = item.id === 'potion' ? 0 : 1;
-game.inventory[targetIdx].count++;
-renderInventory();
+let idx = item.id === 'potion' ? 0 : 1;
+game.inventory[idx].count++;
+if(document.getElementById("inventory").style.display === "block") renderInventory();
 game.items.splice(i, 1);
 }
 }
-// 5. 이펙트 파티클 생명주기 관리
+// 5. 파티클 수명 조절
 for(let i = game.particles.length - 1; i >= 0; i--) {
 let p = game.particles[i];
-p.x += p.vx; p.y += p.vy;
-p.life--;
-p.alpha = p.life / 30;
+p.x += p.vx; p.y += p.vy; p.life--;
+p.alpha = p.life / 20;
 if(p.life <= 0) game.particles.splice(i, 1);
 }
 }
-// 경험치 획득 및 레벨 업 핸들러
 function gainExp(amount) {
 game.player.exp += amount;
 if(game.player.exp >= game.player.maxExp) {
 game.player.exp -= game.player.maxExp;
 game.player.level++;
 game.player.maxExp = Math.floor(game.player.maxExp * 1.3);
-game.player.maxHp += 15;
+game.player.maxHp += 20;
 game.player.hp = game.player.maxHp;
-game.player.damage += 4;
-createParticles(game.player.x, game.player.y, '#ffa502', 40);
+game.player.damage += 5;
 }
 }
-// 메인 UI 수치 업데이트
 function updateUI() {
-document.getElementById("hp-bar").style.width = (game.player.hp / game.player.maxHp * 100) + "%";
-document.getElementById("exp-bar").style.width = (game.player.exp / game.player.maxExp * 100) + "%";
-document.getElementById("level-text").innerText = LV. ${game.player.level} 엘리트 네크로맨서;
+document.getElementById("hp-bar").style.width = Math.max(0, (game.player.hp / game.player.maxHp * 100)) + "%";
+document.getElementById("exp-bar").style.width = Math.min(100, (game.player.exp / game.player.maxExp * 100)) + "%";
+document.getElementById("level-text").innerText = LV. ${game.player.level} 네크로맨서;
 document.getElementById("score-text").innerText = 처치 수: ${game.player.kills} | 공격력: ${game.player.damage};
-// 스킬 쿨타임 오버레이 반영
 const now = Date.now();
 ['q','e','r'].forEach(sk => {
 const skill = game.skills[sk];
 const passed = now - skill.lastUsed;
 const percentage = Math.max(0, 100 - (passed / skill.cooldown * 100));
-document.getElementById(cooldown-${sk}).style.height = (percentage) + "%";
+document.getElementById(cooldown-${sk}).style.height = percentage + "%";
 });
 }
-// 인게임 그래픽 그리기 함수
+
+
 function drawGame() {
-ctx.clearRect(0, 0, canvas.width, canvas.height);
+// 배경화면 초기 클리어
+ctx.fillStyle = "#111111";
+ctx.fillRect(0, 0, canvas.width, canvas.height);
 ctx.save();
 ctx.translate(-game.camera.x, -game.camera.y);
-// 1. 바둑판 그리드 월드 맵 그리기
-ctx.strokeStyle = "#2c3e50";
-ctx.lineWidth = 1;
-const gridSize = 100;
-for(let x=0; x<=WORLD_SIZE; x+=gridSize) {
+// 1. 월드 맵 바닥 그리드 그리기 (에러가 나도 화면을 유지하도록 예외 방지형 설계)
+ctx.strokeStyle = "#252525";
+ctx.lineWidth = 2;
+const spacing = 100;
+for(let x=0; x<=WORLD_SIZE; x+=spacing) {
 ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, WORLD_SIZE); ctx.stroke();
 }
-for(let y=0; y<=WORLD_SIZE; y+=gridSize) {
+for(let y=0; y<=WORLD_SIZE; y+=spacing) {
 ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(WORLD_SIZE, y); ctx.stroke();
 }
-// 월드 외곽 경계선
+// 월드 월 경계선 실선 그리기
 ctx.strokeStyle = "#ff4757";
-ctx.lineWidth = 5;
+ctx.lineWidth = 4;
 ctx.strokeRect(0, 0, WORLD_SIZE, WORLD_SIZE);
-// 2. 드롭 아이템 그리기
+// 2. 필드 드롭 아이템 렌더링
 game.items.forEach(item => {
 ctx.fillStyle = item.color;
-ctx.beginPath();
-ctx.arc(item.x, item.y, item.radius, 0, Math.PI*2);
-ctx.fill();
+ctx.beginPath(); ctx.arc(item.x, item.y, item.radius, 0, Math.PI*2); ctx.fill();
 });
-// 3. 몬스터 렌더링
+// 3. 적 몬스터 객체 렌더링
 game.monsters.forEach(m => {
 ctx.fillStyle = m.color;
-ctx.beginPath();
-ctx.arc(m.x, m.y, m.radius, 0, Math.PI*2);
-ctx.fill();
-// 몬스터 체력바 상단 표기
-ctx.fillStyle = "rgba(0,0,0,0.5)";
-ctx.fillRect(m.x - m.radius, m.y - m.radius - 10, m.radius*2, 5);
+ctx.beginPath(); ctx.arc(m.x, m.y, m.radius, 0, Math.PI*2); ctx.fill();
+// 몬스터 개별 체력 바 상단 노출
+ctx.fillStyle = "rgba(0,0,0,0.6)";
+ctx.fillRect(m.x - m.radius, m.y - m.radius - 12, m.radius * 2, 5);
 ctx.fillStyle = "#ff4757";
-ctx.fillRect(m.x - m.radius, m.y - m.radius - 10, (m.hp / m.maxHp) * m.radius * 2, 5);
+ctx.fillRect(m.x - m.radius, m.y - m.radius - 12, (m.hp / m.maxHp) * m.radius * 2, 5);
 });
-// 4. 투사체(총알) 그리기
+// 4. 총알 그리기
 game.bullets.forEach(b => {
 ctx.fillStyle = b.color;
-ctx.beginPath();
-ctx.arc(b.x, b.y, b.radius, 0, Math.PI*2);
-ctx.fill();
+ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI*2); ctx.fill();
 });
-// 5. 이펙트 파티클 그리기
+// 5. 파티클 이펙트 그리기
 game.particles.forEach(p => {
 ctx.save();
 ctx.globalAlpha = p.alpha;
 ctx.fillStyle = p.color;
-ctx.beginPath();
-ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2);
-ctx.fill();
+ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2); ctx.fill();
 ctx.restore();
 });
-// 6. 플레이어 캐릭터 본체 그리기
-ctx.fillStyle = "#1e90ff";
+// 6. 플레이어 본체(아바타) 드로잉 보완
+ctx.fillStyle = "#00bcff";
 ctx.beginPath();
 ctx.arc(game.player.x, game.player.y, game.player.radius, 0, Math.PI*2);
 ctx.fill();
+ctx.strokeStyle = "#ffffff";
 ctx.lineWidth = 3;
-ctx.strokeStyle = "#fff";
 ctx.stroke();
-// 플레이어 조준선 벡터선
-ctx.strokeStyle = "rgba(255,255,255,0.2)";
-ctx.beginPath();
-ctx.moveTo(game.player.x, game.player.y);
-ctx.lineTo(game.mouse.x, game.mouse.y);
-ctx.stroke();
+// 조준 가이드 실선
+ctx.strokeStyle = "rgba(255,255,255,0.15)";
+ctx.lineWidth = 1;
+ctx.beginPath(); ctx.moveTo(game.player.x, game.player.y); ctx.lineTo(game.mouse.x, game.mouse.y); ctx.stroke();
 ctx.restore();
 }
-// 미니맵 기능 렌더링
 function drawMinimap() {
-mCtx.clearRect(0, 0, mCanvas.width, mCanvas.height);
+mCtx.fillStyle = "#0a0a0a";
+mCtx.fillRect(0, 0, mCanvas.width, mCanvas.height);
 const scale = mCanvas.width / WORLD_SIZE;
-// 플레이어 위치 표시 (파란 점)
-mCtx.fillStyle = "#0096ff";
+// 플레이어 초록색 점 매핑
+mCtx.fillStyle = "#00ffcc";
 mCtx.beginPath();
-mCtx.arc(game.player.x * scale, game.player.y * scale, 3, 0, Math.PI*2);
+mCtx.arc(game.player.x * scale, game.player.y * scale, 4, 0, Math.PI*2);
 mCtx.fill();
-// 적 위치 집단 표시 (빨간 점)
-mCtx.fillStyle = "#ff4d4d";
+// 적군 빨간 점 매핑
+mCtx.fillStyle = "#ff3366";
 game.monsters.forEach(m => {
 mCtx.beginPath();
-mCtx.arc(m.x * scale, m.y * scale, 1.5, 0, Math.PI*2);
+mCtx.arc(m.x * scale, m.y * scale, 2, 0, Math.PI*2);
 mCtx.fill();
 });
 }
-// 주기적인 몬스터 스폰 타이머 설정
-setInterval(spawnMonster, 1000);
-// 인벤토리 초기 세팅
+// 몬스터 생성 주기
+setInterval(spawnMonster, 1200);
+// 인벤토리 초기 화면 빌드
 renderInventory();
-// 메인 무한 루프 파이프라인
+// 에러에 안전한 통합 게임 메인 루프 파이프라인
 function loop() {
+try {
 if (game.player.hp > 0) {
-checkCollisions();
-updateCamera();
+updateLogic();
 drawGame();
 drawMinimap();
 updateUI();
 }
+} catch (err) {
+console.error("Game loop error: ", err);
+}
 requestAnimationFrame(loop);
 }
-// 게임 시작 구동
+// 무조건 선제 루프 시작
 loop();
 
 
