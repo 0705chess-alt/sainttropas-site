@@ -2,7 +2,8 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>검 강화 게임</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>검 강화 게임 - 전설의 대장장이</title>
 <style>
   :root{
     --bg-deep: #14100c;
@@ -26,6 +27,7 @@
     display: flex;
     justify-content: center;
     padding: 32px 16px;
+    touch-action: manipulation;
   }
   .stage { width: 100%; max-width: 480px; }
   h1 {
@@ -60,22 +62,22 @@
   .level-badge { font-size: 30px; font-weight: 900; letter-spacing: 1px; margin-bottom: 6px; transition: color 0.3s; }
   .tier-label { font-size: 11px; letter-spacing: 3px; color: var(--text-dim); margin-bottom: 10px; }
   .tier-track { font-size: 10px; color: var(--text-dim); margin-bottom: 14px; }
-  #swordWrap { height: 200px; display: flex; align-items: flex-end; justify-content: center; }
+  #swordWrap { height: 200px; display: flex; align-items: flex-end; justify-content: center; position: relative; }
   #swordSvg { width: 130px; height: 200px; transition: filter 0.3s, transform 0.4s ease; overflow: visible; }
   #swordSvg.level-up-pulse { animation: levelPulse 0.55s ease; }
   @keyframes levelPulse {
-    0% { transform: scale(var(--sword-scale, 1)); }
-    35% { transform: scale(calc(var(--sword-scale, 1) * 1.25)) rotate(-4deg); }
-    60% { transform: scale(calc(var(--sword-scale, 1) * 0.95)) rotate(3deg); }
-    100% { transform: scale(var(--sword-scale, 1)) rotate(0deg); }
+    0% { transform: scale(1); }
+    35% { transform: scale(1.25) rotate(-4deg); }
+    60% { transform: scale(0.95) rotate(3deg); }
+    100% { transform: scale(1) rotate(0deg); }
   }
   #swordSvg.shatter { animation: shatterShake 0.5s ease; }
   @keyframes shatterShake {
-    0%,100% { transform: scale(var(--sword-scale,1)) translateX(0); }
-    20% { transform: scale(calc(var(--sword-scale,1)*0.9)) translateX(-8px) rotate(-6deg); }
-    40% { transform: scale(calc(var(--sword-scale,1)*0.9)) translateX(8px) rotate(6deg); }
-    60% { transform: scale(calc(var(--sword-scale,1)*0.85)) translateX(-5px) rotate(-3deg); }
-    80% { transform: scale(calc(var(--sword-scale,1)*0.95)) translateX(5px) rotate(2deg); }
+    0%,100% { transform: scale(1) translateX(0); }
+    20% { transform: scale(0.9) translateX(-8px) rotate(-6deg); }
+    40% { transform: scale(0.9) translateX(8px) rotate(6deg); }
+    60% { transform: scale(0.85) translateX(-5px) rotate(-3deg); }
+    80% { transform: scale(0.95) translateX(5px) rotate(2deg); }
   }
   .flame { animation: flicker 0.6s ease-in-out infinite alternate; transform-origin: 50px 30px; }
   .flame.f2 { animation-delay: 0.15s; }
@@ -136,7 +138,7 @@
   .btn-sell { background: var(--bg-panel); border: 1px solid #5a4326 !important; color: var(--gold); font-size: 13px; }
   .btn-sell:hover:not(:disabled) { filter: brightness(1.3); }
   .btn-scroll { background: var(--bg-panel); border: 1px solid #305a44 !important; color: var(--safe); font-size: 12px; padding: 10px; }
-  .risk-note { font-size: 11px; color: var(--danger); margin-top: 4px; min-height: 14px; }
+  .risk-note { font-size: 11px; color: var(--danger); margin-top: 4px; min-height: 14px; text-align: center;}
   .risk-note.protected { color: var(--safe); }
   .log {
     margin-top: 18px; background: var(--bg-panel); border: 1px solid #3a2c1c; border-radius: 10px;
@@ -157,568 +159,61 @@
     20% { transform: translateX(-6px); } 40% { transform: translateX(6px); }
     60% { transform: translateX(-4px); } 80% { transform: translateX(4px); }
   }
+  
+  /* 신규 수집/도감 탭 시스템 */
+  .tabs { display: flex; gap: 8px; margin-top: 20px; }
+  .tab-btn { flex: 1; background: #261e15; border: 1px solid #3a2c1c; color: var(--text-dim); padding: 8px; font-size: 12px; border-radius: 6px; }
+  .tab-btn.active { background: var(--bg-panel); color: var(--gold); border-color: var(--gold); }
+  .tab-content { display: none; margin-top: 12px; }
+  .tab-content.active { display: block; }
+
+  /* 사냥터 스타일 완결 */
   .hunt-zone {
     background: radial-gradient(ellipse at 50% 30%, #1c2410 0%, var(--bg-panel) 70%);
-    border: 1px solid #2c3a1c;
-    border-radius: 14px;
-    padding: 18px 16px 16px;
-    margin-top: 16px;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-    transition: box-shadow 0.3s, border-color 0.3s;
+    border: 1px solid #2c3a1c; border-radius: 14px; padding: 18px 16px 16px; text-align: center; position: relative; overflow: hidden;
   }
   .hunt-zone.boss { border-color: var(--gold); box-shadow: 0 0 24px rgba(232,184,75,0.45); }
   .monster-name { font-size: 12px; color: var(--text-dim); letter-spacing: 2px; margin-bottom: 4px; }
-  .monster-emoji { font-size: 56px; line-height: 1; display: inline-block; animation: idleBounce 2s ease-in-out infinite; }
+  .monster-emoji { font-size: 56px; line-height: 1; display: inline-block; animation: idleBounce 2s ease-in-out infinite; user-select: none;}
   .monster-emoji.hit { animation: hitShake 0.25s; }
   @keyframes idleBounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
-  @keyframes hitShake {
-    0%,100% { transform: translateX(0) rotate(0); }
-    25% { transform: translateX(-6px) rotate(-5deg); }
-    75% { transform: translateX(6px) rotate(5deg); }
-  }
+  @keyframes hitShake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
   .hp-bar-track { width: 100%; height: 10px; background: #241a10; border-radius: 6px; overflow: hidden; margin-top: 12px; border: 1px solid #3a2c1c; }
-  .hp-bar-fill { height: 100%; background: linear-gradient(90deg, #ff7a3d, #c23b3b); transition: width 0.25s ease; }
+  .hp-bar-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #ff7a3d, #c23b3b); transition: width 0.15s ease; }
   .hp-text { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
-  .btn-attack {
-    width: 100%; margin-top: 14px;
-    background: linear-gradient(135deg, #6fae52, #3f7a34);
-    color: #0d150a;
-    box-shadow: 0 0 16px rgba(111,174,82,0.35);
-  }
-  .btn-attack:hover:not(:disabled) { filter: brightness(1.12); }
+
+  /* 상점 & 도감 스타일 */
+  .shop-grid, .book-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .shop-card, .book-card { background: var(--bg-panel); border: 1px solid #3a2c1c; padding: 12px; border-radius: 8px; text-align: center; }
+  .shop-card p, .book-card p { margin: 4px 0; font-size: 12px; }
+  .shop-card b { color: var(--gold); }
+  .book-card.locked { opacity: 0.4; filter: grayscale(1); }
+  .book-card.unlocked { border-color: var(--gold); background: linear-gradient(135deg, #2b2216, var(--bg-panel)); }
 </style>
 </head>
 <body>
+
 <div class="stage">
-  <h1>대 장 간</h1>
-  <div class="sub">SWORD ENHANCEMENT · MAX +50</div>
+  <h1>대장간 검 강화</h1>
+  <div class="sub">FORGE SIMULATOR</div>
 
+  <!-- 최상단 스탯바 -->
   <div class="topbar">
-    <div>골드 <span class="gold" id="goldDisplay">0</span></div>
-    <div>투자 골드 <span id="investedDisplay" style="color:var(--gold)">0</span></div>
-    <div>주문서 <span id="scrollDisplay" style="color:var(--safe)">0</span>개</div>
-    <button id="muteBtn" style="padding:2px 8px; font-size:14px; background:transparent; color:var(--text-dim); border:none; cursor:pointer;">🔊</button>
+    <div>보유 골드: <span class="gold" id="userGold">5,000</span> G</div>
+    <div>전투력: <b id="userAtk" style="color:var(--ember)">10</b></div>
   </div>
 
-  <div class="forge" id="forge">
-    <div class="flash" id="flash"></div>
-    <div class="level-badge" id="levelBadge">+0</div>
-    <div class="tier-label" id="tierLabel">평범한 검</div>
-    <div class="tier-track" id="tierTrack">1 / 10 단계</div>
+  <!-- 대장간 메인 창 -->
+  <div class="forge" id="forgePanel">
+    <div class="flash" id="flashEff"></div>
+    <div class="level-badge" id="swordLvl">+0</div>
+    <div class="tier-label" id="swordName">평범한 훈련용 연습검</div>
+    <div class="tier-track" id="chanceInfo">강화 확률: 100% | 비용: 100G</div>
+    
     <div id="swordWrap">
-      <svg id="swordSvg" viewBox="0 0 100 160">
-        <defs>
-          <linearGradient id="bladeGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop id="gradTop" offset="0%" stop-color="#dfe6ec"/>
-            <stop id="gradBottom" offset="100%" stop-color="#8a94a6"/>
-          </linearGradient>
-        </defs>
-
-        <circle id="aura" cx="50" cy="80" r="65" fill="none" stroke="#e8b84b" stroke-width="2" opacity="0"/>
-
-        <g id="flameTip" opacity="0">
-          <path class="flame f1" d="M50 5 Q45 -10 50 -20 Q55 -10 50 5 Z" fill="#ff7a3d"/>
-          <path class="flame f2" d="M42 9 Q37 -1 41 -9 Q45 -1 42 9 Z" fill="#ffb347"/>
-          <path class="flame f3" d="M58 9 Q63 -1 59 -9 Q55 -1 58 9 Z" fill="#ffb347"/>
+      <!-- 기본 검 이미지 (SVG 형태 유지) -->
+      <svg id="swordSvg" viewBox="0 0 100 200">
+        <g id="aura" fill="none" stroke="rgba(232,184,75,0.4)" stroke-width="2">
+          <circle cx="50" cy="80" r="30" stroke-dasharray="4 4"/>
         </g>
-
-        <polygon id="blade" points="50,5 60,20 57,110 50,125 43,110 40,20" fill="url(#bladeGrad)" stroke="#556070" stroke-width="1.5"/>
-
-        <g id="wings" opacity="0">
-          <path d="M38 118 L18 110 L25 124 L38 122 Z" fill="#c46bff" stroke="#8a3fd1" stroke-width="1"/>
-          <path d="M62 118 L82 110 L75 124 L62 122 Z" fill="#c46bff" stroke="#8a3fd1" stroke-width="1"/>
-        </g>
-
-        <rect x="38" y="118" width="24" height="8" rx="2" fill="#3a2c1c"/>
-        <circle id="gem" cx="50" cy="122" r="4.5" fill="#6fb8ff" opacity="0"/>
-        <rect x="47" y="126" width="6" height="28" rx="2" fill="#5c4326"/>
-        <circle cx="50" cy="154" r="7" fill="#e8b84b"/>
-      </svg>
-    </div>
-    <div class="stats">
-      <div>공격력 <b id="atkDisplay">10</b></div>
-      <div>성공확률 <b id="chanceDisplay">92%</b></div>
-      <div>최고기록 <b id="bestDisplay">+0</b></div>
-    </div>
-  </div>
-
-  <div class="hunt-zone" id="huntZone">
-    <div class="monster-name" id="monsterName">슬라임</div>
-    <div class="monster-emoji" id="monsterEmoji">🟢</div>
-    <div class="hp-bar-track"><div class="hp-bar-fill" id="hpFill" style="width:100%"></div></div>
-    <div class="hp-text" id="hpText">16 / 16</div>
-    <button class="btn-attack" id="attackBtn">⚔ 공격!</button>
-  </div>
-
-  <div class="action-row">
-    <button class="btn-enhance" id="enhanceBtn">강화하기 (비용: <span id="costDisplay">12</span>G)</button>
-    <div class="risk-note" id="riskNote"></div>
-    <button class="btn-sell" id="sellBtn">검 판매 (<span id="sellPrice">0</span>G)</button>
-    <button class="btn-scroll" id="scrollBtn">보호 주문서 구매 (<span id="scrollCost">30</span>G) — 실패 시 파괴 방지</button>
-  </div>
-
-  <div class="log" id="log"></div>
-</div>
-
-<script>
-  const state = { gold: 60, level: 0, best: 0, scrolls: 0, invested: 0 };
-
-  const maxLevel = 50;
-
-  const successRate = (lvl) => Math.max(3, Math.round(90 - lvl * 1.9));
-  const enhanceCost = (lvl) => Math.round(12 * Math.pow(1.62, lvl));
-  const scrollCost = () => Math.round(25 + state.level * 9);
-  const atkPower = (lvl) => 10 + lvl * lvl * 4;
-  const sellPrice = () => Math.round(state.invested * 0.55);
-
-  const tiers = [
-    { name: "평범한 검",   top: "#dfe6ec", bottom: "#8a94a6", glow: "#dfe6ec" },
-    { name: "빛나는 검",   top: "#bfe0ff", bottom: "#5a8fd6", glow: "#6fb8ff" },
-    { name: "정령의 검",   top: "#e6c7ff", bottom: "#9a4fd1", glow: "#c46bff" },
-    { name: "화염의 검",   top: "#ffdca0", bottom: "#e8760f", glow: "#ff7a3d" },
-    { name: "얼음의 검",   top: "#d8f6ff", bottom: "#4fb8d9", glow: "#7fe0ff" },
-    { name: "뇌전의 검",   top: "#fff6b0", bottom: "#e0c020", glow: "#ffe45c" },
-    { name: "암흑의 검",   top: "#b6a6f0", bottom: "#2a1f4a", glow: "#8a5cff" },
-    { name: "천상의 검",   top: "#ffffff", bottom: "#cfd8ff", glow: "#eaf1ff" },
-    { name: "용의 검",     top: "#ff9a6a", bottom: "#8f1d1d", glow: "#ff4d4d" },
-    { name: "신화의 검",   top: "#fff2c2", bottom: "#e8b84b", glow: "#ffd75e" },
-  ];
-  const tierOf = (lvl) => tiers[Math.min(tiers.length - 1, Math.floor(lvl / 5))];
-  const tierIndexOf = (lvl) => Math.min(tiers.length - 1, Math.floor(lvl / 5));
-
-  const _dummyEl = { style:{}, classList:{add(){},remove(){},toggle(){},contains(){return false;}}, setAttribute(){}, querySelectorAll(){return [];}, appendChild(){}, prepend(){}, remove(){} };
-  const el = id => document.getElementById(id) || _dummyEl;
-
-  // ── 사운드 엔진 (외부 파일 없이 오실레이터로 직접 합성) ──
-  let audioCtx = null;
-  let muted = false;
-  let audioDisabled = false;
-  function ctx() {
-    if (audioDisabled) return null;
-    try {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      return audioCtx;
-    } catch (e) {
-      audioDisabled = true; // 이 환경에서는 오디오 미지원 - 이후 조용히 건너뜀
-      return null;
-    }
-  }
-  function tone(freq, start, dur, type = 'sine', vol = 0.18) {
-    if (muted) return;
-    try {
-      const c = ctx();
-      if (!c) return;
-      const osc = c.createOscillator();
-      const gain = c.createGain();
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, c.currentTime + start);
-      gain.gain.setValueAtTime(0, c.currentTime + start);
-      gain.gain.linearRampToValueAtTime(vol, c.currentTime + start + 0.01);
-      gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + start + dur);
-      osc.connect(gain).connect(c.destination);
-      osc.start(c.currentTime + start);
-      osc.stop(c.currentTime + start + dur + 0.03);
-    } catch (e) { /* 소리 재생 실패가 게임 진행을 막지 않도록 함 */ }
-  }
-  function noiseBurst(start, dur, vol = 0.3) {
-    if (muted) return;
-    try {
-      const c = ctx();
-      if (!c) return;
-      const size = Math.floor(c.sampleRate * dur);
-      const buffer = c.createBuffer(1, size, c.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < size; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / size);
-      const src = c.createBufferSource();
-      src.buffer = buffer;
-      const gain = c.createGain();
-      gain.gain.setValueAtTime(vol, c.currentTime + start);
-      gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + start + dur);
-      const filter = c.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.value = 700;
-      src.connect(filter).connect(gain).connect(c.destination);
-      src.start(c.currentTime + start);
-    } catch (e) { /* 소리 재생 실패가 게임 진행을 막지 않도록 함 */ }
-  }
-  function sfxSuccess(tierIdx) {
-    const base = 440 + tierIdx * 18;
-    tone(base, 0, 0.12, 'triangle', 0.16);
-    tone(base * 1.25, 0.08, 0.12, 'triangle', 0.15);
-    tone(base * 1.5, 0.16, 0.22, 'triangle', 0.17);
-  }
-  function sfxDestroy() {
-    tone(180, 0, 0.25, 'sawtooth', 0.14);
-    tone(90, 0.06, 0.35, 'sawtooth', 0.14);
-    noiseBurst(0, 0.4, 0.32);
-  }
-  function sfxShield() {
-    tone(660, 0, 0.15, 'sine', 0.14);
-    tone(880, 0.08, 0.18, 'sine', 0.12);
-  }
-  function sfxCoin() {
-    tone(880, 0, 0.08, 'square', 0.1);
-    tone(1320, 0.05, 0.1, 'square', 0.09);
-  }
-  function sfxPurchase() {
-    tone(520, 0, 0.1, 'sine', 0.13);
-    tone(660, 0.06, 0.12, 'sine', 0.11);
-  }
-  function sfxSell() {
-    tone(700, 0, 0.08, 'square', 0.11);
-    tone(900, 0.05, 0.08, 'square', 0.11);
-    tone(1100, 0.1, 0.15, 'square', 0.13);
-  }
-  function sfxHit(crit) {
-    tone(crit ? 300 : 220, 0, 0.06, 'square', crit ? 0.16 : 0.1);
-    if (crit) tone(500, 0.04, 0.08, 'square', 0.12);
-  }
-  function sfxKill(boss) {
-    if (boss) {
-      tone(392, 0, 0.15, 'triangle', 0.18);
-      tone(494, 0.1, 0.15, 'triangle', 0.18);
-      tone(587, 0.2, 0.15, 'triangle', 0.18);
-      tone(784, 0.3, 0.3, 'triangle', 0.2);
-    } else {
-      tone(660, 0, 0.08, 'triangle', 0.14);
-      tone(880, 0.06, 0.12, 'triangle', 0.14);
-    }
-  }
-  function sfxBoss() {
-    tone(120, 0, 0.4, 'sawtooth', 0.15);
-    tone(90, 0.15, 0.5, 'sawtooth', 0.15);
-  }
-  function toggleMute() {
-    muted = !muted;
-    el('muteBtn').textContent = muted ? '🔇' : '🔊';
-  }
-
-  function log(msg, cls) {
-    const div = document.createElement('div');
-    div.textContent = msg;
-    if (cls) div.className = cls;
-    el('log').prepend(div);
-  }
-
-  function flash(type) {
-    const f = el('flash');
-    f.className = 'flash ' + type;
-    void f.offsetWidth;
-    f.className = 'flash ' + type;
-  }
-
-  function shake() {
-    const forge = el('forge');
-    forge.classList.remove('shake');
-    void forge.offsetWidth;
-    forge.classList.add('shake');
-  }
-
-  function pulseSword() {
-    const sword = el('swordSvg');
-    sword.classList.remove('level-up-pulse');
-    void sword.offsetWidth;
-    sword.classList.add('level-up-pulse');
-  }
-
-  function shatterSword() {
-    const sword = el('swordSvg');
-    sword.classList.remove('shatter');
-    void sword.offsetWidth;
-    sword.classList.add('shatter');
-  }
-
-  function spawnParticles(color, count = 14) {
-    const forge = el('forge');
-    for (let i = 0; i < count; i++) {
-      const p = document.createElement('div');
-      p.className = 'particle';
-      p.style.background = color;
-      const angle = Math.random() * Math.PI * 2;
-      const dist = 35 + Math.random() * 55;
-      p.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
-      p.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
-      forge.appendChild(p);
-      setTimeout(() => p.remove(), 750);
-    }
-  }
-
-  function popupText(text, color) {
-    const forge = el('forge');
-    const t = document.createElement('div');
-    t.className = 'float-text';
-    t.textContent = text;
-    t.style.color = color;
-    forge.appendChild(t);
-    setTimeout(() => t.remove(), 1000);
-  }
-
-  function spawnParticlesIn(containerId, color, count = 10) {
-    const c = el(containerId);
-    for (let i = 0; i < count; i++) {
-      const p = document.createElement('div');
-      p.className = 'particle';
-      p.style.background = color;
-      const angle = Math.random() * Math.PI * 2;
-      const dist = 30 + Math.random() * 45;
-      p.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
-      p.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
-      c.appendChild(p);
-      setTimeout(() => p.remove(), 700);
-    }
-  }
-
-  function popupTextIn(containerId, text, color) {
-    const c = el(containerId);
-    const t = document.createElement('div');
-    t.className = 'float-text';
-    t.textContent = text;
-    t.style.color = color;
-    c.appendChild(t);
-    setTimeout(() => t.remove(), 900);
-  }
-
-  // ── 몬스터 사냥터 ──
-  const monsters = [
-    { name: '슬라임',       emoji: '🟢', hp: 16,  min: 3,  max: 7,   weight: 30 },
-    { name: '박쥐',         emoji: '🦇', hp: 12,  min: 4,  max: 8,   weight: 25 },
-    { name: '고블린',       emoji: '👺', hp: 28,  min: 7,  max: 13,  weight: 20 },
-    { name: '스켈레톤',     emoji: '💀', hp: 38,  min: 10, max: 17,  weight: 14 },
-    { name: '오크',         emoji: '👹', hp: 55,  min: 15, max: 25,  weight: 8  },
-    { name: '고대 드래곤',  emoji: '🐉', hp: 130, min: 60, max: 100, weight: 3, boss: true },
-  ];
-
-  function pickMonster() {
-    const total = monsters.reduce((s, m) => s + m.weight, 0);
-    let r = Math.random() * total;
-    for (const m of monsters) {
-      if (r < m.weight) return m;
-      r -= m.weight;
-    }
-    return monsters[0];
-  }
-
-  function spawnMonster(announce) {
-    try {
-      const def = pickMonster();
-      state.monster = { ...def, curHp: def.hp };
-      el('huntZone').classList.toggle('boss', !!def.boss);
-      el('monsterEmoji').textContent = def.emoji;
-      el('monsterName').textContent = def.name + (def.boss ? ' (보스!)' : '');
-      renderMonster();
-      if (announce && def.boss) {
-        popupTextIn('huntZone', '보스 등장!', '#e8b84b');
-        sfxBoss();
-      }
-    } catch (e) {
-      // 리스폰 중 오류가 나도 최소한 몬스터 객체는 항상 살아있게 보장
-      if (!state.monster || state.monster.curHp <= 0) {
-        state.monster = { name: '슬라임', emoji: '🟢', hp: 16, curHp: 16, min: 3, max: 7 };
-      }
-    }
-  }
-
-  function renderMonster() {
-    const m = state.monster;
-    const pct = Math.max(0, (m.curHp / m.hp) * 100);
-    el('hpFill').style.width = pct + '%';
-    el('hpText').textContent = `${Math.max(0, m.curHp)} / ${m.hp}`;
-  }
-
-  function shakeMonster() {
-    const e = el('monsterEmoji');
-    e.classList.remove('hit');
-    void e.offsetWidth;
-    e.classList.add('hit');
-  }
-
-  function attackMonster() {
-    const m = state.monster;
-    if (!m || m.curHp <= 0) return;
-
-    const atk = atkPower(state.level);
-    let dmg = 4 + Math.floor(Math.random() * 6) + Math.floor(atk / 18);
-    const crit = Math.random() < 0.15;
-    if (crit) dmg = Math.round(dmg * 2);
-
-    m.curHp -= dmg;
-    shakeMonster();
-    popupTextIn('huntZone', (crit ? 'CRIT ' : '') + '-' + dmg, crit ? '#ffd75e' : '#ff7a3d');
-
-    if (m.curHp <= 0) {
-      // 리스폰을 가장 먼저 예약: 아래 이펙트/사운드/로그에서 문제가 생겨도 리스폰은 반드시 실행됨
-      setTimeout(() => spawnMonster(true), 500);
-      try {
-        const reward = Math.floor(Math.random() * (m.max - m.min + 1)) + m.min;
-        state.gold += reward;
-        spawnParticlesIn('huntZone', m.boss ? '#e8b84b' : '#4a9d6e', m.boss ? 24 : 12);
-        popupTextIn('huntZone', `+${reward}G`, '#e8b84b');
-        log(`${m.name}을(를) 처치하고 ${reward}G를 획득했습니다.${m.boss ? ' (보스 처치!)' : ''}`, m.boss ? 'info' : 'success');
-        renderMonster();
-        render();
-        sfxHit(crit);
-        sfxKill(!!m.boss);
-      } catch (e) { /* 이펙트/사운드 오류가 리스폰을 막지 않도록 함 */ }
-    } else {
-      try {
-        renderMonster();
-        render();
-        sfxHit(crit);
-      } catch (e) { /* 이펙트/사운드 오류가 다음 공격을 막지 않도록 함 */ }
-    }
-  }
-
-  function render() {
-    el('goldDisplay').textContent = state.gold;
-    el('investedDisplay').textContent = state.invested;
-    el('scrollDisplay').textContent = state.scrolls;
-    el('levelBadge').textContent = '+' + state.level;
-    el('bestDisplay').textContent = '+' + state.best;
-    el('atkDisplay').textContent = atkPower(state.level);
-
-    const tier = tierOf(state.level);
-    const tIdx = tierIndexOf(state.level);
-    el('tierLabel').textContent = tier.name;
-    el('tierTrack').textContent = `${tIdx + 1} / ${tiers.length} 단계`;
-    el('levelBadge').style.color = tier.glow;
-
-    el('gradTop').setAttribute('stop-color', tier.top);
-    el('gradBottom').setAttribute('stop-color', tier.bottom);
-
-    const scale = 1 + Math.min(state.level, maxLevel) * 0.016;
-    el('swordSvg').style.setProperty('--sword-scale', scale);
-    el('swordSvg').style.transform = `scale(${scale})`;
-
-    el('swordSvg').style.filter = state.level >= 5
-      ? `drop-shadow(0 0 ${6 + tIdx * 3}px ${tier.glow})`
-      : 'none';
-
-    el('gem').style.opacity = state.level >= 5 ? 1 : 0;
-    el('gem').setAttribute('fill', tier.glow);
-
-    el('wings').style.opacity = state.level >= 10 ? 1 : 0;
-
-    el('flameTip').style.opacity = state.level >= 20 ? 1 : 0;
-    el('flameTip').querySelectorAll('.flame').forEach((f, i) => {
-      f.setAttribute('fill', i === 0 ? tier.glow : tier.top);
-    });
-
-    el('aura').style.opacity = state.level >= 35 ? 1 : 0;
-    el('aura').setAttribute('stroke', tier.glow);
-
-    el('sellPrice').textContent = sellPrice();
-    el('sellBtn').disabled = state.level === 0;
-
-    if (state.level >= maxLevel) {
-      el('enhanceBtn').disabled = true;
-      el('enhanceBtn').textContent = '최고 강화 달성!';
-      el('chanceDisplay').textContent = '-';
-      el('costDisplay').textContent = '-';
-      el('riskNote').textContent = '';
-    } else {
-      const cost = enhanceCost(state.level);
-      el('costDisplay').textContent = cost;
-      el('chanceDisplay').textContent = successRate(state.level) + '%';
-      el('enhanceBtn').disabled = false;
-      el('enhanceBtn').textContent = state.gold < cost
-        ? `골드 부족 (필요: ${cost}G)`
-        : `강화하기 (비용: ${cost}G)`;
-
-      const note = el('riskNote');
-      if (state.scrolls > 0) {
-        note.textContent = `보호 주문서 보유 중 (실패해도 파괴 방지, ${state.scrolls}개)`;
-        note.className = 'risk-note protected';
-      } else {
-        note.textContent = '실패 시 검이 파괴됩니다 (+0으로 초기화)';
-        note.className = 'risk-note';
-      }
-    }
-
-    el('scrollCost').textContent = scrollCost();
-    el('scrollBtn').disabled = false;
-  }
-
-  function enhance() {
-    if (state.level >= maxLevel) return;
-    const cost = enhanceCost(state.level);
-    if (state.gold < cost) {
-      popupText('골드 부족!', '#c23b3b');
-      log(`골드가 부족합니다. (필요: ${cost}G / 보유: ${state.gold}G)`, 'fail');
-      return;
-    }
-    state.gold -= cost;
-    state.invested += cost;
-
-    const rate = successRate(state.level);
-    const roll = Math.random() * 100;
-
-    if (roll < rate) {
-      state.level += 1;
-      state.best = Math.max(state.best, state.level);
-      const tier = tierOf(state.level);
-      flash('success');
-      pulseSword();
-      spawnParticles(tier.glow);
-      popupText(`+${state.level}`, tier.glow);
-      sfxSuccess(tierIndexOf(state.level));
-      log(`+${state.level - 1} -> +${state.level} 강화 성공!`, 'success');
-    } else {
-      flash('fail');
-      shake();
-      if (state.scrolls > 0) {
-        state.scrolls -= 1;
-        popupText('방어!', '#4a9d6e');
-        sfxShield();
-        log(`강화 실패... 보호 주문서로 검을 지켰습니다.`, 'info');
-      } else {
-        spawnParticles('#c23b3b', 22);
-        shatterSword();
-        popupText('파괴!', '#c23b3b');
-        sfxDestroy();
-        log(`강화 실패... 검이 파괴되었습니다! ㅋ(+${state.level} -> +0)`, 'fail');
-        state.level = 0;
-        state.invested = 0;
-      }
-    }
-    render();
-  }
-
-  function sell() {
-    if (state.level === 0) return;
-    const price = sellPrice();
-    state.gold += price;
-    sfxSell();
-    log(`+${state.level} 검을 ${price}G에 판매했습니다.`, 'info');
-    state.level = 0;
-    state.invested = 0;
-    render();
-  }
-
-  function buyScroll() {
-    const cost = scrollCost();
-    if (state.gold < cost) {
-      log(`골드가 부족합니다. (필요: ${cost}G)`, 'fail');
-      return;
-    }
-    state.gold -= cost;
-    state.scrolls += 1;
-    sfxPurchase();
-    log(`보호 주문서를 구매했습니다.`, 'info');
-    render();
-  }
-
-  el('enhanceBtn').addEventListener('click', enhance);
-  el('attackBtn').addEventListener('click', attackMonster);
-  el('sellBtn').addEventListener('click', sell);
-  el('scrollBtn').addEventListener('click', buyScroll);
-  el('muteBtn').addEventListener('click', toggleMute);
-
-  log('대장간에 오신 것을 환영합니다. 검을 강화해보세요! (최대 +50)');
-  spawnMonster(false);
-  render();
-</script>
-</body>
-</html>
+        <!-- 검 자루 -->
