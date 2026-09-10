@@ -66,6 +66,37 @@ canvas {
     text-shadow: 0 0 20px #00f5ff;
 }
 
+.name-input-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 18px;
+}
+
+.name-input-wrap label {
+    color: #00f5ff;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.name-input-wrap input {
+    width: 280px;
+    padding: 11px 14px;
+    font-size: 17px;
+    text-align: center;
+    background: #111;
+    color: #fff;
+    border: 2px solid #555;
+    border-radius: 7px;
+    outline: none;
+}
+
+.name-input-wrap input:focus {
+    border-color: #00f5ff;
+    box-shadow: 0 0 12px rgba(0,245,255,.25);
+}
+
 #main-menu .menu-buttons {
     display: flex;
     flex-direction: column;
@@ -530,6 +561,8 @@ canvas {
     cursor: pointer;
 }
 
+.skill-card.locked { opacity: .55; filter: grayscale(.8); }
+
 .skill-card:hover {
     border-color: #00f5ff;
     background: #292929;
@@ -813,13 +846,6 @@ canvas {
     z-index: 150;
 }
 
-.structure-close-btn {
-     position: absolute;
-     top: 6px;
-     right: 6px;
-     padding: 3px 7px;
-     font-size: 12px;
- }
 
  .structure-interact button {
     background: #00f5ff;
@@ -1036,6 +1062,101 @@ canvas {
 #inventory-toggle { top: 150px; right: 92px; }
 #skill-toggle { top: 150px; right: 20px; }
 
+/* 추가 UI 정리 */
+#shop {
+    max-height: min(560px, calc(100vh - 100px));
+}
+
+#shop-grid {
+    max-height: 455px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+#shop-grid::-webkit-scrollbar,
+#inventory::-webkit-scrollbar,
+#skill-window::-webkit-scrollbar {
+    width: 7px;
+}
+
+#shop-grid::-webkit-scrollbar-thumb,
+#inventory::-webkit-scrollbar-thumb,
+#skill-window::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 6px;
+}
+
+#craft-panel {
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(420px, 92vw);
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+    background: rgba(0,0,0,0.97);
+    border: 2px solid #f39c12;
+    border-radius: 10px;
+    padding: 15px;
+    display: none;
+    z-index: 200;
+}
+
+.craft-recipe {
+    background: #1a1a1a;
+    border: 1px solid #555;
+    border-radius: 7px;
+    padding: 12px;
+    margin-bottom: 9px;
+}
+
+.craft-recipe-name {
+    color: #f39c12;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.craft-recipe-cost {
+    color: #aaa;
+    font-size: 11px;
+    margin-bottom: 8px;
+}
+
+.craft-recipe button {
+    width: 100%;
+    padding: 8px;
+    background: #f39c12;
+    color: #000;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.craft-recipe button:disabled {
+    opacity: .4;
+    cursor: default;
+}
+
+.hunt-combo {
+    position: fixed;
+    left: 50%;
+    top: 24%;
+    transform: translateX(-50%);
+    color: #ffd166;
+    font-size: 20px;
+    font-weight: bold;
+    text-shadow: 0 0 10px #000;
+    pointer-events: none;
+    z-index: 40;
+    opacity: 0;
+    transition: opacity .15s, transform .15s;
+}
+
+.hunt-combo.active {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.08);
+}
+
 </style>
 </head>
 
@@ -1046,6 +1167,11 @@ canvas {
 <div id="main-menu" class="screen active">
 
     <h1>⚔️ RPG SHOOTER ⚔️</h1>
+
+    <div class="name-input-wrap">
+        <label for="player-name-input">플레이어 이름</label>
+        <input id="player-name-input" maxlength="12" placeholder="이름을 입력하세요" autocomplete="off">
+    </div>
 
     <div class="menu-buttons">
 
@@ -1246,7 +1372,7 @@ canvas {
 
     <div class="skill-window-info">
         위 5칸이 현재 사용할 수 있는 스킬입니다.<br>
-        아래 보유 스킬을 클릭하면 빈 슬롯에 등록됩니다.
+        잠긴 스킬은 상점에서 구매하면 사용할 수 있습니다.
     </div>
 
     <div class="active-skill-title">
@@ -1362,8 +1488,17 @@ canvas {
         onclick="interactStructure()">
         상호작용
     </button>
-    <button class="close-btn structure-close-btn" onclick="closeStructureInteract()">✕</button>
 
+</div>
+
+<div id="hunt-combo" class="hunt-combo"></div>
+
+<div id="craft-panel" class="ui-panel interactive">
+    <div class="panel-header">
+        <div class="inv-title">🛠️ 제작소</div>
+        <button class="close-btn" onclick="closeCraftPanel()">✕</button>
+    </div>
+    <div id="craft-grid"></div>
 </div>
 
 
@@ -1610,6 +1745,15 @@ const STRUCTURES = [
         y:400,
         size:60,
         color:"#e74c3c"
+    },
+
+    {
+        type:"craft",
+        name:"🛠️ 제작소",
+        x:900,
+        y:400,
+        size:60,
+        color:"#f39c12"
     }
 
 ];
@@ -1892,7 +2036,7 @@ magic_staff:{
     type:"weapon",
     damage:25,
     attackType:"magic",
-    range:700,
+    range:550,
     cooldown:650,
     projectileSpeed:9,
     value:500
@@ -1904,6 +2048,23 @@ dragon_scale:{
     rarity:"legendary",
     type:"material",
     value:1000
+},
+
+arcane_core:{
+    name:"마력의 핵",
+    emoji:"🔮",
+    rarity:"epic",
+    type:"material",
+    value:900
+},
+
+dragon_amulet:{
+    name:"용의 부적",
+    emoji:"📿",
+    rarity:"legendary",
+    type:"armor",
+    defense:12,
+    value:3500
 },
 
 blessed_sword:{
@@ -1988,6 +2149,9 @@ let nearbyStructure = null;
 
 let lastSpawnTime = 0;
 let lastRegenTime = 0;
+let structurePromptDismissed = false;
+let huntCombo = 0;
+let lastKillTime = 0;
 
 
 /* =========================================================
@@ -1999,6 +2163,8 @@ const game = {
 currentZone:"town",
 
 player:{
+
+    name:"플레이어",
 
     x:750,
     y:750,
@@ -2209,7 +2375,10 @@ function addToInventory(id,count=1) {
 
         existing.count += count;
 
+        const existingIndex = game.inventory.indexOf(existing);
+        autoAssignLootToHotbar(existingIndex);
         renderInventory();
+        renderItemHotbar();
 
         return true;
 
@@ -2233,7 +2402,11 @@ function addToInventory(id,count=1) {
         count:count
     };
 
+    // 획득 즉시 첫 빈 아이템 핫바 칸에 자동 등록.
+    autoAssignLootToHotbar(empty);
+
     renderInventory();
+    renderItemHotbar();
 
     return true;
 
@@ -2244,6 +2417,30 @@ function addToInventory(id,count=1) {
  * 골드 아이템은 항상 인벤에서
  * 현재 골드 수치를 보여준다.
  */
+function autoAssignLootToHotbar(inventoryIndex) {
+
+    if(!Number.isInteger(inventoryIndex))
+        return;
+
+    const item = game.inventory[inventoryIndex];
+
+    if(!item || item.id === "gold")
+        return;
+
+    if(game.itemHotbar.includes(inventoryIndex))
+        return;
+
+    const empty = game.itemHotbar.indexOf(null);
+
+    if(empty !== -1) {
+        game.itemHotbar[empty] = inventoryIndex;
+        return;
+    }
+
+    // 5칸이 모두 차 있으면 자동으로 덮어쓰지 않는다.
+}
+
+
 function syncGoldInventory() {
 
     const index =
@@ -2541,6 +2738,10 @@ function unequipArmor() {
 
 function startGame() {
 
+    const nameInput = document.getElementById("player-name-input");
+    const enteredName = nameInput ? nameInput.value.trim() : "";
+    game.player.name = enteredName || "플레이어";
+
     document.getElementById("main-menu")
         .classList.remove("active");
 
@@ -2582,6 +2783,9 @@ function resetGameState() {
 
     game.player.invincibleUntil = 0;
     lastRegenTime = performance.now();
+    huntCombo = 0;
+    lastKillTime = 0;
+    structurePromptDismissed = false;
 
     game.player.attackAnimation.type = null;
 
@@ -2633,20 +2837,15 @@ function resetGameState() {
      * 처음 5개만 사용 가능.
      */
     game.skillsUnlocked = [
-        "multi",
-        "ultimate",
-        "explosion",
-        "lightning",
-        "dash",
-        "roll"
+        "multi"
     ];
 
     game.skillHotbar = [
         "multi",
-        "ultimate",
-        "explosion",
-        "lightning",
-        "dash"
+        null,
+        null,
+        null,
+        null
     ];
 
     /*
@@ -2766,6 +2965,10 @@ function closeAllPanels() {
     ).style.display = "none";
 
     document.getElementById(
+        "craft-panel"
+    ).style.display = "none";
+
+    document.getElementById(
         "zone-select"
     ).style.display = "none";
 
@@ -2778,10 +2981,15 @@ function closeAllPanels() {
 }
 
 
+function closeCraftPanel() {
+    const panel = document.getElementById("craft-panel");
+    if(panel) panel.style.display = "none";
+}
+
 function closeStructureInteract() {
     const panel = document.getElementById("structure-interact");
     if(panel) panel.style.display = "none";
-    nearbyStructure = null;
+    structurePromptDismissed = true;
 }
 
 
@@ -3577,10 +3785,7 @@ function renderSkillWindow() {
     /*
      * 보유 스킬.
      */
-    for(
-        const skillId of
-        game.skillsUnlocked
-    ) {
+    for(const skillId of Object.keys(SKILLS)) {
 
         const skill =
             SKILLS[skillId];
@@ -3592,8 +3797,9 @@ function renderSkillWindow() {
             document.createElement("div");
 
         card.className =
-            "skill-card";
+            "skill-card" + (unlocked ? "" : " locked");
 
+        const unlocked = game.skillsUnlocked.includes(skillId);
         const index =
             game.skillHotbar.indexOf(
                 skillId
@@ -3619,16 +3825,17 @@ function renderSkillWindow() {
             </div>
 
             <div class="skill-card-status">
-                ${
-                    index !== -1
-                    ? `사용중: ${keyNames[index]}`
-                    : "클릭 → 슬롯 선택"
-                }
+                ${!unlocked ? "🔒 상점에서 구매" : (index !== -1 ? `사용중: ${keyNames[index]}` : "클릭 → 슬롯 선택")}
             </div>
 
         `;
 
         card.onclick = () => {
+
+            if(!unlocked) {
+                showDropNotification("🔒 아직 잠긴 스킬입니다. 상점에서 구매하세요.");
+                return;
+            }
 
             selectedSkillForEquip =
                 skillId;
@@ -3795,11 +4002,15 @@ function useSkill(skillId) {
     if(!SKILLS[skillId])
         return;
 
+    if(!game.skillsUnlocked.includes(skillId)) {
+        showDropNotification("🔒 잠긴 스킬입니다. 상점에서 구매하세요.");
+        return;
+    }
+
     if(!skillReady(skillId))
         return;
 
-    skillLastUsed[skillId] =
-        performance.now();
+    let used = true;
 
     switch(skillId) {
 
@@ -3816,7 +4027,7 @@ function useSkill(skillId) {
             break;
 
         case "lightning":
-            useLightning();
+            used = useLightning();
             break;
 
         case "dash":
@@ -3828,6 +4039,9 @@ function useSkill(skillId) {
             break;
 
     }
+
+    if(used !== false)
+        skillLastUsed[skillId] = performance.now();
 
 }
 
@@ -4007,10 +4221,10 @@ function useLightning() {
     if(!closest) {
 
         showDropNotification(
-            "⚡ 공격할 적이 없습니다."
+            "⚡ 공격할 적이 없습니다. (스킬 미소모)"
         );
 
-        return;
+        return false;
 
     }
 
@@ -4195,7 +4409,7 @@ document.addEventListener(
             game.selectedSkillHotbar=skillKeyMap[gameKey]; useSkillHotbar(); renderSkillBar(); return;
         }
         if(gameKey === "escape") {
-            const ids=["inventory","skill-window","shop","forge-panel","zone-select","map-window"];
+            const ids=["inventory","skill-window","shop","forge-panel","craft-panel","zone-select","map-window"];
             const open=ids.some(id=>document.getElementById(id)?.style.display === "block") || document.getElementById("structure-interact")?.style.display === "block";
             if(open) closeAllPanels(); else togglePause();
         }
@@ -4922,7 +5136,20 @@ function killMonster(monster) {
 
     game.player.kills++;
 
-    gainExp(monster.exp);
+    const now = performance.now();
+    if(now - lastKillTime <= 3500)
+        huntCombo++;
+    else
+        huntCombo = 1;
+    lastKillTime = now;
+
+    const comboMultiplier = 1 + Math.min(0.5, (huntCombo - 1) * 0.05);
+    gainExp(Math.round(monster.exp * comboMultiplier));
+
+    // 연속 처치 보너스: 전투 흐름을 유지할수록 경험치가 조금 증가.
+    if(huntCombo >= 2) {
+        showHuntCombo(huntCombo);
+    }
 
     dropMonsterLoot(monster);
 
@@ -4965,6 +5192,39 @@ function dropMonsterLoot(monster) {
 
     }
 
+    // 사냥터별 제작 재료 드롭
+    let bonusMaterial = null;
+    if(monster.type === "goblin" || monster.type === "wolf" || monster.type === "deer") {
+        if(Math.random() < 0.08) bonusMaterial = "ruby";
+    }
+    else if(monster.type === "orc" || monster.type === "skeleton" || monster.type === "ghoul") {
+        if(Math.random() < 0.12) bonusMaterial = "emerald";
+    }
+    else if(monster.isElite) {
+        if(Math.random() < 0.25) bonusMaterial = "dragon_scale";
+    }
+
+    if(bonusMaterial) {
+        game.groundItems.push({
+            id:bonusMaterial, amount:1,
+            x:monster.x + (Math.random()-0.5)*30,
+            y:monster.y + (Math.random()-0.5)*30,
+            bob:Math.random()*Math.PI*2
+        });
+    }
+
+}
+
+
+function showHuntCombo(combo) {
+    const el = document.getElementById("hunt-combo");
+    if(!el) return;
+    el.textContent = `🔥 ${combo} COMBO  ·  EXP 보너스`;
+    el.classList.remove("active");
+    void el.offsetWidth;
+    el.classList.add("active");
+    clearTimeout(showHuntCombo.timer);
+    showHuntCombo.timer = setTimeout(() => el.classList.remove("active"), 900);
 }
 
 
@@ -5126,14 +5386,16 @@ function checkNearbyStructure() {
 
     if(nearbyStructure) {
 
-        box.style.display = "block";
-
-        button.textContent =
-            `${nearbyStructure.name} 열기`;
+        if(!structurePromptDismissed) {
+            box.style.display = "block";
+            button.textContent =
+                `${nearbyStructure.name} 열기`;
+        }
 
     }
     else {
 
+        structurePromptDismissed = false;
         box.style.display = "none";
 
     }
@@ -5145,6 +5407,9 @@ function interactStructure() {
 
     if(!nearbyStructure)
         return;
+
+    document.getElementById("structure-interact").style.display = "none";
+    structurePromptDismissed = true;
 
     if(
         nearbyStructure.type ===
@@ -5161,6 +5426,15 @@ function interactStructure() {
     ) {
 
         openForge();
+
+    }
+
+    else if(
+        nearbyStructure.type ===
+        "craft"
+    ) {
+
+        openCraft();
 
     }
 
@@ -5194,38 +5468,30 @@ function renderShop() {
     grid.innerHTML = "";
 
     const shopItems = [
-
-        {
-            id:"potion",
-            price:50
-        },
-
-        {
-            id:"sword",
-            price:200
-        },
-
-        {
-            id:"iron_armor",
-            price:180
-        },
-
-        {
-            id:"magic_staff",
-            price:500
-        },
-
-        {
-            id:"blessed_sword",
-            price:5000
-        }
-
+        {id:"potion", price:50},
+        {id:"ruby", price:180},
+        {id:"emerald", price:250},
+        {id:"sword", price:200},
+        {id:"iron_armor", price:180},
+        {id:"magic_staff", price:500},
+        {id:"arcane_core", price:1200},
+        {id:"dragon_amulet", price:3500},
+        {id:"blessed_sword", price:5000},
+        {id:"skill_lightning", price:900, skillId:"lightning"},
+        {id:"skill_explosion", price:1200, skillId:"explosion"},
+        {id:"skill_dash", price:1500, skillId:"dash"},
+        {id:"skill_roll", price:1800, skillId:"roll"},
+        {id:"skill_ultimate", price:3000, skillId:"ultimate"}
     ];
 
     for(const shopItem of shopItems) {
 
+        const skillData = shopItem.skillId ? SKILLS[shopItem.skillId] : null;
         const data =
             ITEMS[shopItem.id];
+
+        if(skillData && game.skillsUnlocked.includes(shopItem.skillId))
+            continue;
 
         const div =
             document.createElement("div");
@@ -5236,12 +5502,12 @@ function renderShop() {
         div.innerHTML = `
 
             <div class="shop-item-name">
-                ${data.emoji}
-                ${data.name}
+                ${skillData ? skillData.emoji : data.emoji}
+                ${skillData ? skillData.name + " 스킬" : data.name}
             </div>
 
             <div style="font-size:12px;color:#aaa;margin:4px 0;">
-                ${getItemDescription(shopItem.id)}
+                ${skillData ? skillData.desc : getItemDescription(shopItem.id)}
             </div>
 
             <div class="shop-item-price">
@@ -5250,11 +5516,12 @@ function renderShop() {
 
         `;
 
-        div.onclick = () =>
-            buyItem(
-                shopItem.id,
-                shopItem.price
-            );
+        div.onclick = () => {
+            if(shopItem.skillId)
+                buySkill(shopItem.skillId, shopItem.price);
+            else
+                buyItem(shopItem.id, shopItem.price);
+        };
 
         grid.appendChild(div);
 
@@ -5307,6 +5574,14 @@ function getItemDescription(id) {
     ) {
 
         return "HP +50";
+
+    }
+
+    if(
+        item.type === "material"
+    ) {
+
+        return `제작 재료 | 가치 ${item.value}`;
 
     }
 
@@ -5363,6 +5638,109 @@ function buyItem(id,price) {
     renderShop();
     updateUI();
 
+}
+
+
+
+function buySkill(skillId, price) {
+    if(!SKILLS[skillId] || game.skillsUnlocked.includes(skillId)) {
+        return;
+    }
+
+    if(game.player.gold < price) {
+        showDropNotification("💰 금화가 부족합니다.");
+        return;
+    }
+
+    game.player.gold -= price;
+    syncGoldInventory();
+    game.skillsUnlocked.push(skillId);
+
+    const empty = game.skillHotbar.indexOf(null);
+    if(empty !== -1)
+        game.skillHotbar[empty] = skillId;
+
+    showDropNotification(`✨ ${SKILLS[skillId].name} 스킬 획득!`);
+    renderSkillWindow();
+    renderSkillBar();
+    renderShop();
+    updateUI();
+}
+
+/* =========================================================
+   CRAFTING
+========================================================= */
+
+const CRAFT_RECIPES = [
+    {
+        id:"arcane_core",
+        name:"마력의 핵",
+        emoji:"🔮",
+        costs:{ruby:2, emerald:2},
+        amount:1
+    },
+    {
+        id:"dragon_amulet",
+        name:"용의 부적",
+        emoji:"📿",
+        costs:{dragon_scale:2, arcane_core:1},
+        amount:1
+    }
+];
+
+function hasCraftMaterials(costs) {
+    return Object.entries(costs).every(([id,count]) => {
+        const item = getInventoryItem(id);
+        return item && item.count >= count;
+    });
+}
+
+function openCraft() {
+    closeAllPanels();
+    document.getElementById("craft-panel").style.display = "block";
+    renderCraft();
+}
+
+function renderCraft() {
+    const grid = document.getElementById("craft-grid");
+    if(!grid) return;
+    grid.innerHTML = "";
+
+    for(const recipe of CRAFT_RECIPES) {
+        const div = document.createElement("div");
+        div.className = "craft-recipe";
+
+        const costs = Object.entries(recipe.costs).map(([id,count]) => {
+            const data = ITEMS[id];
+            const have = getInventoryItem(id)?.count || 0;
+            return `${data.emoji} ${data.name} ${have}/${count}`;
+        }).join(" · ");
+
+        div.innerHTML = `
+            <div class="craft-recipe-name">${recipe.emoji} ${recipe.name} ×${recipe.amount}</div>
+            <div class="craft-recipe-cost">재료: ${costs}</div>
+            <button ${hasCraftMaterials(recipe.costs) ? "" : "disabled"}>제작</button>
+        `;
+
+        div.querySelector("button").onclick = () => craftItem(recipe);
+        grid.appendChild(div);
+    }
+}
+
+function craftItem(recipe) {
+    if(!hasCraftMaterials(recipe.costs)) {
+        showDropNotification("🛠️ 재료가 부족합니다.");
+        return;
+    }
+
+    for(const [id,count] of Object.entries(recipe.costs))
+        removeFromInventory(id,count);
+
+    addToInventory(recipe.id, recipe.amount);
+    showDropNotification(`${recipe.emoji} ${recipe.name} 제작 완료!`);
+    renderCraft();
+    renderInventory();
+    renderItemHotbar();
 }
 
 
@@ -6092,7 +6470,7 @@ function updateUI() {
     document.getElementById(
         "level-text"
     ).textContent =
-        `LV. ${p.level} 네크로맨서`;
+        `LV. ${p.level} ${p.name}`;
 
     document.getElementById(
         "score-text"
@@ -6326,6 +6704,49 @@ function drawWorld() {
 
     }
 
+    drawWorldDecorations();
+
+}
+
+function drawWorldDecorations() {
+    const zone = game.currentZone;
+    ctx.save();
+    ctx.globalAlpha = 0.7;
+
+    if(zone === "town") {
+        // 마을 길
+        ctx.strokeStyle = "#8b7355";
+        ctx.lineWidth = 90;
+        ctx.beginPath(); ctx.moveTo(0,750); ctx.lineTo(1500,750); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(750,0); ctx.lineTo(750,1500); ctx.stroke();
+        // 작은 나무/화단
+        for(let i=0;i<18;i++) {
+            const x = 90 + ((i*271)%1320);
+            const y = 90 + ((i*173)%1320);
+            if(Math.hypot(x-750,y-750)<260) continue;
+            ctx.fillStyle="#183b25"; ctx.beginPath(); ctx.arc(x,y,22,0,Math.PI*2); ctx.fill();
+            ctx.fillStyle="#6b4a2e"; ctx.fillRect(x-4,y+15,8,18);
+        }
+    } else if(zone === "forest") {
+        for(let i=0;i<45;i++) {
+            const x=50+((i*317)%3900), y=50+((i*191)%3900);
+            ctx.fillStyle="#123b1b"; ctx.beginPath(); ctx.arc(x,y,24,0,Math.PI*2); ctx.fill();
+            ctx.fillStyle="#6b4a2e"; ctx.fillRect(x-5,y+15,10,25);
+        }
+        ctx.strokeStyle="#7a5a38"; ctx.lineWidth=45; ctx.beginPath(); ctx.moveTo(0,300); ctx.lineTo(4000,3600); ctx.stroke();
+    } else if(zone === "mountain") {
+        ctx.fillStyle="#66584a";
+        for(let i=0;i<28;i++){ const x=100+((i*521)%3800), y=100+((i*277)%3800); ctx.beginPath(); ctx.moveTo(x,y-45); ctx.lineTo(x-55,y+40); ctx.lineTo(x+55,y+40); ctx.closePath(); ctx.fill(); }
+    } else if(zone === "dungeon") {
+        ctx.fillStyle="#171735";
+        for(let i=0;i<22;i++){ const x=120+((i*433)%3700), y=120+((i*307)%3700); ctx.fillRect(x,y,90,18); ctx.fillRect(x+36,y-36,18,90); }
+        ctx.strokeStyle="#45456d"; ctx.lineWidth=30; ctx.strokeRect(180,180,3640,3640);
+    } else if(zone === "desert") {
+        ctx.fillStyle="#806b2e";
+        for(let i=0;i<35;i++){ const x=80+((i*283)%3840), y=80+((i*419)%3840); ctx.beginPath(); ctx.arc(x,y,18,0,Math.PI*2); ctx.fill(); }
+        ctx.strokeStyle="#c09a45"; ctx.lineWidth=55; ctx.beginPath(); ctx.moveTo(0,3400); ctx.bezierCurveTo(1200,2800,2600,3800,4000,3000); ctx.stroke();
+    }
+    ctx.restore();
 }
 
 
@@ -6576,6 +6997,23 @@ function drawMonsters() {
    PLAYER DRAW
 ========================================================= */
 
+function drawMagicRangeIndicator() {
+    const weapon = getEquippedWeapon();
+    if(!weapon || weapon.attackType !== "magic" || isPaused || !gameStarted || gameOver)
+        return;
+
+    ctx.save();
+    ctx.globalAlpha = 0.12;
+    ctx.strokeStyle = "#d66bff";
+    ctx.setLineDash([8, 8]);
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(game.player.x, game.player.y, weapon.range || 550, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.restore();
+}
+
+
 function drawPlayer() {
 
     const p =
@@ -6659,72 +7097,35 @@ function drawWeapon() {
         "melee"
     ) {
 
-        const length =
-            game.equipment.weapon ===
-            "blessed_sword"
-            ? 45
-            : 37;
+        const level = getWeaponUpgradeLevel();
+        const isBlessed = game.equipment.weapon === "blessed_sword";
+        const swing = Math.sin(performance.now()/110) * (0.035 + level*0.002);
+        const a = angle + swing;
+        const length = (isBlessed ? 48 : 40) + Math.min(level,20)*1.2;
+        const perpX = -Math.sin(a), perpY = Math.cos(a);
+        const baseX = handX + Math.cos(a)*5, baseY = handY + Math.sin(a)*5;
+        const tipX = handX + Math.cos(a)*length, tipY = handY + Math.sin(a)*length;
+        const width = isBlessed ? 8 : 6;
 
-        const endX =
-            handX +
-            Math.cos(angle) *
-            length;
+        ctx.save();
+        if(level >= 3 || isBlessed) {
+            ctx.shadowColor = isBlessed ? "#ffe66d" : "#00f5ff";
+            ctx.shadowBlur = 7 + Math.min(level,10)*2;
+        }
+        ctx.strokeStyle = isBlessed ? "#ffe66d" : (level >= 5 ? "#9eefff" : "#ddd");
+        ctx.lineWidth = width;
+        ctx.beginPath(); ctx.moveTo(baseX,baseY); ctx.lineTo(tipX,tipY); ctx.stroke();
+        ctx.strokeStyle = isBlessed ? "#fff6b0" : "#fff";
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(baseX+perpX*2,baseY+perpY*2); ctx.lineTo(tipX+perpX*2,tipY+perpY*2); ctx.stroke();
+        ctx.strokeStyle = "#7b4f2c"; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(handX-Math.cos(a)*5,handY-Math.sin(a)*5); ctx.lineTo(handX+Math.cos(a)*7,handY+Math.sin(a)*7); ctx.stroke();
+        ctx.restore();
 
-        const endY =
-            handY +
-            Math.sin(angle) *
-            length;
-
-        ctx.strokeStyle =
-            game.equipment.weapon ===
-            "blessed_sword"
-            ? "#ffe66d"
-            : "#ddd";
-
-        ctx.lineWidth =
-            game.equipment.weapon ===
-            "blessed_sword"
-            ? 7
-            : 6;
-
-        ctx.beginPath();
-
-        ctx.moveTo(
-            handX,
-            handY
-        );
-
-        ctx.lineTo(
-            endX,
-            endY
-        );
-
-        ctx.stroke();
-
-        ctx.strokeStyle =
-            "#7b4f2c";
-
-        ctx.lineWidth = 4;
-
-        ctx.beginPath();
-
-        ctx.moveTo(
-            handX -
-            Math.cos(angle)*5,
-
-            handY -
-            Math.sin(angle)*5
-        );
-
-        ctx.lineTo(
-            handX +
-            Math.cos(angle)*7,
-
-            handY +
-            Math.sin(angle)*7
-        );
-
-        ctx.stroke();
+        if(level >= 10) {
+            ctx.save(); ctx.globalAlpha=.55; ctx.strokeStyle=isBlessed?"#fff1a8":"#00f5ff"; ctx.lineWidth=2;
+            ctx.beginPath(); ctx.arc(p.x,p.y,length+8,a-.35,a+.35); ctx.stroke(); ctx.restore();
+        }
 
     }
 
@@ -6741,10 +7142,13 @@ function drawWeapon() {
             handY +
             Math.sin(angle)*30;
 
-        ctx.strokeStyle =
-            "#d66bff";
+        const level = getWeaponUpgradeLevel();
+        ctx.save();
+        ctx.shadowColor = "#d66bff";
+        ctx.shadowBlur = 5 + Math.min(level,10)*2;
+        ctx.strokeStyle = level >= 5 ? "#ff9cff" : "#d66bff";
 
-        ctx.lineWidth = 5;
+        ctx.lineWidth = 5 + Math.min(level,5)*0.5;
 
         ctx.beginPath();
 
@@ -6774,6 +7178,7 @@ function drawWeapon() {
         );
 
         ctx.fill();
+        ctx.restore();
 
     }
 
@@ -7290,6 +7695,7 @@ function drawGame() {
     drawMonsters();
 
     drawEffects();
+    drawMagicRangeIndicator();
 
     drawPlayer();
 
