@@ -157,17 +157,42 @@
     });
 
     // 마우스 좌표 계산 에러 방지 처리 (핵심 버그 수정점)
-    window.addEventListener('mousemove', function(e) {
-        if(!canvas) return;
+    canvas.addEventListener('mousemove', function(e) {
         const rect = canvas.getBoundingClientRect();
-        game.mouse.x = e.clientX - rect.left + game.camera.x;
-        game.mouse.y = e.clientY - rect.top + game.camera.y;
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        game.mouse.x = (e.clientX - rect.left) * scaleX + game.camera.x;
+        game.mouse.y = (e.clientY - rect.top) * scaleY + game.camera.y;
     });
 
-    window.addEventListener('mousedown', function(e) {
-        if (e.target && e.target.tagName === 'CANVAS') {
+    canvas.addEventListener('mousedown', function(e) {
+        if (e.button === 0) {
+            e.preventDefault();
             shootNormal();
         }
+    });
+
+
+    // Robust UI listeners: buttons/skill slots work even if inline handlers are blocked.
+    document.getElementById('inventory-toggle').addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleInventory();
+    });
+    document.getElementById('skill-q').addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        useSkillQ();
+    });
+    document.getElementById('skill-e').addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        useSkillE();
+    });
+    document.getElementById('skill-r').addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        useSkillR();
     });
 
     function toggleInventory() {
@@ -381,7 +406,7 @@ ctx.fillRect(0, 0, canvas.width, canvas.height);
 ctx.save();
 ctx.translate(-game.camera.x, -game.camera.y);
 // 1. 바닥 그리드 바둑판 (가시성 대폭 상향)
-ctx.strokeStyle = "#2a2a2a";
+ctx.strokeStyle = "#3a3a3a";
 ctx.lineWidth = 1;
 const spacing = 100;
 for(let x=0; x<=WORLD_SIZE; x+=spacing) {
@@ -459,5 +484,6 @@ requestAnimationFrame(loop);
 }
 // 즉시 루프 구동 실행
 loop();
-
-
+</script>
+</body>
+</html>
