@@ -1,878 +1,7332 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RPG Shooter - Final</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
-        body { background: #111; color: #fff; font-family: Arial, sans-serif; overflow: hidden; }
-        
-        #game-container { position: relative; width: 100vw; height: 100vh; background: #111; }
-        canvas { display: block; background: #161616; width: 100%; height: 100%; border: 1px solid #333; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RPG Shooter - Final</title>
 
-        .screen { display: none; position: absolute; width: 100%; height: 100%; z-index: 100; }
-        .screen.active { display: block; }
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+}
 
-        #main-menu { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); display: flex !important; flex-direction: column; justify-content: center; align-items: center; }
-        #main-menu h1 { font-size: 60px; color: #00f5ff; margin-bottom: 30px; text-shadow: 0 0 20px #00f5ff; }
-        #main-menu .menu-buttons { display: flex; flex-direction: column; gap: 20px; }
-        #main-menu button { padding: 15px 60px; font-size: 24px; background: #00f5ff; color: #000; border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s; font-weight: bold; }
-        #main-menu button:hover { background: #00d4ff; transform: scale(1.05); box-shadow: 0 0 20px #00f5ff; }
+body {
+    background: #111;
+    color: #fff;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+}
 
-        .ui-panel { position: absolute; pointer-events: none; z-index: 10; }
-        .interactive { pointer-events: auto; }
+#game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    background: #111;
+}
 
-        #pause-overlay { display: none; position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 50; flex-direction: column; justify-content: center; align-items: center; }
-        #pause-overlay.active { display: flex !important; }
-        #pause-overlay h2 { font-size: 48px; color: #00f5ff; margin-bottom: 40px; }
-        #pause-overlay .menu-buttons { display: flex; flex-direction: column; gap: 15px; }
-        #pause-overlay button { padding: 12px 40px; font-size: 20px; background: #00f5ff; color: #000; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+canvas {
+    display: block;
+    background: #161616;
+    width: 100%;
+    height: 100%;
+    border: 1px solid #333;
+}
 
-        #stat-bar { top: 20px; left: 20px; background: rgba(0,0,0,0.85); padding: 15px; border-radius: 8px; border: 2px solid #00f5ff; min-width: 300px; }
-        .bar-container { background: #333; width: 100%; height: 15px; border-radius: 10px; margin: 5px 0 10px 0; overflow: hidden; }
-        .bar { height: 100%; width: 100%; }
-        #hp-bar { background: #ff4757; }
-        #exp-bar { background: #2ed573; }
-        #level-text { font-weight: bold; color: #ffa502; font-size: 18px; margin-bottom: 5px; }
-        #zone-text { font-size: 14px; color: #00f5ff; margin-top: 5px; }
-        #interact-text { font-size: 12px; color: #ffff00; margin-top: 5px; }
+.screen {
+    display: none;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 100;
+}
 
-        #minimap-container { top: 20px; right: 20px; background: rgba(0,0,0,0.85); border: 2px solid #666; border-radius: 6px; padding: 5px; }
-        #minimap { background: #000; display: block; border: 1px solid #444; }
+.screen.active {
+    display: block;
+}
 
-        #inventory-toggle { top: 20px; right: 150px; background: #ffa502; color: black; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; border: none; }
-        #inventory-toggle:hover { background: #ffb71a; }
+#main-menu {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    display: none !important;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
 
-        #inventory, #shop { top: 70px; right: 20px; width: 380px; background: rgba(0,0,0,0.95); border: 2px solid #ff4757; border-radius: 8px; padding: 15px; display: none; max-height: 600px; overflow-y: auto; }
-        
-        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .inv-title { font-size: 16px; font-weight: bold; text-align: center; border-bottom: 1px solid #444; padding-bottom: 5px; color: #ffa502; flex: 1; }
-        .close-btn { background: #ff4757; color: white; border: none; border-radius: 4px; padding: 5px 10px; cursor: pointer; font-weight: bold; font-size: 14px; }
-        .close-btn:hover { background: #ff3838; }
+#main-menu.active {
+    display: flex !important;
+}
 
-        .inv-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 15px; }
-        .inv-slot { width: 50px; height: 50px; background: #222; border: 1px solid #555; border-radius: 4px; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; font-size: 24px; }
-        .inv-slot:hover { border-color: #ffa502; background: #333; }
-        .item-count { position: absolute; bottom: 2px; right: 4px; font-size: 10px; color: #fff; background: rgba(0,0,0,0.7); padding: 0 2px; border-radius: 2px; }
+#main-menu h1 {
+    font-size: 60px;
+    color: #00f5ff;
+    margin-bottom: 30px;
+    text-shadow: 0 0 20px #00f5ff;
+}
 
-        .shop-item { background: #1a1a1a; border: 1px solid #555; border-radius: 4px; padding: 10px; margin-bottom: 10px; cursor: pointer; transition: all 0.3s; }
-        .shop-item:hover { border-color: #ffa502; background: #333; }
-        .shop-item-name { font-weight: bold; color: #00f5ff; }
-        .shop-item-price { color: #ffa502; font-size: 12px; }
+#main-menu .menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
 
-        #skill-bar { bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 15px; background: rgba(0,0,0,0.85); padding: 10px 20px; border-radius: 12px; border: 2px solid #555; }
-        .skill-slot { width: 60px; height: 60px; background: #222; border: 2px solid #666; border-radius: 8px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; cursor: pointer; }
-        .skill-slot:hover { border-color: #00f5ff; }
-        .skill-name { margin-top: 10px; font-size: 11px; color: #ffa502; }
-        .skill-slot .cooldown-overlay { position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; background: rgba(255,0,0,0.4); border-radius: 6px; transition: height 0.1s linear; }
-        .skill-slot .key-bind { position: absolute; top: 2px; left: 4px; font-size: 10px; color: #aaa; }
+#main-menu button {
+    padding: 15px 60px;
+    font-size: 24px;
+    background: #00f5ff;
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-weight: bold;
+}
 
-        #zone-select { top: 70px; left: 20px; background: rgba(0,0,0,0.95); border: 2px solid #00f5ff; border-radius: 8px; padding: 15px; display: none; }
-        .zone-select-title { font-size: 14px; font-weight: bold; color: #00f5ff; margin-bottom: 10px; }
-        .zone-buttons { display: flex; flex-direction: column; gap: 8px; }
-        .zone-btn { padding: 8px 12px; background: #333; border: 1px solid #666; color: #fff; cursor: pointer; border-radius: 4px; font-size: 12px; }
-        .zone-btn:hover { background: #00f5ff; color: #000; }
-        .zone-btn.active { background: #00f5ff; color: #000; font-weight: bold; }
+#main-menu button:hover {
+    background: #00d4ff;
+    transform: scale(1.05);
+    box-shadow: 0 0 20px #00f5ff;
+}
 
-        #game-over { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.95); padding: 40px; border-radius: 10px; text-align: center; border: 2px solid #ff4757; z-index: 60; }
-        #game-over h2 { color: #ff4757; font-size: 36px; margin-bottom: 20px; }
-        #game-over button { background: #ff4757; color: white; border: none; padding: 10px 20px; font-size: 18px; border-radius: 5px; cursor: pointer; margin: 10px 5px; }
+.ui-panel {
+    position: absolute;
+    pointer-events: none;
+    z-index: 10;
+}
 
-        .drop-notification { position: fixed; right: 20px; top: 200px; background: rgba(0,0,0,0.9); border: 2px solid #00f5ff; border-radius: 8px; padding: 12px 15px; max-width: 250px; z-index: 20; animation: slideIn 0.5s; }
-        @keyframes slideIn { from { transform: translateX(300px); } to { transform: translateX(0); } }
+.interactive {
+    pointer-events: auto;
+}
 
-        .structure-interact { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.9); border: 2px solid #00f5ff; border-radius: 8px; padding: 15px 20px; color: #00f5ff; font-weight: bold; z-index: 25; }
-    </style>
+/* =========================
+   스탯
+========================= */
+
+#stat-bar {
+    top: 20px;
+    left: 20px;
+    background: rgba(0,0,0,0.85);
+    padding: 15px;
+    border-radius: 8px;
+    border: 2px solid #00f5ff;
+    min-width: 330px;
+}
+
+.bar-container {
+    background: #333;
+    width: 100%;
+    height: 15px;
+    border-radius: 10px;
+    margin: 5px 0 10px;
+    overflow: hidden;
+}
+
+.bar {
+    height: 100%;
+    width: 100%;
+}
+
+#hp-bar {
+    background: #ff4757;
+}
+
+#exp-bar {
+    background: #2ed573;
+}
+
+#level-text {
+    font-weight: bold;
+    color: #ffa502;
+    font-size: 18px;
+    margin-bottom: 5px;
+}
+
+#zone-text {
+    font-size: 14px;
+    color: #00f5ff;
+    margin-top: 5px;
+}
+
+/* =========================
+   미니맵
+========================= */
+
+#minimap-container {
+    top: 20px;
+    right: 20px;
+    background: rgba(0,0,0,0.85);
+    border: 2px solid #666;
+    border-radius: 6px;
+    padding: 5px;
+    z-index: 20;
+}
+
+#minimap {
+    background: #000;
+    display: block;
+    border: 1px solid #444;
+}
+
+/* =========================
+   맵 버튼
+========================= */
+
+#map-toggle {
+    top: 20px;
+    right: 280px;
+    background: #00f5ff;
+    color: #000;
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+}
+
+#map-toggle:hover {
+    background: #1affff;
+}
+
+/* =========================
+   인벤 / 스킬 버튼
+========================= */
+
+#inventory-toggle {
+    top: 20px;
+    right: 150px;
+    background: #ffa502;
+    color: black;
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+}
+
+#skill-toggle {
+    top: 20px;
+    right: 70px;
+    background: #9b59b6;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+}
+
+#inventory-toggle:hover {
+    background: #ffb71a;
+}
+
+#skill-toggle:hover {
+    background: #b66bd0;
+}
+
+/* =========================
+   패널
+========================= */
+
+#inventory,
+#skill-window,
+#shop {
+    top: 70px;
+    right: 20px;
+    width: 400px;
+    background: rgba(0,0,0,0.96);
+    border: 2px solid #ff4757;
+    border-radius: 8px;
+    padding: 15px;
+    display: none;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+    z-index: 100;
+}
+
+#skill-window {
+    border-color: #00f5ff;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.inv-title {
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    border-bottom: 1px solid #444;
+    padding-bottom: 5px;
+    color: #ffa502;
+    flex: 1;
+}
+
+.close-btn {
+    background: #ff4757;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.close-btn:hover {
+    background: #ff3838;
+}
+
+/* =========================
+   장비
+========================= */
+
+.equipment-section {
+    margin-bottom: 15px;
+}
+
+.equipment-title {
+    color: #00f5ff;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.equipment-slots {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.equipment-slot {
+    width: 165px;
+    min-height: 80px;
+    background: #181818;
+    border: 2px solid #555;
+    border-radius: 6px;
+    padding: 8px;
+    text-align: center;
+    cursor: pointer;
+}
+
+.equipment-slot:hover {
+    border-color: #00f5ff;
+    background: #222;
+}
+
+.equipment-label {
+    color: #888;
+    font-size: 11px;
+}
+
+.equipped-name {
+    color: #ffa502;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+.equipped-stat {
+    color: #aaa;
+    font-size: 11px;
+    margin-top: 4px;
+}
+
+/* =========================
+   아이템 핫바
+========================= */
+
+.hotbar-title {
+    color: #00f5ff;
+    text-align: center;
+    font-size: 13px;
+    margin: 10px 0 7px;
+}
+
+.hotbar {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 15px;
+}
+
+.hotbar-slot {
+    width: 58px;
+    height: 58px;
+    background: #222;
+    border: 2px solid #555;
+    border-radius: 5px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.hotbar-slot:hover {
+    border-color: #ffa502;
+}
+
+.hotbar-slot.selected {
+    border-color: #00f5ff;
+    box-shadow: 0 0 8px #00f5ff;
+}
+
+.hotbar-number {
+    position: absolute;
+    top: 2px;
+    left: 4px;
+    font-size: 10px;
+    color: #aaa;
+}
+
+.hotbar-count {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    font-size: 10px;
+    color: #fff;
+    background: rgba(0,0,0,0.8);
+    padding: 1px 3px;
+    border-radius: 3px;
+}
+
+/* =========================
+   인벤
+========================= */
+
+.inv-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+}
+
+.inv-slot {
+    width: 58px;
+    height: 58px;
+    background: #222;
+    border: 1px solid #555;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+    font-size: 26px;
+}
+
+.inv-slot:hover {
+    border-color: #ffa502;
+    background: #333;
+}
+
+.inv-slot.empty {
+    cursor: default;
+    opacity: 0.5;
+}
+
+.inv-slot.empty:hover {
+    border-color: #555;
+    background: #222;
+}
+
+.item-count {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    font-size: 10px;
+    color: #fff;
+    background: rgba(0,0,0,0.7);
+    padding: 0 2px;
+    border-radius: 2px;
+}
+
+/* =========================
+   스킬창
+========================= */
+
+.skill-window-info {
+    color: #aaa;
+    font-size: 11px;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.active-skill-title {
+    color: #00f5ff;
+    text-align: center;
+    font-size: 13px;
+    margin: 8px 0;
+}
+
+.active-skill-grid {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 15px;
+}
+
+.active-skill-slot {
+    width: 62px;
+    height: 62px;
+    background: #222;
+    border: 2px solid #666;
+    border-radius: 6px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    cursor: pointer;
+}
+
+.active-skill-slot:hover {
+    border-color: #00f5ff;
+}
+
+.active-skill-slot .active-key {
+    position: absolute;
+    top: 2px;
+    left: 4px;
+    font-size: 9px;
+    color: #aaa;
+}
+
+.active-skill-slot .active-icon {
+    font-size: 22px;
+}
+
+.active-skill-slot .active-name {
+    color: #ffa502;
+    font-size: 9px;
+    margin-top: 3px;
+}
+
+.skill-list-title {
+    color: #ffa502;
+    font-size: 12px;
+    text-align: center;
+    border-bottom: 1px solid #444;
+    padding-bottom: 5px;
+    margin-bottom: 8px;
+}
+
+.skill-list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.skill-card {
+    background: #191919;
+    border: 1px solid #555;
+    border-radius: 5px;
+    padding: 10px 5px;
+    text-align: center;
+    cursor: pointer;
+}
+
+.skill-card:hover {
+    border-color: #00f5ff;
+    background: #292929;
+}
+
+.skill-card.equipped {
+    border-color: #ffa502;
+}
+
+.skill-card-icon {
+    font-size: 25px;
+}
+
+.skill-card-name {
+    color: #ffa502;
+    font-size: 12px;
+    font-weight: bold;
+    margin-top: 4px;
+}
+
+.skill-card-desc {
+    color: #aaa;
+    font-size: 9px;
+    margin-top: 3px;
+}
+
+.skill-card-status {
+    color: #00f5ff;
+    font-size: 9px;
+    margin-top: 4px;
+}
+
+/* =========================
+   화면 아이템 핫바
+========================= */
+
+#item-hotbar {
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 4px;
+    background: rgba(0,0,0,0.88);
+    padding: 5px 6px;
+    border-radius: 8px;
+    border: 2px solid #555;
+    z-index: 30;
+}
+
+.item-hud-slot {
+    width: 55px;
+    height: 55px;
+    background: #222;
+    border: 2px solid #666;
+    border-radius: 7px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 23px;
+    cursor: pointer;
+}
+
+.item-hud-slot:hover {
+    border-color: #ffa502;
+}
+
+.item-hud-slot.selected {
+    border-color: #00f5ff;
+    box-shadow: 0 0 8px #00f5ff;
+}
+
+.item-hud-slot .item-key {
+    position: absolute;
+    top: 2px;
+    left: 4px;
+    font-size: 9px;
+    color: #aaa;
+}
+
+.item-hud-slot .item-hud-count {
+    position: absolute;
+    right: 3px;
+    bottom: 2px;
+    font-size: 9px;
+    background: rgba(0,0,0,0.8);
+    padding: 1px 3px;
+    border-radius: 3px;
+}
+
+/* =========================
+   화면 스킬바
+========================= */
+
+#skill-bar {
+    bottom: 95px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    background: rgba(0,0,0,0.88);
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 2px solid #555;
+    z-index: 30;
+}
+
+.skill-slot {
+    width: 62px;
+    height: 62px;
+    background: #222;
+    border: 2px solid #666;
+    border-radius: 8px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.skill-slot:hover {
+    border-color: #00f5ff;
+}
+
+.skill-slot.selected {
+    border-color: #ffa502;
+}
+
+.skill-slot .skill-icon {
+    font-size: 22px;
+}
+
+.skill-slot .key-bind {
+    position: absolute;
+    top: 2px;
+    left: 4px;
+    font-size: 10px;
+    color: #aaa;
+}
+
+.skill-slot .skill-name {
+    margin-top: 3px;
+    font-size: 10px;
+    color: #ffa502;
+}
+
+.cooldown-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 0%;
+    background: rgba(255,0,0,0.45);
+    border-radius: 6px;
+    pointer-events: none;
+}
+
+/* =========================
+   상점
+========================= */
+
+.shop-item {
+    background: #1a1a1a;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 10px;
+    cursor: pointer;
+}
+
+.shop-item:hover {
+    border-color: #ffa502;
+    background: #333;
+}
+
+.shop-item-name {
+    font-weight: bold;
+    color: #00f5ff;
+}
+
+.shop-item-price {
+    color: #ffa502;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+/* =========================
+   맵창
+========================= */
+
+#map-window {
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(700px, 90vw);
+    height: min(650px, 80vh);
+    background: rgba(0,0,0,0.97);
+    border: 2px solid #00f5ff;
+    border-radius: 10px;
+    padding: 15px;
+    display: none;
+    z-index: 200;
+}
+
+#big-map {
+    width: 100%;
+    height: calc(100% - 45px);
+    background: #111;
+    border: 1px solid #555;
+}
+
+/* =========================
+   지역
+========================= */
+
+#zone-select {
+     top: 50%;
+     left: 50%;
+     transform: translate(-50%, -50%);
+     width: min(430px, 90vw);
+     background: rgba(0,0,0,0.97);
+     border: 2px solid #00f5ff;
+     border-radius: 10px;
+     padding: 15px;
+     display: none;
+     z-index: 300;
+ }
+
+.zone-select-title {
+     font-size: 14px;
+     font-weight: bold;
+     color: #00f5ff;
+     flex: 1;
+ }
+
+.zone-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.zone-btn {
+    padding: 8px 12px;
+    background: #333;
+    border: 1px solid #666;
+    color: #fff;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.zone-btn:hover {
+    background: #00f5ff;
+    color: #000;
+}
+
+.zone-btn.active {
+    background: #00f5ff;
+    color: #000;
+    font-weight: bold;
+}
+
+/* =========================
+   구조물
+========================= */
+
+.structure-interact {
+    position: fixed;
+    bottom: 180px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.9);
+    border: 2px solid #00f5ff;
+    border-radius: 8px;
+    padding: 15px 20px;
+    color: #00f5ff;
+    font-weight: bold;
+    z-index: 150;
+}
+
+.structure-close-btn {
+     position: absolute;
+     top: 6px;
+     right: 6px;
+     padding: 3px 7px;
+     font-size: 12px;
+ }
+
+ .structure-interact button {
+    background: #00f5ff;
+    color: #000;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 25px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* =========================
+   강화
+========================= */
+
+#forge-panel {
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 370px;
+    background: rgba(0,0,0,0.96);
+    border: 2px solid #e74c3c;
+    border-radius: 8px;
+    padding: 15px;
+    display: none;
+    z-index: 200;
+}
+
+#forge-info {
+    text-align: center;
+    line-height: 1.8;
+    margin-bottom: 12px;
+}
+
+#forge-upgrade-button {
+    width: 100%;
+    padding: 10px;
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+/* =========================
+   게임오버
+========================= */
+
+#game-over {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.95);
+    padding: 40px;
+    border-radius: 10px;
+    text-align: center;
+    border: 2px solid #ff4757;
+    z-index: 600;
+}
+
+#game-over h2 {
+    color: #ff4757;
+    font-size: 36px;
+    margin-bottom: 20px;
+}
+
+#game-over button {
+    background: #ff4757;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 18px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 10px 5px;
+}
+
+.drop-notification {
+    position: fixed;
+    right: 20px;
+    top: 200px;
+    background: rgba(0,0,0,0.9);
+    border: 2px solid #00f5ff;
+    border-radius: 8px;
+    padding: 12px 15px;
+    max-width: 250px;
+    z-index: 1000;
+    animation: slideIn 0.3s;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(300px);
+    }
+
+    to {
+        transform: translateX(0);
+    }
+}
+
+/* =========================
+   일시정지
+========================= */
+
+#pause-overlay {
+    display: none;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 500;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#pause-overlay.active {
+    display: flex !important;
+}
+
+#pause-overlay h2 {
+    font-size: 48px;
+    color: #00f5ff;
+    margin-bottom: 40px;
+}
+
+#pause-overlay .menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+#pause-overlay button {
+    padding: 12px 40px;
+    font-size: 20px;
+    background: #00f5ff;
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+/* =========================
+   컴팩트 상태 UI
+========================= */
+#stat-bar { display:none !important; }
+
+.compact-status {
+    left: 20px;
+    width: 220px;
+    background: rgba(0,0,0,0.82);
+    border-radius: 6px;
+    padding: 6px 8px;
+    border: 1px solid #555;
+    z-index: 20;
+}
+
+.hp-status { top: 20px; border-color: #ff4757; }
+.exp-status { top: 58px; border-color: #2ed573; }
+
+.status-label {
+    font-size: 11px;
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.hp-status .status-label { color: #ff6b81; }
+.exp-status .status-label { color: #2ed573; }
+
+.compact-bar {
+    width: 100%;
+    height: 8px;
+    background: #333;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+#hp-status #hp-bar { background: #ff4757; }
+#exp-status #exp-bar { background: #2ed573; }
+
+.status-box {
+    top: 96px;
+    left: 20px;
+    width: 220px;
+    background: rgba(0,0,0,0.78);
+    border: 1px solid #555;
+    border-radius: 6px;
+    padding: 7px 9px;
+    z-index: 20;
+}
+
+.status-box #level-text {
+    font-size: 14px;
+    margin-bottom: 3px;
+}
+
+.status-box #score-text {
+    font-size: 10px !important;
+    color: #aaa;
+}
+
+.status-box #zone-text {
+    font-size: 11px;
+    margin-top: 3px;
+}
+
+/* 오른쪽 상단 UI 버튼은 미니맵 아래로 정리 */
+#map-toggle { top: 150px; right: 180px; }
+#inventory-toggle { top: 150px; right: 92px; }
+#skill-toggle { top: 150px; right: 20px; }
+
+</style>
 </head>
+
 <body>
 
 <div id="game-container">
-    <div id="main-menu" class="screen active">
-        <h1>⚔️ RPG SHOOTER ⚔️</h1>
-        <div class="menu-buttons">
-            <button onclick="startGame()">게임 시작</button>
-            <button onclick="showCredits()">게임 정보</button>
-        </div>
+
+<div id="main-menu" class="screen active">
+
+    <h1>⚔️ RPG SHOOTER ⚔️</h1>
+
+    <div class="menu-buttons">
+
+        <button onclick="startGame()">
+            게임 시작
+        </button>
+
+        <button onclick="showCredits()">
+            게임 정보
+        </button>
+
     </div>
 
-    <div id="game-screen" class="screen">
-        <canvas id="gameCanvas"></canvas>
-
-        <div id="stat-bar" class="ui-panel">
-            <div id="level-text">LV. 1 네크로맨서</div>
-            <div>HP</div>
-            <div class="bar-container"><div id="hp-bar" class="bar"></div></div>
-            <div>EXP</div>
-            <div class="bar-container"><div id="exp-bar" class="bar"></div></div>
-            <div id="score-text" style="font-size:12px; color:#aaa;">처치: 0 | 공격력: 15</div>
-            <div id="zone-text">🗺️ 마을</div>
-            <div id="interact-text"></div>
-        </div>
-
-        <div id="minimap-container" class="ui-panel">
-            <canvas id="minimap" width="120" height="120"></canvas>
-        </div>
-
-        <button id="inventory-toggle" class="ui-panel interactive" onclick="toggleInventory()">[I] 인벤</button>
-        
-        <div id="inventory" class="ui-panel interactive">
-            <div class="panel-header">
-                <div class="inv-title">📦 인벤토리</div>
-                <button class="close-btn" onclick="toggleInventory()">✕</button>
-            </div>
-            <div class="inv-grid" id="inv-grid"></div>
-        </div>
-
-        <div id="shop" class="ui-panel interactive">
-            <div class="panel-header">
-                <div class="inv-title">🛍️ 상점 (💰 <span id="gold-display">0</span>)</div>
-                <button class="close-btn" onclick="closeShop()">✕</button>
-            </div>
-            <div id="shop-grid"></div>
-        </div>
-
-        <div id="zone-select" class="ui-panel interactive">
-            <div class="zone-select-title">📍 지역 선택</div>
-            <div class="zone-buttons" id="zone-buttons"></div>
-        </div>
-
-        <div id="structure-interact" class="structure-interact" style="display: none;"></div>
-
-        <div id="skill-bar" class="ui-panel interactive">
-            <div class="skill-slot" onclick="useSkillQ()">
-                <span class="key-bind">Q</span>
-                <span class="skill-name">멀티</span>
-                <div class="cooldown-overlay" id="cooldown-q"></div>
-            </div>
-            <div class="skill-slot" onclick="useSkillE()">
-                <span class="key-bind">E</span>
-                <span class="skill-name">힐</span>
-                <div class="cooldown-overlay" id="cooldown-e"></div>
-            </div>
-            <div class="skill-slot" onclick="useSkillR()">
-                <span class="key-bind">R</span>
-                <span class="skill-name">얼티</span>
-                <div class="cooldown-overlay" id="cooldown-r"></div>
-            </div>
-            <div class="skill-slot" onclick="toggleZoneSelect()">
-                <span class="key-bind">M</span>
-                <span class="skill-name">맵</span>
-            </div>
-        </div>
-
-        <div id="game-over" class="ui-panel interactive">
-            <h2>게임 오버</h2>
-            <div id="game-over-stats"></div>
-            <button onclick="location.reload()">다시 시작</button>
-            <button onclick="goToMenu()">메인 메뉴</button>
-        </div>
-    </div>
-
-    <div id="pause-overlay" class="screen">
-        <h2>일시정지</h2>
-        <div class="menu-buttons">
-            <button onclick="togglePause()">계속</button>
-            <button onclick="goToMenu()">메인 메뉴</button>
-        </div>
-    </div>
 </div>
 
+
+<div id="game-screen" class="screen">
+
+<canvas id="gameCanvas"></canvas>
+
+
+<div id="status-info" class="ui-panel status-box">
+    <div id="level-text">LV. 1 네크로맨서</div>
+    <div id="score-text">처치: 0 | 공격력: 25 | 방어력: 0</div>
+    <div id="zone-text">🗺️ 마을</div>
+</div>
+
+<div id="hp-status" class="ui-panel compact-status hp-status">
+    <div class="status-label">HP</div>
+    <div class="compact-bar"><div id="hp-bar" class="bar"></div></div>
+</div>
+
+<div id="exp-status" class="ui-panel compact-status exp-status">
+    <div class="status-label">EXP</div>
+    <div class="compact-bar"><div id="exp-bar" class="bar"></div></div>
+</div>
+
+
+<div id="minimap-container"
+     class="ui-panel">
+
+    <canvas
+        id="minimap"
+        width="120"
+        height="120">
+    </canvas>
+
+</div>
+
+
+<button
+    id="map-toggle"
+    class="ui-panel interactive"
+    onclick="toggleZoneSelect()">
+
+    [M] 지역 이동
+
+</button>
+
+
+<button
+    id="inventory-toggle"
+    class="ui-panel interactive"
+    onclick="toggleInventory()">
+
+    [I] 인벤
+
+</button>
+
+
+<button
+    id="skill-toggle"
+    class="ui-panel interactive"
+    onclick="openSkillWindow()">
+
+    [K] 스킬
+
+</button>
+
+
+<!-- =========================
+     인벤토리
+========================= -->
+
+<div id="inventory"
+     class="ui-panel interactive">
+
+    <div class="panel-header">
+
+        <div class="inv-title">
+            📦 인벤토리
+        </div>
+
+        <button
+            class="close-btn"
+            onclick="closeAllPanels()">
+            ✕
+        </button>
+
+    </div>
+
+
+    <div class="equipment-section">
+
+        <div class="equipment-title">
+            ⚔️ 장비
+        </div>
+
+        <div class="equipment-slots">
+
+            <div
+                class="equipment-slot"
+                onclick="unequipWeapon()">
+
+                <div class="equipment-label">
+                    무기
+                </div>
+
+                <div
+                    id="equipped-weapon"
+                    class="equipped-name">
+                    없음
+                </div>
+
+                <div
+                    id="equipped-weapon-stat"
+                    class="equipped-stat">
+                </div>
+
+            </div>
+
+
+            <div
+                class="equipment-slot"
+                onclick="unequipArmor()">
+
+                <div class="equipment-label">
+                    방어구
+                </div>
+
+                <div
+                    id="equipped-armor"
+                    class="equipped-name">
+                    없음
+                </div>
+
+                <div
+                    id="equipped-armor-stat"
+                    class="equipped-stat">
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="hotbar-title">
+        ⚡ 아이템 핫바 — 1~5
+    </div>
+
+    <div
+        id="inventory-hotbar"
+        class="hotbar">
+    </div>
+
+
+    <div
+        id="inv-grid"
+        class="inv-grid">
+    </div>
+
+</div>
+
+
+<!-- =========================
+     스킬창
+========================= -->
+
+<div
+    id="skill-window"
+    class="ui-panel interactive">
+
+    <div class="panel-header">
+
+        <div class="inv-title">
+            ✨ 스킬
+        </div>
+
+        <button
+            class="close-btn"
+            onclick="closeAllPanels()">
+            ✕
+        </button>
+
+    </div>
+
+    <div class="skill-window-info">
+        위 5칸이 현재 사용할 수 있는 스킬입니다.<br>
+        아래 보유 스킬을 클릭하면 빈 슬롯에 등록됩니다.
+    </div>
+
+    <div class="active-skill-title">
+        ⚡ 사용 스킬 5칸 — Q / E / R / T / F
+    </div>
+
+    <div
+        id="active-skill-grid"
+        class="active-skill-grid">
+    </div>
+
+    <div class="skill-list-title">
+        📚 보유 스킬
+    </div>
+
+    <div
+        id="skill-list"
+        class="skill-list">
+    </div>
+
+</div>
+
+
+<!-- =========================
+     상점
+========================= -->
+
+<div id="shop"
+     class="ui-panel interactive">
+
+    <div class="panel-header">
+
+        <div class="inv-title">
+            🛍️ 상점
+            💰 <span id="gold-display">0</span>
+        </div>
+
+        <button
+            class="close-btn"
+            onclick="closeAllPanels()">
+            ✕
+        </button>
+
+    </div>
+
+    <div id="shop-grid"></div>
+
+</div>
+
+
+<!-- =========================
+     맵창
+========================= -->
+
+<div
+    id="map-window"
+    class="ui-panel interactive">
+
+    <div class="panel-header">
+
+        <div class="inv-title">
+            🗺️ 세계 지도
+        </div>
+
+        <button
+            class="close-btn"
+            onclick="closeAllPanels()">
+            ✕
+        </button>
+
+    </div>
+
+    <canvas
+        id="big-map">
+    </canvas>
+
+</div>
+
+
+<!-- =========================
+     지역 선택
+========================= -->
+
+<div id="zone-select"
+     class="ui-panel interactive">
+
+    <div class="panel-header">
+        <div class="zone-select-title">
+            📍 지역 선택
+        </div>
+        <button class="close-btn" onclick="closeAllPanels()">✕</button>
+    </div>
+
+    <div
+        id="zone-buttons"
+        class="zone-buttons">
+    </div>
+
+</div>
+
+
+<!-- =========================
+     구조물
+========================= -->
+
+<div
+    id="structure-interact"
+    class="structure-interact"
+    style="display:none;">
+
+    <button
+        id="interact-button"
+        onclick="interactStructure()">
+        상호작용
+    </button>
+    <button class="close-btn structure-close-btn" onclick="closeStructureInteract()">✕</button>
+
+</div>
+
+
+<!-- =========================
+     무기 강화
+========================= -->
+
+<div
+    id="forge-panel"
+    class="ui-panel interactive">
+
+    <div class="panel-header">
+
+        <div class="inv-title">
+            ⚒️ 무기강화소
+        </div>
+
+        <button
+            class="close-btn"
+            onclick="closeAllPanels()">
+            ✕
+        </button>
+
+    </div>
+
+    <div id="forge-info"></div>
+
+    <button
+        id="forge-upgrade-button"
+        onclick="upgradeWeapon()">
+
+        ⚒️ 강화하기
+
+    </button>
+
+</div>
+
+
+<!-- =========================
+     스킬 핫바
+========================= -->
+
+<div
+    id="skill-bar"
+    class="ui-panel interactive">
+</div>
+
+
+<!-- =========================
+     아이템 핫바
+========================= -->
+
+<div
+    id="item-hotbar"
+    class="ui-panel interactive">
+</div>
+
+
+<div
+    id="game-over"
+    class="ui-panel interactive">
+
+    <h2>게임 오버</h2>
+
+    <div id="game-over-stats"></div>
+
+    <button onclick="restartGame()">
+        다시 시작
+    </button>
+
+    <button onclick="goToMenu()">
+        메인 메뉴
+    </button>
+
+</div>
+
+</div>
+
+
+<div
+    id="pause-overlay"
+    class="screen">
+
+    <h2>일시정지</h2>
+
+    <div class="menu-buttons">
+
+        <button onclick="togglePause()">
+            계속
+        </button>
+
+        <button onclick="goToMenu()">
+            메인 메뉴
+        </button>
+
+    </div>
+
+</div>
+
+</div>
+
+
 <script>
-    const canvas = document.getElementById("gameCanvas");
-    const ctx = canvas.getContext("2d");
-    const mCanvas = document.getElementById("minimap");
-    const mCtx = mCanvas.getContext("2d");
 
-    function resizeCanvas() {
-        canvas.width = window.innerWidth || 800;
-        canvas.height = window.innerHeight || 600;
-    }
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+/* =========================================================
+   CANVAS
+========================================================= */
 
-    const WORLD_SIZE_NORMAL = 4000;
-    const WORLD_SIZE_TOWN = 1500; // 마을은 작음
+const canvas =
+    document.getElementById("gameCanvas");
 
-    const ZONES = {
-        town: { name: '마을', color: '#2a5a4a', minLevel: 1, worldSize: WORLD_SIZE_TOWN, x: 750, y: 750, spawns: [] }, // 마을은 몬스터 없음
-        forest: { name: '🌲 숲', color: '#1a4d1a', minLevel: 5, worldSize: WORLD_SIZE_NORMAL, x: 1500, y: 500, spawns: ['wolf', 'deer', 'goblin'] },
-        mountain: { name: '⛰️ 산', color: '#4a3a2a', minLevel: 15, worldSize: WORLD_SIZE_NORMAL, x: 2500, y: 1500, spawns: ['orc', 'dragon_wyvern', 'wolf'] },
-        dungeon: { name: '🏰 던전', color: '#2a2a4a', minLevel: 25, worldSize: WORLD_SIZE_NORMAL, x: 1500, y: 2500, spawns: ['skeleton', 'ghoul', 'demon'] },
-        desert: { name: '🏜️ 사막', color: '#5a4a1a', minLevel: 40, worldSize: WORLD_SIZE_NORMAL, x: 3000, y: 3000, spawns: ['scorpion', 'sand_golem', 'pharaoh'] }
-    };
+const ctx =
+    canvas.getContext("2d");
 
-    const STRUCTURES = [
-        { type: 'shop', name: '🛍️ 상점', x: 400, y: 300, size: 60, color: '#9b59b6' },
-        { type: 'forge', name: '⚒️ 검 강화소', x: 650, y: 400, size: 60, color: '#e74c3c' },
-        { type: 'casino', name: '🎲 도박장', x: 900, y: 250, size: 60, color: '#f39c12' }
-    ];
+const mCanvas =
+    document.getElementById("minimap");
 
-    const MONSTERS = {
-        goblin: { name: '고블린', emoji: '👹', hp: 20, damage: 5, speed: 2.2, exp: 10, color: '#ff6b6b', vision: 450, attackRange: 300, loot: [{ item: 'gold', rate: 0.7, amount: 5 }] },
-        bat: { name: '박쥐', emoji: '🦇', hp: 15, damage: 3, speed: 3.0, exp: 8, color: '#6b5b95', vision: 420, attackRange: 280, loot: [{ item: 'gold', rate: 0.6, amount: 3 }] },
-        wolf: { name: '늑대', emoji: '🐺', hp: 40, damage: 10, speed: 2.8, exp: 20, color: '#8b7355', vision: 500, attackRange: 350, loot: [{ item: 'gold', rate: 0.5, amount: 10 }, { item: 'ruby', rate: 0.2, amount: 1 }] },
-        deer: { name: '사슴', emoji: '🦌', hp: 25, damage: 2, speed: 3.5, exp: 15, color: '#a0522d', vision: 480, attackRange: 320, loot: [{ item: 'gold', rate: 0.8, amount: 8 }] },
-        orc: { name: '오크', emoji: '👺', hp: 80, damage: 18, speed: 2.0, exp: 40, color: '#228b22', vision: 520, attackRange: 380, loot: [{ item: 'gold', rate: 0.6, amount: 30 }, { item: 'emerald', rate: 0.3, amount: 1 }], skill: 'power_strike' },
-        dragon_wyvern: { name: '드래곤', emoji: '🐉', hp: 150, damage: 35, speed: 2.5, exp: 100, color: '#ff00ff', vision: 600, attackRange: 420, loot: [{ item: 'gold', rate: 0.8, amount: 100 }, { item: 'dragon_scale', rate: 0.5, amount: 2 }], skill: 'fire_breath', isElite: true },
-        skeleton: { name: '해골', emoji: '💀', hp: 50, damage: 12, speed: 2.3, exp: 30, color: '#d3d3d3', vision: 480, attackRange: 340, loot: [{ item: 'gold', rate: 0.4, amount: 15 }] },
-        ghoul: { name: '구울', emoji: '👻', hp: 70, damage: 15, speed: 2.1, exp: 45, color: '#ffff00', vision: 510, attackRange: 360, loot: [{ item: 'gold', rate: 0.5, amount: 25 }, { item: 'ruby', rate: 0.25, amount: 1 }], skill: 'drain' },
-        demon: { name: '악마', emoji: '😈', hp: 120, damage: 28, speed: 2.4, exp: 80, color: '#ff0000', vision: 550, attackRange: 400, loot: [{ item: 'gold', rate: 0.7, amount: 60 }, { item: 'dragon_scale', rate: 0.3, amount: 1 }], skill: 'teleport', isElite: true },
-        scorpion: { name: '전갈', emoji: '🦂', hp: 60, damage: 16, speed: 2.6, exp: 50, color: '#ffaa00', vision: 500, attackRange: 360, loot: [{ item: 'gold', rate: 0.6, amount: 35 }] },
-        sand_golem: { name: '모래골렘', emoji: '⛩️', hp: 140, damage: 22, speed: 1.8, exp: 70, color: '#cd853f', vision: 480, attackRange: 340, loot: [{ item: 'gold', rate: 0.8, amount: 80 }], skill: 'stone_wall' },
-        pharaoh: { name: '파라오', emoji: '👑', hp: 180, damage: 40, speed: 2.2, exp: 150, color: '#ffd700', vision: 580, attackRange: 420, loot: [{ item: 'gold', rate: 0.9, amount: 150 }, { item: 'dragon_scale', rate: 0.6, amount: 3 }], skill: 'curse', isElite: true }
-    };
+const mCtx =
+    mCanvas.getContext("2d");
 
-    const ITEMS = {
-        potion: { name: '체력 포션', emoji: '🧪', rarity: 'common', type: 'consumable', value: 50, effect: () => { game.player.hp = Math.min(game.player.hp + 50, game.player.maxHp); } },
-        mana_potion: { name: '마나 포션', emoji: '💎', rarity: 'common', type: 'consumable', value: 30, effect: () => { } },
-        gold: { name: '금화', emoji: '💰', rarity: 'common', type: 'currency', value: 1 },
-        ruby: { name: '루비', emoji: '💍', rarity: 'rare', type: 'material', value: 100 },
-        emerald: { name: '에메랄드', emoji: '💚', rarity: 'rare', type: 'material', value: 150 },
-        sword: { name: '철검', emoji: '⚔️', rarity: 'rare', type: 'weapon', damage: 10, value: 200 },
-        iron_armor: { name: '철갑옷', emoji: '🛡️', rarity: 'rare', type: 'armor', defense: 5, value: 180 },
-        magic_staff: { name: '마법봉', emoji: '✨', rarity: 'epic', type: 'weapon', damage: 25, value: 500 },
-        dragon_scale: { name: '용의 비늘', emoji: '🐲', rarity: 'legendary', type: 'material', value: 1000 },
-        blessed_sword: { name: '축복받은 검', emoji: '⚡', rarity: 'legendary', type: 'weapon', damage: 50, value: 5000, effect: () => { game.player.damage += 30; } }
-    };
+const bigMap =
+    document.getElementById("big-map");
 
-    let isPaused = false;
-    let currentWorldSize = WORLD_SIZE_TOWN;
-    let nearbyStructure = null;
+const bigMapCtx =
+    bigMap.getContext("2d");
 
-    const game = {
-        currentZone: 'town',
-        player: { x: 750, y: 750, radius: 18, speed: 4.5, hp: 100, maxHp: 100, level: 1, exp: 0, maxExp: 100, damage: 15, kills: 0, gold: 200, attackRange: 600 },
-        bullets: [],
-        monsters: [],
-        items: [],
-        keys: {},
-        mouse: { x: 750, y: 750 },
-        camera: { x: 0, y: 0 },
-        skills: {
-            q: { cooldown: 2000, lastUsed: 0 },
-            e: { cooldown: 4000, lastUsed: 0 },
-            r: { cooldown: 8000, lastUsed: 0 }
-        },
-        inventory: [
-            { id: 'potion', name: 'POTION', count: 5 },
-            { id: 'gold', name: 'GOLD', count: 200 }
-        ],
-        equipment: { weapon: null, armor: null }
-    };
 
-    function startGame() {
-        document.getElementById('main-menu').classList.remove('active');
-        document.getElementById('game-screen').classList.add('active');
-        initZoneSelect();
-        loop();
-    }
+function resizeCanvas() {
 
-    function initZoneSelect() {
-        const container = document.getElementById('zone-buttons');
-        container.innerHTML = '';
-        Object.keys(ZONES).forEach(zoneKey => {
-            const zone = ZONES[zoneKey];
-            const btn = document.createElement('button');
-            btn.className = 'zone-btn' + (zoneKey === 'town' ? ' active' : '');
-            btn.textContent = zone.name;
-            btn.onclick = () => changeZone(zoneKey);
-            container.appendChild(btn);
-        });
-    }
+    canvas.width =
+        window.innerWidth || 800;
 
-    function changeZone(zone) {
-        if (game.player.level < ZONES[zone].minLevel) {
-            alert(`레벨 ${ZONES[zone].minLevel} 이상 필요`);
-            return;
-        }
-        game.currentZone = zone;
-        game.monsters = [];
-        game.items = [];
-        currentWorldSize = ZONES[zone].worldSize;
-        game.player.x = ZONES[zone].x;
-        game.player.y = ZONES[zone].y;
-        nearbyStructure = null;
-        document.querySelectorAll('.zone-btn').forEach(btn => btn.classList.remove('active'));
-        
-        // 버튼 찾기 및 활성화
-        const buttons = document.querySelectorAll('.zone-btn');
-        const zoneNames = Object.keys(ZONES);
-        const index = zoneNames.indexOf(zone);
-        if(index >= 0 && buttons[index]) {
-            buttons[index].classList.add('active');
-        }
-        
-        document.getElementById('zone-text').innerText = `🗺️ ${ZONES[zone].name}`;
+    canvas.height =
+        window.innerHeight || 600;
+
+}
+
+resizeCanvas();
+
+window.addEventListener(
+    "resize",
+    resizeCanvas
+);
+
+
+/* =========================================================
+   WORLD
+========================================================= */
+
+const WORLD_SIZE_NORMAL = 4000;
+const WORLD_SIZE_TOWN = 1500;
+
+
+const ZONES = {
+
+    town:{
+        name:"마을",
+        color:"#2a5a4a",
+        minLevel:1,
+        worldSize:WORLD_SIZE_TOWN,
+        x:750,
+        y:750,
+        spawns:[]
+    },
+
+    forest:{
+        name:"🌲 숲",
+        color:"#1a4d1a",
+        minLevel:1,
+        worldSize:WORLD_SIZE_NORMAL,
+        x:1500,
+        y:500,
+        spawns:[
+            "wolf",
+            "deer",
+            "goblin"
+        ]
+    },
+
+    mountain:{
+        name:"⛰️ 산",
+        color:"#4a3a2a",
+        minLevel:1,
+        worldSize:WORLD_SIZE_NORMAL,
+        x:2500,
+        y:1500,
+        spawns:[
+            "orc",
+            "dragon_wyvern",
+            "wolf"
+        ]
+    },
+
+    dungeon:{
+        name:"🏰 던전",
+        color:"#2a2a4a",
+        minLevel:1,
+        worldSize:WORLD_SIZE_NORMAL,
+        x:1500,
+        y:2500,
+        spawns:[
+            "skeleton",
+            "ghoul",
+            "demon"
+        ]
+    },
+
+    desert:{
+        name:"🏜️ 사막",
+        color:"#5a4a1a",
+        minLevel:1,
+        worldSize:WORLD_SIZE_NORMAL,
+        x:3000,
+        y:3000,
+        spawns:[
+            "scorpion",
+            "sand_golem",
+            "pharaoh"
+        ]
     }
 
-    function toggleZoneSelect() {
-        const zs = document.getElementById('zone-select');
-        zs.style.display = zs.style.display === 'block' ? 'none' : 'block';
+};
+
+
+/* =========================================================
+   구조물
+========================================================= */
+
+const STRUCTURES = [
+
+    {
+        type:"shop",
+        name:"🛍️ 상점",
+        x:400,
+        y:300,
+        size:60,
+        color:"#9b59b6"
+    },
+
+    {
+        type:"forge",
+        name:"⚒️ 무기강화소",
+        x:650,
+        y:400,
+        size:60,
+        color:"#e74c3c"
     }
 
-    function toggleInventory() {
-        const inv = document.getElementById("inventory");
-        inv.style.display = inv.style.display === "block" ? "none" : "block";
-        if (inv.style.display === "block") renderInventory();
+];
+
+
+/* =========================================================
+   MONSTERS
+========================================================= */
+
+const MONSTERS = {
+
+goblin:{
+    name:"고블린",
+    emoji:"👹",
+    hp:20,
+    damage:5,
+    speed:1.8,
+    exp:10,
+    color:"#ff6b6b",
+    vision:450,
+    attackRange:48,
+    loot:[
+        {item:"gold",rate:.7,amount:5},
+        {item:"potion",rate:.08,amount:1}
+    ]
+},
+
+bat:{
+    name:"박쥐",
+    emoji:"🦇",
+    hp:15,
+    damage:3,
+    speed:2.3,
+    exp:8,
+    color:"#6b5b95",
+    vision:420,
+    attackRange:45,
+    loot:[
+        {item:"gold",rate:.6,amount:3}
+    ]
+},
+
+wolf:{
+    name:"늑대",
+    emoji:"🐺",
+    hp:40,
+    damage:10,
+    speed:2.2,
+    exp:20,
+    color:"#8b7355",
+    vision:500,
+    attackRange:52,
+    loot:[
+        {item:"gold",rate:.5,amount:10},
+        {item:"ruby",rate:.2,amount:1}
+    ]
+},
+
+deer:{
+    name:"사슴",
+    emoji:"🦌",
+    hp:25,
+    damage:2,
+    speed:2.8,
+    exp:15,
+    color:"#a0522d",
+    vision:480,
+    attackRange:45,
+    loot:[
+        {item:"gold",rate:.8,amount:8}
+    ]
+},
+
+orc:{
+    name:"오크",
+    emoji:"👺",
+    hp:80,
+    damage:18,
+    speed:1.6,
+    exp:40,
+    color:"#228b22",
+    vision:520,
+    attackRange:55,
+    loot:[
+        {item:"gold",rate:.6,amount:30},
+        {item:"emerald",rate:.3,amount:1}
+    ]
+},
+
+dragon_wyvern:{
+    name:"드래곤",
+    emoji:"🐉",
+    hp:150,
+    damage:35,
+    speed:2,
+    exp:100,
+    color:"#ff00ff",
+    vision:600,
+    attackRange:60,
+    loot:[
+        {item:"gold",rate:.8,amount:100},
+        {item:"dragon_scale",rate:.5,amount:2}
+    ],
+    isElite:true
+},
+
+skeleton:{
+    name:"해골",
+    emoji:"💀",
+    hp:50,
+    damage:12,
+    speed:1.8,
+    exp:30,
+    color:"#d3d3d3",
+    vision:480,
+    attackRange:50,
+    loot:[
+        {item:"gold",rate:.4,amount:15}
+    ]
+},
+
+ghoul:{
+    name:"구울",
+    emoji:"👻",
+    hp:70,
+    damage:15,
+    speed:1.7,
+    exp:45,
+    color:"#ffff00",
+    vision:510,
+    attackRange:52,
+    loot:[
+        {item:"gold",rate:.5,amount:25},
+        {item:"ruby",rate:.25,amount:1}
+    ]
+},
+
+demon:{
+    name:"악마",
+    emoji:"😈",
+    hp:120,
+    damage:28,
+    speed:2,
+    exp:80,
+    color:"#ff0000",
+    vision:550,
+    attackRange:58,
+    loot:[
+        {item:"gold",rate:.7,amount:60},
+        {item:"dragon_scale",rate:.3,amount:1}
+    ],
+    isElite:true
+},
+
+scorpion:{
+    name:"전갈",
+    emoji:"🦂",
+    hp:60,
+    damage:16,
+    speed:2,
+    exp:50,
+    color:"#ffaa00",
+    vision:500,
+    attackRange:50,
+    loot:[
+        {item:"gold",rate:.6,amount:35}
+    ]
+},
+
+sand_golem:{
+    name:"모래골렘",
+    emoji:"⛩️",
+    hp:140,
+    damage:22,
+    speed:1.4,
+    exp:70,
+    color:"#cd853f",
+    vision:480,
+    attackRange:55,
+    loot:[
+        {item:"gold",rate:.8,amount:80}
+    ]
+},
+
+pharaoh:{
+    name:"파라오",
+    emoji:"👑",
+    hp:180,
+    damage:40,
+    speed:1.8,
+    exp:150,
+    color:"#ffd700",
+    vision:580,
+    attackRange:60,
+    loot:[
+        {item:"gold",rate:.9,amount:150},
+        {item:"dragon_scale",rate:.6,amount:3}
+    ],
+    isElite:true
+}
+
+};
+
+
+/* =========================================================
+   ITEMS
+========================================================= */
+
+const ITEMS = {
+
+potion:{
+    name:"체력 포션",
+    emoji:"🧪",
+    rarity:"common",
+    type:"consumable",
+    value:50,
+    effect:()=>{
+        const before = game.player.hp;
+
+        game.player.hp =
+            Math.min(
+                game.player.maxHp,
+                game.player.hp + 50
+            );
+
+        return game.player.hp - before;
     }
+},
 
-    function openShop() {
-        const shop = document.getElementById("shop");
-        shop.style.display = "block";
-        renderShop();
-    }
+gold:{
+    name:"금화",
+    emoji:"💰",
+    rarity:"common",
+    type:"currency",
+    value:1
+},
 
-    function closeShop() {
-        document.getElementById("shop").style.display = "none";
-    }
+ruby:{
+    name:"루비",
+    emoji:"💍",
+    rarity:"rare",
+    type:"material",
+    value:100
+},
 
-    function renderInventory() {
-        const grid = document.getElementById("inv-grid");
-        if(!grid) return;
-        grid.innerHTML = "";
-        for (let i = 0; i < 25; i++) {
-            const slot = document.createElement("div");
-            slot.className = "inv-slot";
-            if (i < game.inventory.length) {
-                const item = game.inventory[i];
-                const itemData = ITEMS[item.id];
-                if(itemData) {
-                    slot.textContent = itemData.emoji;
-                    slot.title = `${itemData.name}\n수량: ${item.count}`;
-                    if(item.count > 1) {
-                        const count = document.createElement("div");
-                        count.className = "item-count";
-                        count.textContent = item.count;
-                        slot.appendChild(count);
-                    }
-                    slot.onclick = () => useItem(item.id);
-                }
-            }
-            grid.appendChild(slot);
-        }
-    }
+emerald:{
+    name:"에메랄드",
+    emoji:"💚",
+    rarity:"rare",
+    type:"material",
+    value:150
+},
 
-    function renderShop() {
-        const shopGrid = document.getElementById("shop-grid");
-        shopGrid.innerHTML = "";
-        document.getElementById("gold-display").textContent = game.player.gold;
-        
-        const shopItems = [
-            { id: 'potion', count: 50 },
-            { id: 'mana_potion', count: 30 },
-            { id: 'sword', count: 200 },
-            { id: 'iron_armor', count: 180 },
-            { id: 'magic_staff', count: 500 },
-            { id: 'blessed_sword', count: 5000 }
-        ];
+sword:{
+    name:"철검",
+    emoji:"⚔️",
+    rarity:"rare",
+    type:"weapon",
+    damage:10,
+    attackType:"melee",
+    range:78,
+    cooldown:450,
+    arc:1.45,
+    value:200
+},
 
-        shopItems.forEach(shop => {
-            const itemData = ITEMS[shop.id];
-            const div = document.createElement('div');
-            div.className = 'shop-item';
-            div.innerHTML = `
-                <div class="shop-item-name">${itemData.emoji} ${itemData.name}</div>
-                <div class="shop-item-price">💰 ${shop.count}</div>
-            `;
-            div.onclick = () => buyItem(shop.id, shop.count);
-            shopGrid.appendChild(div);
-        });
-    }
+iron_armor:{
+    name:"철갑옷",
+    emoji:"🛡️",
+    rarity:"rare",
+    type:"armor",
+    defense:5,
+    value:180
+},
 
-    function buyItem(itemId, price) {
-        if (game.player.gold < price) {
-            alert('금화가 부족합니다!');
-            return;
-        }
-        game.player.gold -= price;
-        addToInventory(itemId);
-        renderShop();
-    }
+magic_staff:{
+    name:"마법봉",
+    emoji:"✨",
+    rarity:"epic",
+    type:"weapon",
+    damage:25,
+    attackType:"magic",
+    range:700,
+    cooldown:650,
+    projectileSpeed:9,
+    value:500
+},
 
-    function useItem(itemId) {
-        const item = game.inventory.find(i => i.id === itemId);
-        if(!item || item.count <= 0) return;
-        
-        const itemData = ITEMS[itemId];
-        if(itemData.type === 'consumable') {
-            if(itemData.effect) itemData.effect();
-            item.count--;
-            if(item.count <= 0) {
-                game.inventory = game.inventory.filter(i => i.count > 0);
-            }
-            renderInventory();
-        }
-    }
+dragon_scale:{
+    name:"용의 비늘",
+    emoji:"🐲",
+    rarity:"legendary",
+    type:"material",
+    value:1000
+},
 
-    function goToMenu() {
-        isPaused = false;
-        document.getElementById('pause-overlay').classList.remove('active');
-        location.reload();
-    }
+blessed_sword:{
+    name:"축복받은 검",
+    emoji:"⚡",
+    rarity:"legendary",
+    type:"weapon",
+    damage:50,
+    attackType:"melee",
+    range:100,
+    cooldown:600,
+    arc:1.9,
+    value:5000
+}
 
-    function togglePause() {
-        isPaused = !isPaused;
-        document.getElementById('pause-overlay').classList.toggle('active');
-    }
+};
 
-    function checkNearbyStructure() {
-        nearbyStructure = null;
-        const interactText = document.getElementById('interact-text');
-        
-        if(game.currentZone !== 'town') {
-            interactText.textContent = '';
-            return;
-        }
 
-        STRUCTURES.forEach(struct => {
-            const dist = Math.hypot(game.player.x - struct.x, game.player.y - struct.y);
-            if(dist < 80) {
-                nearbyStructure = struct;
-                interactText.textContent = `[F] ${struct.name}`;
-            }
-        });
-        
-        if(!nearbyStructure) {
-            interactText.textContent = '';
-        }
-    }
+/* =========================================================
+   SKILLS
+========================================================= */
 
-    function interactStructure() {
-        if(!nearbyStructure) return;
-        
-        if(nearbyStructure.type === 'shop') {
-            openShop();
-        } else if(nearbyStructure.type === 'forge') {
-            alert('🔨 검 강화소\n\n검을 강화하여 공격력을 높일 수 있습니다.\n(현재 개발 중)');
-        } else if(nearbyStructure.type === 'casino') {
-            alert('🎲 도박장\n\n금화를 걸고 도박을 할 수 있습니다.\n(현재 개발 중)');
-        }
-    }
+const SKILLS = {
 
-    window.addEventListener('keydown', function(e) {
-        if (!e.key) return;
-        const key = e.key.toLowerCase();
-        game.keys[key] = true;
-        if(key === 'i') toggleInventory();
-        if(key === 'f') interactStructure();
-        if(key === 'q') useSkillQ();
-        if(key === 'e') useSkillE();
-        if(key === 'r') useSkillR();
-        if(key === 'm') toggleZoneSelect();
-        if(key === 'escape') togglePause();
-    });
+multi:{
+    name:"멀티샷",
+    emoji:"🏹",
+    cooldown:2200,
+    desc:"전방으로 3개의 투사체"
+},
 
-    window.addEventListener('keyup', function(e) {
-        if (!e.key) return;
-        game.keys[e.key.toLowerCase()] = false;
-    });
+ultimate:{
+    name:"궁극기",
+    emoji:"☄️",
+    cooldown:9000,
+    desc:"주변 전체에 강력한 공격"
+},
 
-    canvas.addEventListener('mousemove', function(e) {
-        const rect = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        game.mouse.x = (e.clientX - rect.left) * scaleX + game.camera.x;
-        game.mouse.y = (e.clientY - rect.top) * scaleY + game.camera.y;
-    });
+explosion:{
+    name:"폭발",
+    emoji:"🔥",
+    cooldown:6000,
+    desc:"주변 적을 폭발로 공격"
+},
 
-    canvas.addEventListener('mousedown', function(e) {
-        if (e.button === 0 && !isPaused) {
-            shootNormal();
-        }
-    });
+lightning:{
+    name:"번개",
+    emoji:"⚡",
+    cooldown:7000,
+    desc:"가장 가까운 적에게 번개"
+},
 
-    function shootNormal() {
-        const angle = Math.atan2(game.mouse.y - game.player.y, game.mouse.x - game.player.x);
-        const dist = Math.hypot(game.mouse.x - game.player.x, game.mouse.y - game.player.y);
-        
-        // 사정거리 제한
-        if(dist > game.player.attackRange) {
-            return;
-        }
+dash:{
+    name:"대쉬",
+    emoji:"💨",
+    cooldown:1800,
+    desc:"바라보는 방향으로 빠르게 이동"
+},
 
-        const speed = 8;
-        const damage = game.player.damage + (game.equipment.weapon?.damage || 0);
-        game.bullets.push({
-            x: game.player.x, y: game.player.y,
-            vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
-            radius: 7, damage: damage, color: '#9b59b6', type: 'player'
-        });
-    }
+roll:{
+    name:"구르기",
+    emoji:"🌀",
+    cooldown:3000,
+    desc:"짧은 거리 이동하며 무적"
+}
 
-    function useSkillQ() {
-        if(isPaused) return;
-        const now = Date.now();
-        if(now - game.skills.q.lastUsed < game.skills.q.cooldown) return;
-        game.skills.q.lastUsed = now;
-        
-        for(let i = 0; i < 5; i++) {
-            const angle = (Math.PI * 2 / 5) * i;
-            game.bullets.push({
-                x: game.player.x, y: game.player.y,
-                vx: Math.cos(angle) * 6, vy: Math.sin(angle) * 6,
-                radius: 6, damage: game.player.damage * 1.5, color: '#ffff00', type: 'player'
-            });
-        }
-    }
+};
 
-    function useSkillE() {
-        if(isPaused) return;
-        const now = Date.now();
-        if(now - game.skills.e.lastUsed < game.skills.e.cooldown) return;
-        game.skills.e.lastUsed = now;
-        game.player.hp = Math.min(game.player.hp + 60, game.player.maxHp);
-    }
 
-    function useSkillR() {
-        if(isPaused) return;
-        const now = Date.now();
-        if(now - game.skills.r.lastUsed < game.skills.r.cooldown) return;
-        game.skills.r.lastUsed = now;
-        
-        for(let angle = 0; angle < Math.PI * 2; angle += Math.PI / 6) {
-            game.bullets.push({
-                x: game.player.x, y: game.player.y,
-                vx: Math.cos(angle) * 8, vy: Math.sin(angle) * 8,
-                radius: 8, damage: game.player.damage * 3, color: '#ff0000', type: 'player'
-            });
-        }
-    }
+/* =========================================================
+   GAME STATE
+========================================================= */
 
-    function spawnMonster() {
-        if(game.monsters.length >= 40 || isPaused || game.currentZone === 'town') return;
-        
-        const zone = ZONES[game.currentZone];
-        const monsterType = zone.spawns[Math.floor(Math.random() * zone.spawns.length)];
-        const monsterData = MONSTERS[monsterType];
-        
-        const angle = Math.random() * Math.PI * 2;
-        const dist = 500 + Math.random() * 300;
-        let mx = game.player.x + Math.cos(angle) * dist;
-        let my = game.player.y + Math.sin(angle) * dist;
-        mx = Math.max(40, Math.min(mx, currentWorldSize-40));
-        my = Math.max(40, Math.min(my, currentWorldSize-40));
-        
-        const level = Math.max(game.player.level - 3, 1) + Math.floor(Math.random() * 5);
-        const hpMult = 1 + (level * 0.15);
-        
-        game.monsters.push({
-            type: monsterType,
-            x: mx, y: my,
-            radius: 15,
-            speed: monsterData.speed,
-            hp: monsterData.hp * hpMult,
-            maxHp: monsterData.hp * hpMult,
-            damage: monsterData.damage * (1 + level * 0.1),
-            color: monsterData.color,
-            emoji: monsterData.emoji,
-            vision: monsterData.vision,
-            attackRange: monsterData.attackRange,
-            exp: monsterData.exp * level,
-            level: level,
-            isElite: monsterData.isElite,
-            loot: monsterData.loot,
-            skill: monsterData.skill,
-            pursuing: false,
-            lastSkillUse: 0
-        });
-    }
+let gameStarted = false;
+let gameOver = false;
+let isPaused = false;
 
-    function updateLogic() {
-        if(isPaused) return;
-        
-        let moveX = 0; let moveY = 0;
-        if (game.keys['w'] || game.keys['arrowup']) moveY -= 1;
-        if (game.keys['s'] || game.keys['arrowdown']) moveY += 1;
-        if (game.keys['a'] || game.keys['arrowleft']) moveX -= 1;
-        if (game.keys['d'] || game.keys['arrowright']) moveX += 1;
-        if(moveX !== 0 && moveY !== 0) { moveX *= 0.707; moveY *= 0.707; }
-        
-        game.player.x += moveX * game.player.speed;
-        game.player.y += moveY * game.player.speed;
-        game.player.x = Math.max(game.player.radius, Math.min(game.player.x, currentWorldSize - game.player.radius));
-        game.player.y = Math.max(game.player.radius, Math.min(game.player.y, currentWorldSize - game.player.radius));
-        game.camera.x = game.player.x - canvas.width / 2;
-        game.camera.y = game.player.y - canvas.height / 2;
+let currentWorldSize =
+    WORLD_SIZE_TOWN;
 
-        checkNearbyStructure();
+let nearbyStructure = null;
 
-        for(let i = game.bullets.length - 1; i >= 0; i--) {
-            let b = game.bullets[i];
-            b.x += b.vx; b.y += b.vy;
-            if(b.x < 0 || b.x > currentWorldSize || b.y < 0 || b.y > currentWorldSize) {
-                game.bullets.splice(i, 1);
-                continue;
-            }
-            for(let j = game.monsters.length - 1; j >= 0; j--) {
-                let m = game.monsters[j];
-                let dist = Math.hypot(b.x - m.x, b.y - m.y);
-                if(dist < b.radius + m.radius) {
-                    m.hp -= b.damage;
-                    game.bullets.splice(i, 1);
-                    if(m.hp <= 0) {
-                        dropLoot(m);
-                        game.monsters.splice(j, 1);
-                        game.player.kills++;
-                        gainExp(m.exp);
-                    }
-                    break;
-                }
-            }
-        }
+let lastSpawnTime = 0;
+let lastRegenTime = 0;
 
-        game.monsters.forEach(function(m) {
-            const distToPlayer = Math.hypot(game.player.x - m.x, game.player.y - m.y);
-            
-            if(distToPlayer < m.vision) {
-                m.pursuing = true;
-                let angle = Math.atan2(game.player.y - m.y, game.player.x - m.x);
-                m.x += Math.cos(angle) * m.speed;
-                m.y += Math.sin(angle) * m.speed;
-            } else {
-                m.pursuing = false;
-            }
 
-            // 몬스터는 attackRange 내에서만 공격
-            if(distToPlayer < m.attackRange + game.player.radius) {
-                game.player.hp -= m.damage * 0.02;
-                if(game.player.hp <= 0) {
-                    game.player.hp = 0;
-                    const go = document.getElementById("game-over");
-                    if(go) {
-                        go.style.display = "block";
-                        document.getElementById('game-over-stats').innerHTML = `
-                            <p>최종 레벨: ${game.player.level}</p>
-                            <p>처치한 몬스터: ${game.player.kills}</p>
-                            <p>보유 금화: ${game.player.gold}</p>
-                        `;
-                    }
-                }
-            }
-        });
+/* =========================================================
+   GAME
+========================================================= */
 
-        for(let i = game.items.length - 1; i >= 0; i--) {
-            let item = game.items[i];
-            let dist = Math.hypot(game.player.x - item.x, game.player.y - item.y);
-            if(dist < game.player.radius + item.radius) {
-                if(item.id === 'gold') {
-                    game.player.gold += item.amount || 1;
-                } else {
-                    addToInventory(item.id);
-                }
-                game.items.splice(i, 1);
-            }
-        }
-    }
+const game = {
 
-    function dropLoot(monster) {
-        monster.loot.forEach(lootData => {
-            if(Math.random() < lootData.rate) {
-                game.items.push({
-                    x: monster.x, y: monster.y, radius: 7,
-                    id: lootData.item,
-                    amount: lootData.amount || 1,
-                    color: '#00f5ff'
-                });
-                showDropNotification(lootData.item, lootData.amount || 1);
-            }
-        });
-    }
+currentZone:"town",
 
-    function showDropNotification(itemId, amount = 1) {
-        const itemData = ITEMS[itemId];
-        const notif = document.createElement('div');
-        notif.className = 'drop-notification';
-        const text = itemId === 'gold' ? `${itemData.emoji} ${amount} 획득` : `${itemData.emoji} ${itemData.name} 획득`;
-        notif.textContent = text;
-        document.body.appendChild(notif);
-        setTimeout(() => notif.remove(), 3000);
-    }
+player:{
 
-    function addToInventory(itemId) {
-        let existing = game.inventory.find(i => i.id === itemId);
-        if(existing) {
-            existing.count++;
-        } else {
-            const itemData = ITEMS[itemId];
-            game.inventory.push({ id: itemId, name: itemData.name, count: 1 });
-        }
+    x:750,
+    y:750,
+
+    radius:18,
+    speed:4.5,
+
+    hp:100,
+    maxHp:100,
+
+    level:1,
+    exp:0,
+    maxExp:100,
+
+    damage:15,
+    kills:0,
+    gold:200,
+
+    facingAngle:0,
+
+    lastAttack:0,
+
+    invincibleUntil:0,
+
+    attackAnimation:{
+        type:null,
+        start:0,
+        duration:250,
+        angle:0
+    },
+
+    movementAnimation:0
+
+},
+
+bullets:[],
+monsters:[],
+groundItems:[],
+effects:[],
+
+keys:{},
+
+mouse:{
+    x:750,
+    y:750
+},
+
+camera:{
+    x:0,
+    y:0
+},
+
+/*
+ * 정확히 20칸.
+ * null = 빈칸
+ */
+inventory:Array(20).fill(null),
+
+equipment:{
+    weapon:"sword",
+    armor:null
+},
+
+weaponUpgrade:{
+    sword:0,
+    magic_staff:0,
+    blessed_sword:0
+},
+
+skillsUnlocked:[
+    "multi",
+    "ultimate",
+    "explosion",
+    "lightning",
+    "dash",
+    "roll"
+],
+
+/*
+ * 스킬은 아이템 핫바와 완전히 분리.
+ */
+skillHotbar:[
+    "multi",
+    "ultimate",
+    "explosion",
+    "lightning",
+    "dash"
+],
+
+/*
+ * 아이템 핫바는 inventory의 인덱스를 참조.
+ */
+itemHotbar:[
+    0,
+    1,
+    2,
+    null,
+    null
+],
+
+selectedItemHotbar:0,
+selectedSkillHotbar:0
+
+};
+
+
+/* =========================================================
+   UTIL
+========================================================= */
+
+function clamp(v,min,max) {
+
+    return Math.max(
+        min,
+        Math.min(max,v)
+    );
+
+}
+
+
+function distance(a,b) {
+
+    return Math.hypot(
+        a.x-b.x,
+        a.y-b.y
+    );
+
+}
+
+
+function normalizeAngle(angle) {
+
+    while(angle > Math.PI)
+        angle -= Math.PI*2;
+
+    while(angle < -Math.PI)
+        angle += Math.PI*2;
+
+    return angle;
+
+}
+
+
+function getInventoryItem(id) {
+
+    return game.inventory.find(
+        item =>
+            item &&
+            item.id === id
+    );
+
+}
+
+
+function getInventoryIndex(id) {
+
+    return game.inventory.findIndex(
+        item =>
+            item &&
+            item.id === id
+    );
+
+}
+
+
+/*
+ * 빈 인벤 슬롯을 찾는다.
+ */
+function getEmptyInventorySlot() {
+
+    return game.inventory.findIndex(
+        item => item === null
+    );
+
+}
+
+
+/*
+ * 아이템을 인벤에 추가.
+ */
+function addToInventory(id,count=1) {
+
+    const data = ITEMS[id];
+
+    if(!data)
+        return false;
+
+    /*
+     * 금화는 별도 골드 수치와 동기화.
+     */
+    if(id === "gold") {
+
+        game.player.gold += count;
+
+        syncGoldInventory();
+
         renderInventory();
+        updateUI();
+
+        return true;
+
     }
 
-    function gainExp(amount) {
-        game.player.exp += amount;
-        while(game.player.exp >= game.player.maxExp && game.player.level < 100) {
-            game.player.exp -= game.player.maxExp;
-            game.player.level++;
-            game.player.maxExp = Math.floor(game.player.maxExp * 1.2);
-            game.player.maxHp += 25;
-            game.player.hp = game.player.maxHp;
-            game.player.damage += 3;
-        }
+    let existing =
+        getInventoryItem(id);
+
+    if(existing) {
+
+        existing.count += count;
+
+        renderInventory();
+
+        return true;
+
     }
 
-    function updateUI() {
-        const hb = document.getElementById("hp-bar");
-        const eb = document.getElementById("exp-bar");
-        const lt = document.getElementById("level-text");
-        const st = document.getElementById("score-text");
-        if(hb) hb.style.width = Math.max(0, (game.player.hp / game.player.maxHp * 100)) + "%";
-        if(eb) eb.style.width = Math.min(100, (game.player.exp / game.player.maxExp * 100)) + "%";
-        if(lt) lt.innerText = "LV. " + game.player.level + "/100 네크로맨서";
-        if(st) st.innerText = "처치: " + game.player.kills + " | 공격력: " + game.player.damage + " | 💰" + game.player.gold;
-        
-        const now = Date.now();
-        ['q','e','r'].forEach(function(sk) {
-            const skill = game.skills[sk];
-            const passed = now - skill.lastUsed;
-            const percentage = Math.max(0, 100 - (passed / skill.cooldown * 100));
-            const co = document.getElementById("cooldown-" + sk);
-            if(co) co.style.height = percentage + "%";
-        });
+    const empty =
+        getEmptyInventorySlot();
+
+    if(empty === -1) {
+
+        showDropNotification(
+            "🎒 인벤토리가 가득 찼습니다."
+        );
+
+        return false;
+
     }
 
-    function drawGame() {
-        if(!ctx) return;
-        const zone = ZONES[game.currentZone];
-        ctx.fillStyle = zone.color;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.save();
-        ctx.translate(-game.camera.x, -game.camera.y);
-        
-        ctx.strokeStyle = "#3a3a3a";
-        ctx.lineWidth = 1;
-        const spacing = 100;
-        for(let x=0; x<=currentWorldSize; x+=spacing) {
-            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, currentWorldSize); ctx.stroke();
-        }
-        for(let y=0; y<=currentWorldSize; y+=spacing) {
-            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(currentWorldSize, y); ctx.stroke();
-        }
-        
-        ctx.strokeStyle = "#ff4757";
-        ctx.lineWidth = 4;
-        ctx.strokeRect(0, 0, currentWorldSize, currentWorldSize);
+    game.inventory[empty] = {
+        id:id,
+        count:count
+    };
 
-        // 구조물 그리기 (마을에서만)
-        if(game.currentZone === 'town') {
-            STRUCTURES.forEach(struct => {
-                ctx.fillStyle = struct.color;
-                ctx.fillRect(struct.x - struct.size/2, struct.y - struct.size/2, struct.size, struct.size);
-                ctx.strokeStyle = '#fff';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(struct.x - struct.size/2, struct.y - struct.size/2, struct.size, struct.size);
-                ctx.fillStyle = '#fff';
-                ctx.font = 'bold 16px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(struct.name, struct.x, struct.y + 5);
-            });
-        }
-
-        game.items.forEach(function(item) {
-            ctx.fillStyle = item.color;
-            ctx.beginPath(); ctx.arc(item.x, item.y, item.radius, 0, Math.PI*2); ctx.fill();
-        });
-
-        game.monsters.forEach(function(m) {
-            ctx.fillStyle = m.pursuing ? '#ff6b6b' : m.color;
-            ctx.beginPath(); ctx.arc(m.x, m.y, m.radius, 0, Math.PI*2); ctx.fill();
-            
-            ctx.fillStyle = "rgba(0,0,0,0.6)";
-            ctx.fillRect(m.x - m.radius, m.y - m.radius - 20, m.radius * 2, 4);
-            ctx.fillStyle = "#ff4757";
-            ctx.fillRect(m.x - m.radius, m.y - m.radius - 20, (m.hp / m.maxHp) * m.radius * 2, 4);
-
-            ctx.fillStyle = "#ffff00";
-            ctx.font = "bold 11px Arial";
-            ctx.textAlign = "center";
-            ctx.fillText("Lv." + m.level, m.x, m.y - m.radius - 25);
-        });
-
-        game.bullets.forEach(function(b) {
-            ctx.fillStyle = b.color;
-            ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI*2); ctx.fill();
-        });
-
-        ctx.fillStyle = "#00bcff";
-        ctx.beginPath();
-        ctx.arc(game.player.x, game.player.y, game.player.radius, 0, Math.PI*2);
-        ctx.fill();
-        ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = 3;
-        ctx.stroke();
-
-        // 플레이어 공격 범위 시각화 (디버그용)
-        ctx.strokeStyle = "rgba(155, 89, 182, 0.2)";
-        ctx.beginPath();
-        ctx.arc(game.player.x, game.player.y, game.player.attackRange, 0, Math.PI*2);
-        ctx.stroke();
-
-        ctx.fillStyle = "#ffff00";
-        ctx.font = "bold 12px Arial";
-        ctx.textAlign = "center";
-        ctx.fillText("Lv." + game.player.level, game.player.x, game.player.y - game.player.radius - 25);
-
-        ctx.restore();
-    }
-
-    function drawMinimap() {
-        if(!mCtx) return;
-        const zone = ZONES[game.currentZone];
-        mCtx.fillStyle = "#0a0a0a";
-        mCtx.fillRect(0, 0, mCanvas.width, mCanvas.height);
-        const scale = mCanvas.width / currentWorldSize;
-        
-        mCtx.fillStyle = "#00ffcc";
-        mCtx.beginPath();
-        mCtx.arc(game.player.x * scale, game.player.y * scale, 4, 0, Math.PI*2);
-        mCtx.fill();
-        
-        mCtx.fillStyle = zone.color;
-        game.monsters.forEach(function(m) {
-            mCtx.beginPath();
-            mCtx.arc(m.x * scale, m.y * scale, m.pursuing ? 3 : 2, 0, Math.PI*2);
-            mCtx.fill();
-        });
-    }
-
-    setInterval(spawnMonster, 1200);
     renderInventory();
 
-    function loop() {
-        try {
-            updateLogic();
-            drawGame();
-            drawMinimap();
-            updateUI();
-        } catch (e) {
-            console.log("Error: " + e.message);
+    return true;
+
+}
+
+
+/*
+ * 골드 아이템은 항상 인벤에서
+ * 현재 골드 수치를 보여준다.
+ */
+function syncGoldInventory() {
+
+    const index =
+        getInventoryIndex("gold");
+
+    if(index !== -1) {
+
+        game.inventory[index].count =
+            game.player.gold;
+
+    }
+
+}
+
+
+/*
+ * 인벤에서 아이템 제거.
+ */
+function removeFromInventory(id,count=1) {
+
+    if(id === "gold") {
+
+        if(game.player.gold < count)
+            return false;
+
+        game.player.gold -= count;
+
+        syncGoldInventory();
+        renderInventory();
+
+        return true;
+
+    }
+
+    const index =
+        getInventoryIndex(id);
+
+    if(index === -1)
+        return false;
+
+    const item =
+        game.inventory[index];
+
+    if(item.count < count)
+        return false;
+
+    item.count -= count;
+
+    if(item.count <= 0) {
+
+        game.inventory[index] = null;
+
+        /*
+         * 해당 슬롯이 핫바에 있었다면
+         * 자동으로 핫바에서도 제거.
+         */
+        for(let i=0;i<5;i++) {
+
+            if(game.itemHotbar[i] === index)
+                game.itemHotbar[i] = null;
+
         }
-        requestAnimationFrame(loop);
+
     }
 
-    function showCredits() {
-        alert(`RPG Shooter Ultimate Edition
+    renderInventory();
 
-✨ 주요 기능:
-- 5개 지역 (마을은 안전지역)
-- 12종류 몬스터 (각각 다른 능력)
-- 9가지 아이템
-- 마을 구조물 (상점, 검강화소, 도박장)
-- 레벨 1~100 시스템
-- 시야 시스템 (몬스터가 플레이어를 추적)
-- 사정거리 제한 (플레이어 600, 몬스터별 다름)
-- 각 몬스터/플레이어 레벨 표시
+    return true;
 
-🎮 조작:
-- 마우스: 공격 (범위 제한)
-- WASD: 이동
-- Q/E/R: 스킬
-- I: 인벤토리
-- F: 구조물 상호작용
-- M: 지역 선택
-- ESC: 일시정지`);
+}
+
+
+/* =========================================================
+   EQUIPMENT
+========================================================= */
+
+function getEquippedWeapon() {
+
+    if(!game.equipment.weapon)
+        return null;
+
+    return ITEMS[
+        game.equipment.weapon
+    ];
+
+}
+
+
+function getEquippedArmor() {
+
+    if(!game.equipment.armor)
+        return null;
+
+    return ITEMS[
+        game.equipment.armor
+    ];
+
+}
+
+
+function getWeaponUpgradeLevel() {
+
+    if(!game.equipment.weapon)
+        return 0;
+
+    return game.weaponUpgrade[
+        game.equipment.weapon
+    ] || 0;
+
+}
+
+
+function getTotalAttackDamage() {
+
+    const weapon =
+        getEquippedWeapon();
+
+    let damage =
+        game.player.damage;
+
+    if(weapon) {
+
+        damage +=
+            weapon.damage || 0;
+
+        damage +=
+            getWeaponUpgradeLevel() * 2;
+
     }
+
+    return Math.round(damage);
+
+}
+
+
+function getDefense() {
+
+    const armor =
+        getEquippedArmor();
+
+    return armor
+        ? armor.defense || 0
+        : 0;
+
+}
+
+
+function equipItem(id) {
+
+    const item = ITEMS[id];
+
+    if(!item)
+        return;
+
+    const index =
+        getInventoryIndex(id);
+
+    if(index === -1)
+        return;
+
+    if(item.type === "weapon") {
+
+        /*
+         * 기존 무기가 장착되어 있으면
+         * 기존 무기는 인벤에 남아 있음.
+         */
+        game.equipment.weapon = id;
+
+        showDropNotification(
+            `${item.emoji} ${item.name} 장착`
+        );
+
+    }
+
+    else if(item.type === "armor") {
+
+        game.equipment.armor = id;
+
+        showDropNotification(
+            `${item.emoji} ${item.name} 장착`
+        );
+
+    }
+
+    renderInventory();
+    updateUI();
+
+}
+
+
+function unequipWeapon() {
+
+    const weaponId =
+        game.equipment.weapon;
+
+    if(!weaponId)
+        return;
+
+    /*
+     * 이미 인벤에 무기가 있으면
+     * 같은 아이템을 하나 더 만들지 않는다.
+     */
+    if(
+        getInventoryIndex(weaponId) === -1
+    ) {
+
+        const empty =
+            getEmptyInventorySlot();
+
+        if(empty === -1) {
+
+            showDropNotification(
+                "🎒 인벤토리가 가득 차서 무기를 해제할 수 없습니다."
+            );
+
+            return;
+
+        }
+
+        game.inventory[empty] = {
+            id:weaponId,
+            count:1
+        };
+
+    }
+
+    game.equipment.weapon = null;
+
+    showDropNotification(
+        "⚔️ 무기를 해제했습니다."
+    );
+
+    renderInventory();
+    updateUI();
+
+}
+
+
+function unequipArmor() {
+
+    const armorId =
+        game.equipment.armor;
+
+    if(!armorId)
+        return;
+
+    /*
+     * 해제하면 인벤으로 돌아감.
+     */
+    const existing =
+        getInventoryItem(armorId);
+
+    if(existing) {
+
+        existing.count++;
+
+    }
+    else {
+
+        const empty =
+            getEmptyInventorySlot();
+
+        if(empty === -1) {
+
+            showDropNotification(
+                "🎒 인벤토리가 가득 차서 갑옷을 해제할 수 없습니다."
+            );
+
+            return;
+
+        }
+
+        game.inventory[empty] = {
+            id:armorId,
+            count:1
+        };
+
+    }
+
+    game.equipment.armor = null;
+
+    showDropNotification(
+        "🛡️ 갑옷을 인벤토리로 돌려놓았습니다."
+    );
+
+    renderInventory();
+    updateUI();
+
+}
+
+
+/* =========================================================
+   GAME START
+========================================================= */
+
+function startGame() {
+
+    document.getElementById("main-menu")
+        .classList.remove("active");
+
+    document.getElementById("game-screen")
+        .classList.add("active");
+
+    gameStarted = true;
+    gameOver = false;
+    isPaused = false;
+
+    resetGameState();
+
+}
+
+
+function resetGameState() {
+
+    game.currentZone = "town";
+
+    currentWorldSize =
+        WORLD_SIZE_TOWN;
+
+    game.player.x = 750;
+    game.player.y = 750;
+
+    game.player.hp = 100;
+    game.player.maxHp = 100;
+
+    game.player.level = 1;
+    game.player.exp = 0;
+    game.player.maxExp = 100;
+
+    game.player.damage = 15;
+    game.player.kills = 0;
+    game.player.gold = 200;
+
+    game.player.facingAngle = 0;
+    game.player.lastAttack = 0;
+
+    game.player.invincibleUntil = 0;
+    lastRegenTime = performance.now();
+
+    game.player.attackAnimation.type = null;
+
+    game.bullets = [];
+    game.monsters = [];
+    game.groundItems = [];
+    game.effects = [];
+
+    game.keys = {};
+
+    /*
+     * 시작 인벤.
+     * 갑옷은 없다.
+     */
+    game.inventory =
+        Array(20).fill(null);
+
+    game.inventory[0] = {
+        id:"potion",
+        count:5
+    };
+
+    game.inventory[1] = {
+        id:"gold",
+        count:200
+    };
+
+    game.inventory[2] = {
+        id:"sword",
+        count:1
+    };
+
+    /*
+     * 시작 장비는 무기만.
+     */
+    game.equipment = {
+        weapon:"sword",
+        armor:null
+    };
+
+    game.weaponUpgrade = {
+        sword:0,
+        magic_staff:0,
+        blessed_sword:0
+    };
+
+    /*
+     * 스킬 7개 보유.
+     * 처음 5개만 사용 가능.
+     */
+    game.skillsUnlocked = [
+        "multi",
+        "ultimate",
+        "explosion",
+        "lightning",
+        "dash",
+        "roll"
+    ];
+
+    game.skillHotbar = [
+        "multi",
+        "ultimate",
+        "explosion",
+        "lightning",
+        "dash"
+    ];
+
+    /*
+     * 아이템 핫바.
+     * 0번 = 포션
+     * 1번 = 금화
+     * 2번 = 검
+     */
+    game.itemHotbar = [
+        0,
+        1,
+        2,
+        null,
+        null
+    ];
+
+    game.selectedItemHotbar = 0;
+    game.selectedSkillHotbar = 0;
+
+    nearbyStructure = null;
+
+    closeAllPanels();
+
+    document.getElementById(
+        "game-over"
+    ).style.display = "none";
+
+    document.getElementById(
+        "structure-interact"
+    ).style.display = "none";
+
+    game.camera.x = 0;
+    game.camera.y = 0;
+
+    initZoneSelect();
+
+    renderInventory();
+    renderSkillWindow();
+    renderSkillBar();
+    renderItemHotbar();
+
+    updateUI();
+
+}
+
+
+/* =========================================================
+   MENU
+========================================================= */
+
+function restartGame() {
+
+    resetGameState();
+
+    gameStarted = true;
+    gameOver = false;
+    isPaused = false;
+
+    document.getElementById("game-screen")
+        .classList.add("active");
+
+    document.getElementById("main-menu")
+        .classList.remove("active");
+
+}
+
+
+function goToMenu() {
+
+    gameStarted = false;
+    gameOver = false;
+    isPaused = false;
+
+    document.getElementById("game-screen")
+        .classList.remove("active");
+
+    document.getElementById("pause-overlay")
+        .classList.remove("active");
+
+    document.getElementById("main-menu")
+        .classList.add("active");
+
+}
+
+
+function showCredits() {
+
+    alert(
+        "RPG SHOOTER\n\n" +
+        "탐험하고 몬스터를 처치하며\n" +
+        "장비와 스킬을 성장시키세요!"
+    );
+
+}
+
+
+/* =========================================================
+   PANELS
+========================================================= */
+
+function closeAllPanels() {
+
+    document.getElementById(
+        "inventory"
+    ).style.display = "none";
+
+    document.getElementById(
+        "skill-window"
+    ).style.display = "none";
+
+    document.getElementById(
+        "shop"
+    ).style.display = "none";
+
+    document.getElementById(
+        "forge-panel"
+    ).style.display = "none";
+
+    document.getElementById(
+        "zone-select"
+    ).style.display = "none";
+
+    document.getElementById(
+        "map-window"
+    ).style.display = "none";
+
+    closeStructureInteract();
+
+}
+
+
+function closeStructureInteract() {
+    const panel = document.getElementById("structure-interact");
+    if(panel) panel.style.display = "none";
+    nearbyStructure = null;
+}
+
+
+function toggleInventory() {
+
+    if(!gameStarted || gameOver)
+        return;
+
+    const panel =
+        document.getElementById("inventory");
+
+    if(panel.style.display === "block") {
+
+        panel.style.display = "none";
+
+    }
+    else {
+
+        closeAllPanels();
+
+        panel.style.display = "block";
+
+        renderInventory();
+
+    }
+
+}
+
+
+function toggleMap() {
+
+    if(!gameStarted || gameOver)
+        return;
+
+    const panel =
+        document.getElementById("map-window");
+
+    if(panel.style.display === "block") {
+
+        panel.style.display = "none";
+
+    }
+    else {
+
+        closeAllPanels();
+
+        panel.style.display = "block";
+
+        drawBigMap();
+
+    }
+
+}
+
+
+/* =========================================================
+   INVENTORY
+========================================================= */
+
+function renderInventory() {
+
+    const grid =
+        document.getElementById(
+            "inv-grid"
+        );
+
+    if(!grid)
+        return;
+
+    grid.innerHTML = "";
+
+    for(
+        let index=0;
+        index<game.inventory.length;
+        index++
+    ) {
+
+        const item =
+            game.inventory[index];
+
+        const slot =
+            document.createElement("div");
+
+        slot.className = "inv-slot";
+
+        if(!item) {
+
+            slot.classList.add("empty");
+
+            slot.innerHTML = "";
+
+            grid.appendChild(slot);
+
+            continue;
+
+        }
+
+        const data =
+            ITEMS[item.id];
+
+        if(!data)
+            continue;
+
+        slot.innerHTML = `
+            ${data.emoji}
+            <span class="item-count">
+                ${item.count}
+            </span>
+        `;
+
+        slot.title =
+            `${data.name}\n클릭: 사용/장착\n더블클릭: 핫바 등록`;
+
+        /*
+         * 클릭:
+         * 무기/갑옷 = 장착
+         * 포션 = 사용
+         */
+        slot.onclick = () => {
+
+            if(
+                data.type === "weapon" ||
+                data.type === "armor"
+            ) {
+
+                equipItem(item.id);
+
+            }
+
+            else if(
+                data.type === "consumable"
+            ) {
+
+                useInventorySlot(index);
+
+            }
+
+        };
+
+        /*
+         * 더블클릭 = 아이템 핫바 등록.
+         */
+        slot.ondblclick = () => {
+
+            assignItemToHotbar(index);
+
+        };
+
+        /*
+         * 드래그 가능.
+         */
+        slot.draggable = true;
+
+        slot.ondragstart = e => {
+
+            e.dataTransfer.setData(
+                "text/inventory-index",
+                index
+            );
+
+        };
+
+        slot.ondragover = e => {
+            e.preventDefault();
+        };
+
+        slot.ondrop = e => {
+
+            e.preventDefault();
+
+            const from =
+                Number(
+                    e.dataTransfer.getData(
+                        "text/inventory-index"
+                    )
+                );
+
+            if(Number.isInteger(from))
+                swapInventorySlots(
+                    from,
+                    index
+                );
+
+        };
+
+        grid.appendChild(slot);
+
+    }
+
+    updateEquipmentUI();
+    renderInventoryHotbar();
+
+}
+
+
+/* =========================================================
+   INVENTORY USE
+========================================================= */
+
+function useInventorySlot(index) {
+
+    const item =
+        game.inventory[index];
+
+    if(!item)
+        return;
+
+    const data =
+        ITEMS[item.id];
+
+    if(!data)
+        return;
+
+    if(
+        data.type ===
+        "consumable"
+    ) {
+
+        // HP가 가득 차 있으면 포션을 사용하지 않는다.
+        if(
+            item.id === "potion" &&
+            game.player.hp >= game.player.maxHp
+        ) {
+            showDropNotification("🧪 HP가 가득 차 있어 포션을 사용할 수 없습니다.");
+            return;
+        }
+
+        const restored =
+            data.effect();
+
+        // 실제로 회복된 경우에만 포션 1개를 소비한다.
+        if(restored <= 0)
+            return;
+
+        removeFromInventory(
+            item.id,
+            1
+        );
+
+        showDropNotification(
+            `${data.emoji} ${data.name} 사용 +${restored} HP`
+        );
+
+        updateUI();
+
+    }
+
+}
+
+
+/* =========================================================
+   INVENTORY SWAP
+========================================================= */
+
+function swapInventorySlots(a,b) {
+
+    if(a === b)
+        return;
+
+    const temp =
+        game.inventory[a];
+
+    game.inventory[a] =
+        game.inventory[b];
+
+    game.inventory[b] =
+        temp;
+
+    /*
+     * 핫바의 인벤 인덱스도 같이 이동.
+     */
+    for(let i=0;i<5;i++) {
+
+        if(game.itemHotbar[i] === a) {
+
+            game.itemHotbar[i] = b;
+
+        }
+        else if(game.itemHotbar[i] === b) {
+
+            game.itemHotbar[i] = a;
+
+        }
+
+    }
+
+    renderInventory();
+    renderItemHotbar();
+
+}
+
+
+/* =========================================================
+   EQUIPMENT UI
+========================================================= */
+
+function updateEquipmentUI() {
+
+    const weapon =
+        getEquippedWeapon();
+
+    const armor =
+        getEquippedArmor();
+
+    document.getElementById(
+        "equipped-weapon"
+    ).textContent =
+        weapon
+        ? `${weapon.emoji} ${weapon.name}`
+        : "없음";
+
+    document.getElementById(
+        "equipped-weapon-stat"
+    ).textContent =
+        weapon
+        ? `공격력 +${weapon.damage} | 강화 +${getWeaponUpgradeLevel()}`
+        : "";
+
+    document.getElementById(
+        "equipped-armor"
+    ).textContent =
+        armor
+        ? `${armor.emoji} ${armor.name}`
+        : "없음";
+
+    document.getElementById(
+        "equipped-armor-stat"
+    ).textContent =
+        armor
+        ? `방어력 +${armor.defense}`
+        : "";
+
+}
+
+
+/* =========================================================
+   ITEM HOTBAR
+========================================================= */
+
+function renderInventoryHotbar() {
+
+    const container =
+        document.getElementById(
+            "inventory-hotbar"
+        );
+
+    if(!container)
+        return;
+
+    container.innerHTML = "";
+
+    for(let i=0;i<5;i++) {
+
+        const slot =
+            document.createElement("div");
+
+        slot.className =
+            "hotbar-slot";
+
+        slot.innerHTML =
+            `<span class="hotbar-number">${i+1}</span>`;
+
+        const inventoryIndex =
+            game.itemHotbar[i];
+
+        const item =
+            Number.isInteger(inventoryIndex)
+            ? game.inventory[inventoryIndex]
+            : null;
+
+        if(item && ITEMS[item.id]) {
+
+            const data =
+                ITEMS[item.id];
+
+            slot.innerHTML +=
+                `${data.emoji}
+                 <span class="hotbar-count">
+                    ${item.count}
+                 </span>`;
+
+            slot.title =
+                `${data.name}\n클릭: 사용`;
+
+        }
+        else {
+
+            slot.title =
+                "빈 핫바 슬롯";
+
+        }
+
+        if(
+            game.selectedItemHotbar === i
+        ) {
+
+            slot.classList.add(
+                "selected"
+            );
+
+        }
+
+        /*
+         * 클릭 = 선택 + 사용
+         */
+        slot.onclick = () => {
+
+            game.selectedItemHotbar = i;
+
+            useItemHotbar();
+
+            renderInventoryHotbar();
+            renderItemHotbar();
+
+        };
+
+        /*
+         * 인벤 슬롯을 이곳으로 드래그 가능.
+         */
+        slot.ondragover = e => {
+            e.preventDefault();
+        };
+
+        slot.ondrop = e => {
+
+            e.preventDefault();
+
+            const index =
+                Number(
+                    e.dataTransfer.getData(
+                        "text/inventory-index"
+                    )
+                );
+
+            if(
+                Number.isInteger(index) &&
+                game.inventory[index]
+            ) {
+
+                game.itemHotbar[i] =
+                    index;
+
+                game.selectedItemHotbar = i;
+
+                renderInventory();
+                renderItemHotbar();
+
+            }
+
+        };
+
+        /*
+         * 우클릭 = 핫바 제거.
+         */
+        slot.oncontextmenu = e => {
+
+            e.preventDefault();
+
+            game.itemHotbar[i] = null;
+
+            renderInventory();
+            renderItemHotbar();
+
+        };
+
+        container.appendChild(slot);
+
+    }
+
+}
+
+
+function renderItemHotbar() {
+
+    const container =
+        document.getElementById(
+            "item-hotbar"
+        );
+
+    if(!container)
+        return;
+
+    container.innerHTML = "";
+
+    for(let i=0;i<5;i++) {
+
+        const slot =
+            document.createElement("div");
+
+        slot.className =
+            "item-hud-slot";
+
+        slot.innerHTML =
+            `<span class="item-key">${i+1}</span>`;
+
+        const inventoryIndex =
+            game.itemHotbar[i];
+
+        const item =
+            Number.isInteger(inventoryIndex)
+            ? game.inventory[inventoryIndex]
+            : null;
+
+        if(item && ITEMS[item.id]) {
+
+            const data =
+                ITEMS[item.id];
+
+            slot.innerHTML +=
+                `${data.emoji}
+                 <span class="item-hud-count">
+                    ${item.count}
+                 </span>`;
+
+            slot.title =
+                `${data.name} 사용`;
+
+        }
+
+        if(
+            game.selectedItemHotbar === i
+        ) {
+
+            slot.classList.add(
+                "selected"
+            );
+
+        }
+
+        slot.onclick = () => {
+
+            game.selectedItemHotbar = i;
+
+            useItemHotbar();
+
+            renderItemHotbar();
+            renderInventoryHotbar();
+
+        };
+
+        container.appendChild(slot);
+
+    }
+
+}
+
+
+function assignItemToHotbar(index) {
+
+    if(
+        !game.inventory[index]
+    )
+        return;
+
+    /*
+     * 이미 등록되어 있으면 제거.
+     */
+    const existing =
+        game.itemHotbar.indexOf(index);
+
+    if(existing !== -1) {
+
+        game.itemHotbar[existing] = null;
+
+        showDropNotification(
+            `${ITEMS[game.inventory[index].id].emoji} 핫바에서 제거`
+        );
+
+    }
+    else {
+
+        const empty =
+            game.itemHotbar.indexOf(null);
+
+        if(empty !== -1) {
+
+            game.itemHotbar[empty] =
+                index;
+
+            game.selectedItemHotbar =
+                empty;
+
+        }
+        else {
+
+            game.itemHotbar[
+                game.selectedItemHotbar
+            ] = index;
+
+        }
+
+        const data =
+            ITEMS[
+                game.inventory[index].id
+            ];
+
+        showDropNotification(
+            `${data.emoji} ${data.name} 핫바 등록`
+        );
+
+    }
+
+    renderInventory();
+    renderItemHotbar();
+
+}
+
+
+function useItemHotbar() {
+
+    if(
+        !gameStarted ||
+        gameOver ||
+        isPaused
+    )
+        return;
+
+    const inventoryIndex =
+        game.itemHotbar[
+            game.selectedItemHotbar
+        ];
+
+    if(
+        !Number.isInteger(
+            inventoryIndex
+        )
+    )
+        return;
+
+    const item =
+        game.inventory[inventoryIndex];
+
+    if(!item)
+        return;
+
+    const data =
+        ITEMS[item.id];
+
+    if(!data)
+        return;
+
+    if(
+        data.type ===
+        "consumable"
+    ) {
+
+        useInventorySlot(
+            inventoryIndex
+        );
+
+    }
+    else if(
+        data.type ===
+        "weapon" ||
+        data.type ===
+        "armor"
+    ) {
+
+        equipItem(item.id);
+
+    }
+
+}
+
+
+/* =========================================================
+   SKILL WINDOW
+========================================================= */
+
+function openSkillWindow() {
+
+    if(!gameStarted || gameOver)
+        return;
+
+    closeAllPanels();
+
+    document.getElementById(
+        "skill-window"
+    ).style.display = "block";
+
+    renderSkillWindow();
+
+}
+
+
+function renderSkillWindow() {
+
+    const activeGrid =
+        document.getElementById(
+            "active-skill-grid"
+        );
+
+    const list =
+        document.getElementById(
+            "skill-list"
+        );
+
+    if(!activeGrid || !list)
+        return;
+
+    activeGrid.innerHTML = "";
+    list.innerHTML = "";
+
+    const keyNames =
+        ["Q","E","R","T","F"];
+
+    /*
+     * 현재 사용 중인 5개.
+     */
+    for(let i=0;i<5;i++) {
+
+        const skillId =
+            game.skillHotbar[i];
+
+        const slot =
+            document.createElement("div");
+
+        slot.className =
+            "active-skill-slot";
+
+        slot.innerHTML = `
+
+            <span class="active-key">
+                ${keyNames[i]}
+            </span>
+
+            <span class="active-icon">
+                ${
+                    skillId &&
+                    SKILLS[skillId]
+                    ? SKILLS[skillId].emoji
+                    : "—"
+                }
+            </span>
+
+            <span class="active-name">
+                ${
+                    skillId &&
+                    SKILLS[skillId]
+                    ? SKILLS[skillId].name
+                    : "빈칸"
+                }
+            </span>
+
+        `;
+
+        /*
+         * 보유 스킬을 클릭한 다음
+         * 활성 슬롯을 클릭하면 교체 가능.
+         */
+        slot.onclick = () => {
+
+            if(
+                selectedSkillForEquip
+            ) {
+
+                game.skillHotbar[i] =
+                    selectedSkillForEquip;
+
+                selectedSkillForEquip =
+                    null;
+
+                showDropNotification(
+                    `✨ ${SKILLS[game.skillHotbar[i]].name} 장착`
+                );
+
+                renderSkillWindow();
+                renderSkillBar();
+
+            }
+
+        };
+
+        /*
+         * 우클릭 = 스킬 제거.
+         */
+        slot.oncontextmenu = e => {
+
+            e.preventDefault();
+
+            game.skillHotbar[i] = null;
+
+            renderSkillWindow();
+            renderSkillBar();
+
+        };
+
+        activeGrid.appendChild(slot);
+
+    }
+
+
+    /*
+     * 보유 스킬.
+     */
+    for(
+        const skillId of
+        game.skillsUnlocked
+    ) {
+
+        const skill =
+            SKILLS[skillId];
+
+        if(!skill)
+            continue;
+
+        const card =
+            document.createElement("div");
+
+        card.className =
+            "skill-card";
+
+        const index =
+            game.skillHotbar.indexOf(
+                skillId
+            );
+
+        if(index !== -1)
+            card.classList.add(
+                "equipped"
+            );
+
+        card.innerHTML = `
+
+            <div class="skill-card-icon">
+                ${skill.emoji}
+            </div>
+
+            <div class="skill-card-name">
+                ${skill.name}
+            </div>
+
+            <div class="skill-card-desc">
+                ${skill.desc}
+            </div>
+
+            <div class="skill-card-status">
+                ${
+                    index !== -1
+                    ? `사용중: ${keyNames[index]}`
+                    : "클릭 → 슬롯 선택"
+                }
+            </div>
+
+        `;
+
+        card.onclick = () => {
+
+            selectedSkillForEquip =
+                skillId;
+
+            showDropNotification(
+                `${skill.emoji} ${skill.name} 선택됨 — 위 슬롯을 클릭하세요.`
+            );
+
+        };
+
+        list.appendChild(card);
+
+    }
+
+}
+
+
+let selectedSkillForEquip = null;
+
+
+/* =========================================================
+   SKILL BAR
+========================================================= */
+
+function renderSkillBar() {
+
+    const bar =
+        document.getElementById(
+            "skill-bar"
+        );
+
+    if(!bar)
+        return;
+
+    bar.innerHTML = "";
+
+    const keys =
+        ["Q","E","R","T","F"];
+
+    for(let i=0;i<5;i++) {
+
+        const skillId =
+            game.skillHotbar[i];
+
+        const slot =
+            document.createElement("div");
+
+        slot.className =
+            "skill-slot";
+
+        if(
+            game.selectedSkillHotbar === i
+        ) {
+
+            slot.classList.add(
+                "selected"
+            );
+
+        }
+
+        slot.innerHTML = `
+
+            <span class="key-bind">
+                ${keys[i]}
+            </span>
+
+            <span class="skill-icon">
+                ${
+                    skillId &&
+                    SKILLS[skillId]
+                    ? SKILLS[skillId].emoji
+                    : "—"
+                }
+            </span>
+
+            <span class="skill-name">
+                ${
+                    skillId &&
+                    SKILLS[skillId]
+                    ? SKILLS[skillId].name
+                    : "빈칸"
+                }
+            </span>
+
+            <div
+                class="cooldown-overlay"
+                id="skill-cooldown-${i}">
+            </div>
+
+        `;
+
+        slot.onclick = () => {
+
+            game.selectedSkillHotbar = i;
+
+            useSkillHotbar();
+
+            renderSkillBar();
+
+        };
+
+        bar.appendChild(slot);
+
+    }
+
+}
+
+
+/* =========================================================
+   SKILL COOLDOWN
+========================================================= */
+
+const skillLastUsed = {};
+
+
+function skillReady(skillId) {
+
+    const skill =
+        SKILLS[skillId];
+
+    if(!skill)
+        return false;
+
+    const last =
+        skillLastUsed[skillId] || 0;
+
+    return (
+        performance.now() -
+        last >=
+        skill.cooldown
+    );
+
+}
+
+
+function useSkillHotbar() {
+
+    if(
+        !gameStarted ||
+        gameOver ||
+        isPaused
+    )
+        return;
+
+    const skillId =
+        game.skillHotbar[
+            game.selectedSkillHotbar
+        ];
+
+    if(
+        !skillId ||
+        skillId === "heal" ||
+        !SKILLS[skillId]
+    )
+        return;
+
+    useSkill(skillId);
+
+}
+
+
+function useSkill(skillId) {
+
+    if(!SKILLS[skillId])
+        return;
+
+    if(!skillReady(skillId))
+        return;
+
+    skillLastUsed[skillId] =
+        performance.now();
+
+    switch(skillId) {
+
+        case "multi":
+            useMulti();
+            break;
+
+        case "ultimate":
+            useUltimate();
+            break;
+
+        case "explosion":
+            useExplosion();
+            break;
+
+        case "lightning":
+            useLightning();
+            break;
+
+        case "dash":
+            useDash();
+            break;
+
+        case "roll":
+            useRoll();
+            break;
+
+    }
+
+}
+
+
+/* =========================================================
+   MULTI
+========================================================= */
+
+function useMulti() {
+
+    const angle =
+        game.player.facingAngle;
+
+    for(let i=-1;i<=1;i++) {
+
+        const a =
+            angle + i * 0.2;
+
+        game.bullets.push({
+
+            type:"skill",
+            skill:"multi",
+
+            x:game.player.x,
+            y:game.player.y,
+
+            vx:Math.cos(a) * 10,
+            vy:Math.sin(a) * 10,
+
+            damage:
+                getTotalAttackDamage() * 0.75,
+
+            radius:6,
+
+            travelled:0,
+            maxDistance:650,
+
+            color:"#00f5ff"
+
+        });
+
+    }
+
+    game.player.attackAnimation = {
+
+        type:"multi",
+        start:performance.now(),
+        duration:300,
+        angle:angle
+
+    };
+
+}
+
+
+/* =========================================================
+   HEAL
+========================================================= */
+
+/* =========================================================
+   ULTIMATE
+========================================================= */
+
+function useUltimate() {
+
+    const now =
+        performance.now();
+
+    game.effects.push({
+
+        type:"ultimate",
+
+        x:game.player.x,
+        y:game.player.y,
+
+        start:now,
+        duration:800
+
+    });
+
+    for(const monster of [...game.monsters]) {
+
+        const d =
+            distance(
+                game.player,
+                monster
+            );
+
+        if(d <= 330) {
+
+            monster.hp -=
+                getTotalAttackDamage() * 2.2;
+
+            if(monster.hp <= 0)
+                killMonster(monster);
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   EXPLOSION
+========================================================= */
+
+function useExplosion() {
+
+    const now =
+        performance.now();
+
+    game.effects.push({
+
+        type:"explosion",
+
+        x:game.player.x,
+        y:game.player.y,
+
+        start:now,
+        duration:600
+
+    });
+
+    for(const monster of [...game.monsters]) {
+
+        const d =
+            distance(
+                game.player,
+                monster
+            );
+
+        if(d <= 230) {
+
+            monster.hp -=
+                getTotalAttackDamage() * 1.5;
+
+            if(monster.hp <= 0)
+                killMonster(monster);
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   LIGHTNING
+========================================================= */
+
+function useLightning() {
+
+    let closest = null;
+    let closestDistance = Infinity;
+
+    for(const monster of game.monsters) {
+
+        const d =
+            distance(
+                game.player,
+                monster
+            );
+
+        if(
+            d <= 700 &&
+            d < closestDistance
+        ) {
+
+            closest = monster;
+            closestDistance = d;
+
+        }
+
+    }
+
+    if(!closest) {
+
+        showDropNotification(
+            "⚡ 공격할 적이 없습니다."
+        );
+
+        return;
+
+    }
+
+    closest.hp -=
+        getTotalAttackDamage() * 2.2;
+
+    game.effects.push({
+
+        type:"lightning",
+
+        x:closest.x,
+        y:closest.y,
+
+        start:performance.now(),
+        duration:500
+
+    });
+
+    if(closest.hp <= 0)
+        killMonster(closest);
+
+}
+
+
+/* =========================================================
+   DASH
+========================================================= */
+
+function useDash() {
+
+    const angle =
+        game.player.facingAngle;
+
+    const distanceMove = 150;
+
+    const oldX =
+        game.player.x;
+
+    const oldY =
+        game.player.y;
+
+    game.player.x +=
+        Math.cos(angle) *
+        distanceMove;
+
+    game.player.y +=
+        Math.sin(angle) *
+        distanceMove;
+
+    game.player.x =
+        clamp(
+            game.player.x,
+            game.player.radius,
+            currentWorldSize -
+            game.player.radius
+        );
+
+    game.player.y =
+        clamp(
+            game.player.y,
+            game.player.radius,
+            currentWorldSize -
+            game.player.radius
+        );
+
+    game.player.invincibleUntil =
+        performance.now() + 300;
+
+    game.effects.push({
+
+        type:"dash",
+
+        x:oldX,
+        y:oldY,
+
+        targetX:game.player.x,
+        targetY:game.player.y,
+
+        start:performance.now(),
+        duration:350,
+
+        angle:angle
+
+    });
+
+}
+
+
+/* =========================================================
+   ROLL
+========================================================= */
+
+function useRoll() {
+
+    const angle =
+        game.player.facingAngle;
+
+    const distanceMove = 95;
+
+    const oldX =
+        game.player.x;
+
+    const oldY =
+        game.player.y;
+
+    game.player.x +=
+        Math.cos(angle) *
+        distanceMove;
+
+    game.player.y +=
+        Math.sin(angle) *
+        distanceMove;
+
+    game.player.x =
+        clamp(
+            game.player.x,
+            game.player.radius,
+            currentWorldSize -
+            game.player.radius
+        );
+
+    game.player.y =
+        clamp(
+            game.player.y,
+            game.player.radius,
+            currentWorldSize -
+            game.player.radius
+        );
+
+    game.player.invincibleUntil =
+        performance.now() + 550;
+
+    game.effects.push({
+
+        type:"roll",
+
+        x:oldX,
+        y:oldY,
+
+        targetX:game.player.x,
+        targetY:game.player.y,
+
+        start:performance.now(),
+        duration:500,
+
+        angle:angle
+
+    });
+
+}
+
+
+/* =========================================================
+   KEYBOARD
+========================================================= */
+
+document.addEventListener(
+    "keydown",
+    function(e) {
+        const code = e.code;
+        const key = e.key.toLowerCase();
+        const map = {
+            KeyW:"w", KeyA:"a", KeyS:"s", KeyD:"d",
+            KeyQ:"q", KeyE:"e", KeyR:"r", KeyT:"t", KeyF:"f",
+            KeyM:"m", KeyK:"k", KeyI:"i",
+            Digit1:"1", Digit2:"2", Digit3:"3", Digit4:"4", Digit5:"5",
+            Escape:"escape", Space:" "
+        };
+        const gameKey = map[code] || key;
+        if(["w","a","s","d","q","e","r","t","f","m","k","i","1","2","3","4","5","escape"," "].includes(gameKey) || ["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(code)) e.preventDefault();
+        game.keys[gameKey] = true;
+        if(!gameStarted || e.repeat) return;
+        if(gameKey === "i") return toggleInventory();
+        if(gameKey === "k") return openSkillWindow();
+        if(gameKey === "m") return toggleZoneSelect();
+        if(gameKey >= "1" && gameKey <= "5") {
+            game.selectedItemHotbar = Number(gameKey)-1;
+            useItemHotbar(); renderItemHotbar(); renderInventoryHotbar(); return;
+        }
+        const skillKeyMap={q:0,e:1,r:2,t:3,f:4};
+        if(Object.prototype.hasOwnProperty.call(skillKeyMap,gameKey)) {
+            game.selectedSkillHotbar=skillKeyMap[gameKey]; useSkillHotbar(); renderSkillBar(); return;
+        }
+        if(gameKey === "escape") {
+            const ids=["inventory","skill-window","shop","forge-panel","zone-select","map-window"];
+            const open=ids.some(id=>document.getElementById(id)?.style.display === "block") || document.getElementById("structure-interact")?.style.display === "block";
+            if(open) closeAllPanels(); else togglePause();
+        }
+    }
+);
+
+document.addEventListener(
+    "keyup",
+    function(e) {
+        const map={KeyW:"w",KeyA:"a",KeyS:"s",KeyD:"d",KeyQ:"q",KeyE:"e",KeyR:"r",KeyT:"t",KeyF:"f",KeyM:"m",KeyK:"k",KeyI:"i",Digit1:"1",Digit2:"2",Digit3:"3",Digit4:"4",Digit5:"5",Escape:"escape",Space:" "};
+        game.keys[map[e.code] || e.key.toLowerCase()] = false;
+    }
+);
+
+
+/* =========================================================
+   MOUSE
+========================================================= */
+
+canvas.addEventListener(
+    "mousemove",
+    function(e) {
+
+        game.mouse.x =
+            e.clientX;
+
+        game.mouse.y =
+            e.clientY;
+
+        game.player.facingAngle =
+            Math.atan2(
+                e.clientY -
+                canvas.height / 2,
+
+                e.clientX -
+                canvas.width / 2
+            );
+
+    }
+);
+
+
+canvas.addEventListener(
+    "mousedown",
+    function(e) {
+
+        if(e.button === 0) {
+
+            playerAttack();
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   NORMAL ATTACK
+========================================================= */
+
+function playerAttack() {
+
+    if(
+        !gameStarted ||
+        gameOver ||
+        isPaused
+    )
+        return;
+
+    const now =
+        performance.now();
+
+    const weapon =
+        getEquippedWeapon();
+
+    const cooldown =
+        weapon
+        ? weapon.cooldown
+        : 500;
+
+    if(
+        now -
+        game.player.lastAttack <
+        cooldown
+    )
+        return;
+
+    game.player.lastAttack = now;
+
+    const angle =
+        game.player.facingAngle;
+
+    if(!weapon) {
+
+        performMeleeAttack(
+            55,
+            1.2,
+            game.player.damage,
+            "fist",
+            angle
+        );
+
+        return;
+
+    }
+
+    if(
+        weapon.attackType ===
+        "melee"
+    ) {
+
+        performMeleeAttack(
+            weapon.range,
+            weapon.arc,
+            getTotalAttackDamage(),
+            game.equipment.weapon,
+            angle
+        );
+
+    }
+
+    else if(
+        weapon.attackType ===
+        "magic"
+    ) {
+
+        fireMagicProjectile(
+            angle,
+            weapon
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   MELEE
+========================================================= */
+
+function performMeleeAttack(
+    range,
+    arc,
+    damage,
+    type,
+    angle
+) {
+
+    game.player.attackAnimation = {
+
+        type:type,
+
+        start:performance.now(),
+
+        duration:
+            type === "blessed_sword"
+            ? 320
+            : 250,
+
+        angle:angle
+
+    };
+
+    for(const monster of [...game.monsters]) {
+
+        const dx =
+            monster.x -
+            game.player.x;
+
+        const dy =
+            monster.y -
+            game.player.y;
+
+        const d =
+            Math.hypot(dx,dy);
+
+        if(
+            d >
+            range +
+            monster.radius
+        )
+            continue;
+
+        const monsterAngle =
+            Math.atan2(dy,dx);
+
+        const diff =
+            normalizeAngle(
+                monsterAngle -
+                angle
+            );
+
+        if(
+            Math.abs(diff) <=
+            arc / 2
+        ) {
+
+            monster.hp -= damage;
+
+            monster.attackFlash =
+                performance.now() + 100;
+
+            if(monster.hp <= 0)
+                killMonster(monster);
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   MAGIC PROJECTILE
+========================================================= */
+
+function fireMagicProjectile(
+    angle,
+    weapon
+) {
+
+    const speed =
+        weapon.projectileSpeed || 9;
+
+    game.bullets.push({
+
+        type:"magic",
+
+        x:game.player.x,
+        y:game.player.y,
+
+        vx:Math.cos(angle) * speed,
+        vy:Math.sin(angle) * speed,
+
+        damage:getTotalAttackDamage(),
+
+        radius:7,
+
+        travelled:0,
+
+        maxDistance:
+            weapon.range || 700,
+
+        color:"#d66bff"
+
+    });
+
+    game.player.attackAnimation = {
+
+        type:"magic_staff",
+
+        start:performance.now(),
+
+        duration:180,
+
+        angle:angle
+
+    };
+
+}
+
+
+/* =========================================================
+   PLAYER MOVEMENT
+========================================================= */
+
+function updatePlayer() {
+
+    let dx = 0;
+    let dy = 0;
+
+    if(
+        game.keys["w"] ||
+        game.keys["arrowup"]
+    )
+        dy--;
+
+    if(
+        game.keys["s"] ||
+        game.keys["arrowdown"]
+    )
+        dy++;
+
+    if(
+        game.keys["a"] ||
+        game.keys["arrowleft"]
+    )
+        dx--;
+
+    if(
+        game.keys["d"] ||
+        game.keys["arrowright"]
+    )
+        dx++;
+
+    if(
+        dx !== 0 ||
+        dy !== 0
+    ) {
+
+        const len =
+            Math.hypot(dx,dy);
+
+        dx /= len;
+        dy /= len;
+
+        game.player.x +=
+            dx * game.player.speed;
+
+        game.player.y +=
+            dy * game.player.speed;
+
+        game.player.movementAnimation +=
+            0.2;
+
+    }
+
+    game.player.x =
+        clamp(
+            game.player.x,
+            game.player.radius,
+            currentWorldSize -
+            game.player.radius
+        );
+
+    game.player.y =
+        clamp(
+            game.player.y,
+            game.player.radius,
+            currentWorldSize -
+            game.player.radius
+        );
+
+}
+
+
+/* =========================================================
+   CAMERA
+========================================================= */
+
+function updateCamera() {
+
+    game.camera.x =
+        game.player.x -
+        canvas.width / 2;
+
+    game.camera.y =
+        game.player.y -
+        canvas.height / 2;
+
+    game.camera.x =
+        clamp(
+            game.camera.x,
+            0,
+            Math.max(
+                0,
+                currentWorldSize -
+                canvas.width
+            )
+        );
+
+    game.camera.y =
+        clamp(
+            game.camera.y,
+            0,
+            Math.max(
+                0,
+                currentWorldSize -
+                canvas.height
+            )
+        );
+
+}
+
+
+/* =========================================================
+   MONSTER SPAWN
+========================================================= */
+
+function spawnMonster() {
+
+    if(
+        game.currentZone === "town"
+    )
+        return;
+
+    if(
+        game.monsters.length >= 25
+    )
+        return;
+
+    const zone =
+        ZONES[game.currentZone];
+
+    if(!zone ||
+       !zone.spawns.length)
+        return;
+
+    const type =
+        zone.spawns[
+            Math.floor(
+                Math.random() *
+                zone.spawns.length
+            )
+        ];
+
+    const data =
+        MONSTERS[type];
+
+    const angle =
+        Math.random() *
+        Math.PI * 2;
+
+    const spawnDistance =
+        600 +
+        Math.random() * 300;
+
+    let x =
+        game.player.x +
+        Math.cos(angle) *
+        spawnDistance;
+
+    let y =
+        game.player.y +
+        Math.sin(angle) *
+        spawnDistance;
+
+    x =
+        clamp(
+            x,
+            50,
+            currentWorldSize - 50
+        );
+
+    y =
+        clamp(
+            y,
+            50,
+            currentWorldSize - 50
+        );
+
+    const level =
+        game.player.level;
+
+    const hpMultiplier =
+        1 +
+        Math.min(
+            0.8,
+            level * 0.08
+        );
+
+    const damageMultiplier =
+        Math.min(
+            0.70,
+            0.45 +
+            level * 0.01
+        );
+
+    game.monsters.push({
+
+        type:type,
+
+        x:x,
+        y:y,
+
+        radius:
+            data.isElite
+            ? 30
+            : 22,
+
+        hp:
+            data.hp *
+            hpMultiplier,
+
+        maxHp:
+            data.hp *
+            hpMultiplier,
+
+        damage:
+            data.damage *
+            damageMultiplier,
+
+        speed:data.speed,
+
+        exp:data.exp,
+
+        color:data.color,
+
+        emoji:data.emoji,
+
+        vision:data.vision,
+
+        attackRange:
+            data.attackRange,
+
+        loot:data.loot,
+
+        isElite:
+            data.isElite || false,
+
+        lastAttack:0,
+
+        attackCooldown:
+            900 +
+            Math.random() * 300,
+
+        attackFlash:0
+
+    });
+
+}
+
+
+/* =========================================================
+   BULLETS
+========================================================= */
+
+function updateBullets() {
+
+    for(
+        let i=game.bullets.length-1;
+        i>=0;
+        i--
+    ) {
+
+        const bullet =
+            game.bullets[i];
+
+        bullet.x += bullet.vx;
+        bullet.y += bullet.vy;
+
+        bullet.travelled +=
+            Math.hypot(
+                bullet.vx,
+                bullet.vy
+            );
+
+        if(
+            bullet.travelled >
+            bullet.maxDistance
+        ) {
+
+            game.bullets.splice(i,1);
+            continue;
+
+        }
+
+        let hit = false;
+
+        for(
+            const monster of
+            [...game.monsters]
+        ) {
+
+            const d =
+                Math.hypot(
+                    bullet.x -
+                    monster.x,
+
+                    bullet.y -
+                    monster.y
+                );
+
+            if(
+                d <=
+                bullet.radius +
+                monster.radius
+            ) {
+
+                monster.hp -=
+                    bullet.damage;
+
+                monster.attackFlash =
+                    performance.now() + 100;
+
+                hit = true;
+
+                if(monster.hp <= 0)
+                    killMonster(monster);
+
+                break;
+
+            }
+
+        }
+
+        if(hit) {
+
+            game.bullets.splice(i,1);
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   MONSTER AI
+========================================================= */
+
+function updateMonsters() {
+
+    const now =
+        performance.now();
+
+    for(const monster of game.monsters) {
+
+        const dx =
+            game.player.x -
+            monster.x;
+
+        const dy =
+            game.player.y -
+            monster.y;
+
+        const d =
+            Math.hypot(dx,dy);
+
+        if(
+            d >
+            monster.vision
+        )
+            continue;
+
+        if(
+            d >
+            monster.attackRange +
+            game.player.radius
+        ) {
+
+            if(d > 0) {
+
+                monster.x +=
+                    dx / d *
+                    monster.speed;
+
+                monster.y +=
+                    dy / d *
+                    monster.speed;
+
+            }
+
+        }
+        else {
+
+            if(
+                now -
+                monster.lastAttack >=
+                monster.attackCooldown
+            ) {
+
+                monster.lastAttack =
+                    now;
+
+                if(
+                    now <
+                    game.player.invincibleUntil
+                )
+                    continue;
+
+                const damage =
+                    Math.max(
+                        1,
+                        monster.damage -
+                        getDefense()
+                    );
+
+                game.player.hp -=
+                    damage;
+
+                monster.attackFlash =
+                    now + 120;
+
+                game.effects.push({
+
+                    type:"playerHit",
+
+                    x:game.player.x,
+                    y:game.player.y,
+
+                    start:now,
+                    duration:200
+
+                });
+
+                if(
+                    game.player.hp <= 0
+                ) {
+
+                    game.player.hp = 0;
+
+                    triggerGameOver();
+
+                    return;
+
+                }
+
+            }
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   DROP
+========================================================= */
+
+function killMonster(monster) {
+
+    const index =
+        game.monsters.indexOf(monster);
+
+    if(index === -1)
+        return;
+
+    game.monsters.splice(
+        index,
+        1
+    );
+
+    game.player.kills++;
+
+    gainExp(monster.exp);
+
+    dropMonsterLoot(monster);
+
+}
+
+
+/*
+ * 몬스터 위치에 직접 아이템을 생성.
+ */
+function dropMonsterLoot(monster) {
+
+    for(const loot of monster.loot) {
+
+        if(
+            Math.random() >
+            loot.rate
+        )
+            continue;
+
+        game.groundItems.push({
+
+            id:loot.item,
+
+            amount:
+                loot.amount,
+
+            x:
+                monster.x +
+                (Math.random()-0.5)*30,
+
+            y:
+                monster.y +
+                (Math.random()-0.5)*30,
+
+            bob:
+                Math.random() *
+                Math.PI * 2
+
+        });
+
+    }
+
+}
+
+
+function updateGroundItems() {
+
+    for(
+        let i=game.groundItems.length-1;
+        i>=0;
+        i--
+    ) {
+
+        const item =
+            game.groundItems[i];
+
+        item.bob += 0.05;
+
+        const d =
+            Math.hypot(
+                item.x -
+                game.player.x,
+
+                item.y -
+                game.player.y
+            );
+
+        if(d <= 42) {
+
+            const picked =
+                addToInventory(
+                    item.id,
+                    item.amount
+                );
+
+            if(picked) {
+
+                const data =
+                    ITEMS[item.id];
+
+                showDropNotification(
+                    `${data.emoji} ${data.name} +${item.amount}`
+                );
+
+                game.groundItems.splice(
+                    i,
+                    1
+                );
+
+            }
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   EXP
+========================================================= */
+
+function gainExp(amount) {
+
+    game.player.exp += amount;
+
+    while(
+        game.player.exp >=
+        game.player.maxExp
+    ) {
+
+        game.player.exp -=
+            game.player.maxExp;
+
+        game.player.level++;
+
+        game.player.maxExp =
+            Math.round(
+                game.player.maxExp * 1.25
+            );
+
+        game.player.maxHp += 10;
+
+        game.player.hp =
+            game.player.maxHp;
+
+        game.player.damage += 2;
+
+        showDropNotification(
+            `🎉 LEVEL UP! LV.${game.player.level}`
+        );
+
+    }
+
+    updateUI();
+
+}
+
+
+/* =========================================================
+   STRUCTURES
+========================================================= */
+
+function checkNearbyStructure() {
+
+    if(
+        game.currentZone !== "town"
+    ) {
+
+        nearbyStructure = null;
+
+        document.getElementById(
+            "structure-interact"
+        ).style.display = "none";
+
+        return;
+
+    }
+
+    nearbyStructure = null;
+
+    let closest =
+        Infinity;
+
+    for(
+        const structure of STRUCTURES
+    ) {
+
+        const d =
+            Math.hypot(
+                game.player.x -
+                structure.x,
+
+                game.player.y -
+                structure.y
+            );
+
+        if(
+            d < 110 &&
+            d < closest
+        ) {
+
+            closest = d;
+
+            nearbyStructure =
+                structure;
+
+        }
+
+    }
+
+    const box =
+        document.getElementById(
+            "structure-interact"
+        );
+
+    const button =
+        document.getElementById(
+            "interact-button"
+        );
+
+    if(nearbyStructure) {
+
+        box.style.display = "block";
+
+        button.textContent =
+            `${nearbyStructure.name} 열기`;
+
+    }
+    else {
+
+        box.style.display = "none";
+
+    }
+
+}
+
+
+function interactStructure() {
+
+    if(!nearbyStructure)
+        return;
+
+    if(
+        nearbyStructure.type ===
+        "shop"
+    ) {
+
+        openShop();
+
+    }
+
+    else if(
+        nearbyStructure.type ===
+        "forge"
+    ) {
+
+        openForge();
+
+    }
+
+}
+
+
+/* =========================================================
+   SHOP
+========================================================= */
+
+function openShop() {
+
+    closeAllPanels();
+
+    document.getElementById(
+        "shop"
+    ).style.display = "block";
+
+    renderShop();
+
+}
+
+
+function renderShop() {
+
+    const grid =
+        document.getElementById(
+            "shop-grid"
+        );
+
+    grid.innerHTML = "";
+
+    const shopItems = [
+
+        {
+            id:"potion",
+            price:50
+        },
+
+        {
+            id:"sword",
+            price:200
+        },
+
+        {
+            id:"iron_armor",
+            price:180
+        },
+
+        {
+            id:"magic_staff",
+            price:500
+        },
+
+        {
+            id:"blessed_sword",
+            price:5000
+        }
+
+    ];
+
+    for(const shopItem of shopItems) {
+
+        const data =
+            ITEMS[shopItem.id];
+
+        const div =
+            document.createElement("div");
+
+        div.className =
+            "shop-item";
+
+        div.innerHTML = `
+
+            <div class="shop-item-name">
+                ${data.emoji}
+                ${data.name}
+            </div>
+
+            <div style="font-size:12px;color:#aaa;margin:4px 0;">
+                ${getItemDescription(shopItem.id)}
+            </div>
+
+            <div class="shop-item-price">
+                💰 ${shopItem.price}
+            </div>
+
+        `;
+
+        div.onclick = () =>
+            buyItem(
+                shopItem.id,
+                shopItem.price
+            );
+
+        grid.appendChild(div);
+
+    }
+
+}
+
+
+function getItemDescription(id) {
+
+    const item =
+        ITEMS[id];
+
+    if(
+        item.type === "weapon"
+    ) {
+
+        if(
+            item.attackType ===
+            "melee"
+        ) {
+
+            return `
+                공격력 +${item.damage}
+                | 근접
+            `;
+
+        }
+
+        return `
+            공격력 +${item.damage}
+            | 마법
+            | 사거리 ${item.range}
+        `;
+
+    }
+
+    if(
+        item.type === "armor"
+    ) {
+
+        return `
+            방어력 +${item.defense}
+        `;
+
+    }
+
+    if(
+        item.type === "consumable"
+    ) {
+
+        return "HP +50";
+
+    }
+
+    return "";
+
+}
+
+
+function buyItem(id,price) {
+
+    if(
+        game.player.gold <
+        price
+    ) {
+
+        showDropNotification(
+            "💰 금화가 부족합니다."
+        );
+
+        return;
+
+    }
+
+    /*
+     * 인벤 공간을 먼저 확인.
+     */
+    if(
+        id !== "gold" &&
+        getInventoryIndex(id) === -1 &&
+        getEmptyInventorySlot() === -1
+    ) {
+
+        showDropNotification(
+            "🎒 인벤토리가 가득 찼습니다."
+        );
+
+        return;
+
+    }
+
+    game.player.gold -= price;
+
+    /*
+     * 골드 인벤 수치를 먼저 동기화.
+     */
+    syncGoldInventory();
+
+    addToInventory(id,1);
+
+    showDropNotification(
+        `${ITEMS[id].emoji} ${ITEMS[id].name} 구매`
+    );
+
+    renderShop();
+    updateUI();
+
+}
+
+
+/* =========================================================
+   FORGE
+========================================================= */
+
+function openForge() {
+
+    closeAllPanels();
+
+    document.getElementById(
+        "forge-panel"
+    ).style.display = "block";
+
+    updateForgeUI();
+
+}
+
+
+function updateForgeUI() {
+
+    const info =
+        document.getElementById(
+            "forge-info"
+        );
+
+    const weapon =
+        getEquippedWeapon();
+
+    const button =
+        document.getElementById(
+            "forge-upgrade-button"
+        );
+
+    if(!weapon) {
+
+        info.innerHTML =
+            "먼저 무기를 장착하세요.";
+
+        button.disabled = true;
+
+        return;
+
+    }
+
+    button.disabled = false;
+
+    const level =
+        getWeaponUpgradeLevel();
+
+    const cost =
+        100 + level * 75;
+
+    const chance =
+        Math.round(
+            Math.max(
+                45,
+                90 -
+                level * 2.5
+            )
+        );
+
+    info.innerHTML = `
+
+        <div style="font-size:25px;">
+            ${weapon.emoji}
+        </div>
+
+        <strong>
+            ${weapon.name}
+        </strong>
+
+        <br>
+
+        강화:
+        <span style="color:#ffa502;">
+            +${level}
+        </span>
+
+        <br>
+
+        공격력:
+        <span style="color:#00f5ff;">
+            ${getTotalAttackDamage()}
+        </span>
+
+        <br>
+
+        비용:
+        <span style="color:#ffd700;">
+            💰 ${cost}
+        </span>
+
+        <br>
+
+        성공 확률:
+        <span style="color:#2ed573;">
+            ${chance}%
+        </span>
+
+        <div style="font-size:11px;color:#aaa;margin-top:7px;">
+            실패하면 강화 단계가 1 내려갑니다.
+        </div>
+
+    `;
+
+}
+
+
+function upgradeWeapon() {
+
+    const weaponId =
+        game.equipment.weapon;
+
+    if(!weaponId) {
+
+        showDropNotification(
+            "무기를 장착하세요."
+        );
+
+        return;
+
+    }
+
+    const level =
+        game.weaponUpgrade[weaponId] || 0;
+
+    if(level >= 20) {
+
+        showDropNotification(
+            "최대 강화입니다."
+        );
+
+        return;
+
+    }
+
+    const cost =
+        100 + level * 75;
+
+    if(
+        game.player.gold <
+        cost
+    ) {
+
+        showDropNotification(
+            "💰 금화가 부족합니다."
+        );
+
+        return;
+
+    }
+
+    game.player.gold -= cost;
+
+    syncGoldInventory();
+
+    const chance =
+        Math.max(
+            0.45,
+            0.90 -
+            level * 0.025
+        );
+
+    if(
+        Math.random() <
+        chance
+    ) {
+
+        game.weaponUpgrade[weaponId] =
+            level + 1;
+
+        showDropNotification(
+            `✨ 강화 성공! +${level+1}`
+        );
+
+    }
+    else {
+
+        game.weaponUpgrade[weaponId] =
+            Math.max(
+                0,
+                level - 1
+            );
+
+        showDropNotification(
+            `💥 강화 실패! +${Math.max(0,level-1)}`
+        );
+
+    }
+
+    updateForgeUI();
+    renderInventory();
+    updateUI();
+
+}
+
+
+/* =========================================================
+   ZONE
+========================================================= */
+
+function initZoneSelect() {
+
+    const container =
+        document.getElementById(
+            "zone-buttons"
+        );
+
+    container.innerHTML = "";
+
+    for(const key in ZONES) {
+
+        const zone =
+            ZONES[key];
+
+        const button =
+            document.createElement(
+                "button"
+            );
+
+        button.className =
+            "zone-btn";
+
+        if(
+            key === game.currentZone
+        ) {
+
+            button.classList.add(
+                "active"
+            );
+
+        }
+
+        button.textContent =
+            zone.name;
+
+        button.onclick = e => {
+            e.stopPropagation();
+            changeZone(key);
+        };
+
+        container.appendChild(
+            button
+        );
+
+    }
+
+}
+
+
+function toggleZoneSelect() {
+
+    if(
+        !gameStarted ||
+        gameOver
+    )
+        return;
+
+    const panel =
+        document.getElementById(
+            "zone-select"
+        );
+
+    if(
+        panel.style.display ===
+        "block"
+    ) {
+
+        panel.style.display =
+            "none";
+
+    }
+    else {
+
+        closeAllPanels();
+
+        panel.style.display =
+            "block";
+
+    }
+
+}
+
+
+function changeZone(key) {
+
+    if(
+        !ZONES[key] ||
+        !gameStarted ||
+        gameOver
+    )
+        return;
+
+    const zone =
+        ZONES[key];
+
+    // 지역을 바꾸기 전에 현재 지역의 이동/전투 상태를 정리한다.
+    game.currentZone = key;
+
+    currentWorldSize =
+        zone.worldSize;
+
+    game.player.x =
+        clamp(
+            zone.x,
+            game.player.radius,
+            currentWorldSize - game.player.radius
+        );
+
+    game.player.y =
+        clamp(
+            zone.y,
+            game.player.radius,
+            currentWorldSize - game.player.radius
+        );
+
+    game.monsters = [];
+    game.bullets = [];
+    game.groundItems = [];
+    game.effects = [];
+    nearbyStructure = null;
+
+    // 이전 지역의 카메라 위치가 새 지역에 남아 화면이 밀리는 문제 방지.
+    updateCamera();
+    lastSpawnTime = performance.now();
+
+    document.getElementById(
+        "zone-select"
+    ).style.display = "none";
+
+    initZoneSelect();
+    updateUI();
+
+}
+
+
+/* =========================================================
+   EFFECTS
+========================================================= */
+
+function updateEffects() {
+
+    const now =
+        performance.now();
+
+    game.effects =
+        game.effects.filter(
+            effect =>
+                now -
+                effect.start <
+                effect.duration
+        );
+
+}
+
+
+function drawEffects() {
+
+    const now =
+        performance.now();
+
+    for(
+        const effect of game.effects
+    ) {
+
+        const progress =
+            clamp(
+                (now-effect.start) /
+                effect.duration,
+                0,
+                1
+            );
+
+        ctx.save();
+
+        if(
+            effect.type ===
+            "explosion"
+        ) {
+
+            const radius =
+                40 +
+                progress * 210;
+
+            ctx.globalAlpha =
+                1-progress;
+
+            ctx.strokeStyle =
+                "#ff8c00";
+
+            ctx.lineWidth = 12;
+
+            ctx.beginPath();
+
+            ctx.arc(
+                effect.x,
+                effect.y,
+                radius,
+                0,
+                Math.PI*2
+            );
+
+            ctx.stroke();
+
+            ctx.strokeStyle =
+                "#ffff00";
+
+            ctx.lineWidth = 4;
+
+            ctx.beginPath();
+
+            ctx.arc(
+                effect.x,
+                effect.y,
+                radius * 0.7,
+                0,
+                Math.PI*2
+            );
+
+            ctx.stroke();
+
+        }
+
+        else if(
+            effect.type ===
+            "ultimate"
+        ) {
+
+            const radius =
+                30 +
+                progress * 300;
+
+            ctx.globalAlpha =
+                1-progress;
+
+            ctx.strokeStyle =
+                "#d66bff";
+
+            ctx.lineWidth = 15;
+
+            ctx.beginPath();
+
+            ctx.arc(
+                effect.x,
+                effect.y,
+                radius,
+                0,
+                Math.PI*2
+            );
+
+            ctx.stroke();
+
+            ctx.strokeStyle =
+                "#ffffff";
+
+            ctx.lineWidth = 4;
+
+            ctx.beginPath();
+
+            ctx.arc(
+                effect.x,
+                effect.y,
+                radius * 0.65,
+                0,
+                Math.PI*2
+            );
+
+            ctx.stroke();
+
+        }
+
+
+        else if(
+            effect.type ===
+            "lightning"
+        ) {
+
+            ctx.globalAlpha =
+                1-progress;
+
+            ctx.strokeStyle =
+                "#fff";
+
+            ctx.lineWidth = 8;
+
+            ctx.beginPath();
+
+            ctx.moveTo(
+                effect.x,
+                effect.y -
+                180
+            );
+
+            ctx.lineTo(
+                effect.x - 15,
+                effect.y - 110
+            );
+
+            ctx.lineTo(
+                effect.x + 15,
+                effect.y - 65
+            );
+
+            ctx.lineTo(
+                effect.x,
+                effect.y
+            );
+
+            ctx.stroke();
+
+            ctx.strokeStyle =
+                "#00f5ff";
+
+            ctx.lineWidth = 3;
+
+            ctx.stroke();
+
+        }
+
+        else if(
+            effect.type ===
+            "dash"
+        ) {
+
+            ctx.globalAlpha =
+                1-progress;
+
+            ctx.strokeStyle =
+                "#00f5ff";
+
+            ctx.lineWidth = 7;
+
+            ctx.beginPath();
+
+            ctx.moveTo(
+                effect.x,
+                effect.y
+            );
+
+            ctx.lineTo(
+                effect.targetX,
+                effect.targetY
+            );
+
+            ctx.stroke();
+
+            ctx.beginPath();
+
+            ctx.arc(
+                effect.targetX,
+                effect.targetY,
+                25 +
+                progress * 35,
+                0,
+                Math.PI*2
+            );
+
+            ctx.stroke();
+
+        }
+
+        else if(
+            effect.type ===
+            "roll"
+        ) {
+
+            ctx.globalAlpha =
+                1-progress;
+
+            ctx.strokeStyle =
+                "#ffffff";
+
+            ctx.lineWidth = 5;
+
+            ctx.beginPath();
+
+            ctx.moveTo(
+                effect.x,
+                effect.y
+            );
+
+            ctx.lineTo(
+                effect.targetX,
+                effect.targetY
+            );
+
+            ctx.stroke();
+
+            ctx.beginPath();
+
+            ctx.arc(
+                effect.targetX,
+                effect.targetY,
+                20 +
+                progress * 20,
+                0,
+                Math.PI*2
+            );
+
+            ctx.stroke();
+
+        }
+
+        else if(
+            effect.type ===
+            "playerHit"
+        ) {
+
+            ctx.globalAlpha =
+                1-progress;
+
+            ctx.strokeStyle =
+                "#ff4757";
+
+            ctx.lineWidth = 5;
+
+            ctx.beginPath();
+
+            ctx.arc(
+                effect.x,
+                effect.y,
+                30,
+                0,
+                Math.PI*2
+            );
+
+            ctx.stroke();
+
+        }
+
+        ctx.restore();
+
+    }
+
+}
+
+
+/* =========================================================
+   UPDATE
+========================================================= */
+
+function updateLogic() {
+
+    if(
+        !gameStarted ||
+        gameOver ||
+        isPaused
+    )
+        return;
+
+    updatePlayer();
+
+    updateCamera();
+
+    checkNearbyStructure();
+
+    updateBullets();
+
+    updateMonsters();
+
+    updateGroundItems();
+
+    updateEffects();
+
+    const now =
+        performance.now();
+
+    // 자동 회복: 전투 중에도 1초마다 HP 2 회복.
+    // 최대 HP를 넘지 않으며, 이미 풀피라면 아무 일도 하지 않는다.
+    if(
+        now - lastRegenTime >= 1000
+    ) {
+        if(game.player.hp > 0 && game.player.hp < game.player.maxHp) {
+            game.player.hp = Math.min(
+                game.player.maxHp,
+                game.player.hp + 2
+            );
+        }
+        lastRegenTime = now;
+    }
+
+    if(
+        game.currentZone !== "town" &&
+        now -
+        lastSpawnTime >
+        1800
+    ) {
+
+        spawnMonster();
+
+        lastSpawnTime = now;
+
+    }
+
+}
+
+
+/* =========================================================
+   UI
+========================================================= */
+
+function updateUI() {
+
+    const p =
+        game.player;
+
+    document.getElementById(
+        "hp-bar"
+    ).style.width =
+        `${clamp(
+            p.hp/p.maxHp*100,
+            0,
+            100
+        )}%`;
+
+    document.getElementById(
+        "exp-bar"
+    ).style.width =
+        `${clamp(
+            p.exp/p.maxExp*100,
+            0,
+            100
+        )}%`;
+
+    document.getElementById(
+        "level-text"
+    ).textContent =
+        `LV. ${p.level} 네크로맨서`;
+
+    document.getElementById(
+        "score-text"
+    ).textContent =
+        `처치: ${p.kills} | 공격력: ${getTotalAttackDamage()} | 방어력: ${getDefense()}`;
+
+    document.getElementById(
+        "zone-text"
+    ).textContent =
+        `🗺️ ${ZONES[game.currentZone].name}`;
+
+    document.getElementById(
+        "gold-display"
+    ).textContent =
+        p.gold;
+
+    updateEquipmentUI();
+    updateSkillCooldowns();
+
+}
+
+
+/* =========================================================
+   COOLDOWN UI
+========================================================= */
+
+function updateSkillCooldowns() {
+
+    const now =
+        performance.now();
+
+    for(let i=0;i<5;i++) {
+
+        const skillId =
+            game.skillHotbar[i];
+
+        const overlay =
+            document.getElementById(
+                `skill-cooldown-${i}`
+            );
+
+        if(!overlay)
+            continue;
+
+        if(
+            !skillId ||
+            !SKILLS[skillId]
+        ) {
+
+            overlay.style.height =
+                "0%";
+
+            continue;
+
+        }
+
+        const skill =
+            SKILLS[skillId];
+
+        const last =
+            skillLastUsed[skillId] || 0;
+
+        const elapsed =
+            now - last;
+
+        const remain =
+            Math.max(
+                0,
+                skill.cooldown -
+                elapsed
+            );
+
+        const percent =
+            remain /
+            skill.cooldown *
+            100;
+
+        overlay.style.height =
+            `${percent}%`;
+
+    }
+
+}
+
+
+/* =========================================================
+   NOTIFICATION
+========================================================= */
+
+function showDropNotification(text) {
+
+    const div =
+        document.createElement(
+            "div"
+        );
+
+    div.className =
+        "drop-notification";
+
+    div.textContent = text;
+
+    document.body.appendChild(div);
+
+    setTimeout(
+        () => div.remove(),
+        1800
+    );
+
+}
+
+
+/* =========================================================
+   GAME OVER
+========================================================= */
+
+function triggerGameOver() {
+
+    if(gameOver)
+        return;
+
+    gameOver = true;
+
+    document.getElementById(
+        "game-over"
+    ).style.display = "block";
+
+    document.getElementById(
+        "game-over-stats"
+    ).innerHTML = `
+
+        <div>
+            레벨: ${game.player.level}
+        </div>
+
+        <div>
+            처치: ${game.player.kills}
+        </div>
+
+        <div>
+            금화: ${game.player.gold}
+        </div>
+
+    `;
+
+}
+
+
+/* =========================================================
+   PAUSE
+========================================================= */
+
+function togglePause() {
+
+    if(
+        !gameStarted ||
+        gameOver
+    )
+        return;
+
+    isPaused = !isPaused;
+
+    document.getElementById(
+        "pause-overlay"
+    ).classList.toggle(
+        "active",
+        isPaused
+    );
+
+}
+
+
+/* =========================================================
+   DRAW WORLD
+========================================================= */
+
+function drawWorld() {
+
+    const zone =
+        ZONES[game.currentZone];
+
+    ctx.fillStyle =
+        zone.color;
+
+    ctx.fillRect(
+        0,
+        0,
+        currentWorldSize,
+        currentWorldSize
+    );
+
+    ctx.strokeStyle =
+        "rgba(255,255,255,0.04)";
+
+    ctx.lineWidth = 1;
+
+    for(
+        let x=0;
+        x<=currentWorldSize;
+        x+=100
+    ) {
+
+        ctx.beginPath();
+
+        ctx.moveTo(x,0);
+
+        ctx.lineTo(
+            x,
+            currentWorldSize
+        );
+
+        ctx.stroke();
+
+    }
+
+    for(
+        let y=0;
+        y<=currentWorldSize;
+        y+=100
+    ) {
+
+        ctx.beginPath();
+
+        ctx.moveTo(0,y);
+
+        ctx.lineTo(
+            currentWorldSize,
+            y
+        );
+
+        ctx.stroke();
+
+    }
+
+}
+
+
+/* =========================================================
+   STRUCTURES DRAW
+========================================================= */
+
+function drawStructures() {
+
+    if(
+        game.currentZone !== "town"
+    )
+        return;
+
+    for(
+        const structure of STRUCTURES
+    ) {
+
+        ctx.fillStyle =
+            structure.color;
+
+        ctx.fillRect(
+            structure.x -
+            structure.size/2,
+
+            structure.y -
+            structure.size/2,
+
+            structure.size,
+            structure.size
+        );
+
+        ctx.strokeStyle =
+            nearbyStructure === structure
+            ? "#00f5ff"
+            : "#222";
+
+        ctx.lineWidth =
+            nearbyStructure === structure
+            ? 4
+            : 2;
+
+        ctx.strokeRect(
+            structure.x -
+            structure.size/2,
+
+            structure.y -
+            structure.size/2,
+
+            structure.size,
+            structure.size
+        );
+
+        ctx.textAlign = "center";
+        ctx.font = "20px Arial";
+
+        ctx.fillStyle = "#fff";
+
+        ctx.fillText(
+            structure.name.split(" ")[0],
+            structure.x,
+            structure.y + 7
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   GROUND ITEMS DRAW
+========================================================= */
+
+function drawGroundItems() {
+
+    for(
+        const item of game.groundItems
+    ) {
+
+        const data =
+            ITEMS[item.id];
+
+        if(!data)
+            continue;
+
+        const bob =
+            Math.sin(item.bob) * 4;
+
+        ctx.save();
+
+        ctx.shadowColor =
+            "#00f5ff";
+
+        ctx.shadowBlur = 8;
+
+        ctx.font = "25px Arial";
+        ctx.textAlign = "center";
+
+        ctx.fillText(
+            data.emoji,
+            item.x,
+            item.y + bob
+        );
+
+        ctx.restore();
+
+    }
+
+}
+
+
+/* =========================================================
+   BULLETS DRAW
+========================================================= */
+
+function drawBullets() {
+
+    for(
+        const bullet of game.bullets
+    ) {
+
+        ctx.save();
+
+        ctx.fillStyle =
+            bullet.color ||
+            "#fff";
+
+        ctx.shadowColor =
+            bullet.color ||
+            "#fff";
+
+        ctx.shadowBlur = 12;
+
+        ctx.beginPath();
+
+        ctx.arc(
+            bullet.x,
+            bullet.y,
+            bullet.radius,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+
+        ctx.restore();
+
+    }
+
+}
+
+
+/* =========================================================
+   MONSTER DRAW
+========================================================= */
+
+function drawMonsters() {
+
+    for(
+        const monster of game.monsters
+    ) {
+
+        ctx.textAlign = "center";
+
+        ctx.font =
+            monster.isElite
+            ? "36px Arial"
+            : "28px Arial";
+
+        ctx.fillText(
+            monster.emoji,
+            monster.x,
+            monster.y + 10
+        );
+
+        const barWidth =
+            monster.isElite
+            ? 65
+            : 45;
+
+        const hp =
+            clamp(
+                monster.hp /
+                monster.maxHp,
+                0,
+                1
+            );
+
+        ctx.fillStyle = "#222";
+
+        ctx.fillRect(
+            monster.x -
+            barWidth/2,
+
+            monster.y -
+            monster.radius -
+            14,
+
+            barWidth,
+            5
+        );
+
+        ctx.fillStyle =
+            "#ff4757";
+
+        ctx.fillRect(
+            monster.x -
+            barWidth/2,
+
+            monster.y -
+            monster.radius -
+            14,
+
+            barWidth * hp,
+            5
+        );
+
+        if(
+            monster.attackFlash >
+            performance.now()
+        ) {
+
+            ctx.strokeStyle =
+                "#fff";
+
+            ctx.lineWidth = 3;
+
+            ctx.beginPath();
+
+            ctx.arc(
+                monster.x,
+                monster.y,
+                monster.radius + 5,
+                0,
+                Math.PI*2
+            );
+
+            ctx.stroke();
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   PLAYER DRAW
+========================================================= */
+
+function drawPlayer() {
+
+    const p =
+        game.player;
+
+    ctx.save();
+
+    if(
+        performance.now() <
+        p.invincibleUntil
+    ) {
+
+        ctx.globalAlpha =
+            0.55 +
+            Math.sin(
+                performance.now()/40
+            ) * 0.3;
+
+    }
+
+    ctx.beginPath();
+
+    ctx.arc(
+        p.x,
+        p.y,
+        p.radius,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fillStyle =
+        "#00f5ff";
+
+    ctx.fill();
+
+    ctx.strokeStyle =
+        "#fff";
+
+    ctx.lineWidth = 2;
+
+    ctx.stroke();
+
+    ctx.restore();
+
+    drawWeapon();
+
+    drawAttackAnimation();
+
+}
+
+
+/* =========================================================
+   WEAPON DRAW
+========================================================= */
+
+function drawWeapon() {
+
+    const weapon =
+        getEquippedWeapon();
+
+    if(!weapon)
+        return;
+
+    const p =
+        game.player;
+
+    const angle =
+        p.facingAngle;
+
+    const handX =
+        p.x +
+        Math.cos(angle)*10;
+
+    const handY =
+        p.y +
+        Math.sin(angle)*10;
+
+
+    if(
+        weapon.attackType ===
+        "melee"
+    ) {
+
+        const length =
+            game.equipment.weapon ===
+            "blessed_sword"
+            ? 45
+            : 37;
+
+        const endX =
+            handX +
+            Math.cos(angle) *
+            length;
+
+        const endY =
+            handY +
+            Math.sin(angle) *
+            length;
+
+        ctx.strokeStyle =
+            game.equipment.weapon ===
+            "blessed_sword"
+            ? "#ffe66d"
+            : "#ddd";
+
+        ctx.lineWidth =
+            game.equipment.weapon ===
+            "blessed_sword"
+            ? 7
+            : 6;
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            handX,
+            handY
+        );
+
+        ctx.lineTo(
+            endX,
+            endY
+        );
+
+        ctx.stroke();
+
+        ctx.strokeStyle =
+            "#7b4f2c";
+
+        ctx.lineWidth = 4;
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            handX -
+            Math.cos(angle)*5,
+
+            handY -
+            Math.sin(angle)*5
+        );
+
+        ctx.lineTo(
+            handX +
+            Math.cos(angle)*7,
+
+            handY +
+            Math.sin(angle)*7
+        );
+
+        ctx.stroke();
+
+    }
+
+    else if(
+        weapon.attackType ===
+        "magic"
+    ) {
+
+        const endX =
+            handX +
+            Math.cos(angle)*30;
+
+        const endY =
+            handY +
+            Math.sin(angle)*30;
+
+        ctx.strokeStyle =
+            "#d66bff";
+
+        ctx.lineWidth = 5;
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            handX,
+            handY
+        );
+
+        ctx.lineTo(
+            endX,
+            endY
+        );
+
+        ctx.stroke();
+
+        ctx.fillStyle =
+            "#fff";
+
+        ctx.beginPath();
+
+        ctx.arc(
+            endX,
+            endY,
+            5,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+
+    }
+
+}
+
+
+/* =========================================================
+   ATTACK ANIMATION
+========================================================= */
+
+function drawAttackAnimation() {
+
+    const animation =
+        game.player.attackAnimation;
+
+    if(!animation.type)
+        return;
+
+    const now =
+        performance.now();
+
+    const progress =
+        (now -
+        animation.start) /
+        animation.duration;
+
+    if(progress >= 1) {
+
+        animation.type = null;
+
+        return;
+
+    }
+
+    const p =
+        game.player;
+
+
+    if(
+        animation.type ===
+        "sword" ||
+        animation.type ===
+        "blessed_sword"
+    ) {
+
+        const weapon =
+            getEquippedWeapon();
+
+        if(!weapon)
+            return;
+
+        ctx.save();
+
+        ctx.globalAlpha =
+            1-progress;
+
+        ctx.strokeStyle =
+            animation.type ===
+            "blessed_sword"
+            ? "#ffe66d"
+            : "#fff";
+
+        ctx.lineWidth =
+            animation.type ===
+            "blessed_sword"
+            ? 10
+            : 7;
+
+        const radius =
+            weapon.range;
+
+        const start =
+            animation.angle -
+            weapon.arc/2 +
+            progress *
+            weapon.arc;
+
+        const end =
+            start +
+            weapon.arc * 0.6;
+
+        ctx.beginPath();
+
+        ctx.arc(
+            p.x,
+            p.y,
+            radius,
+            start,
+            end
+        );
+
+        ctx.stroke();
+
+        ctx.restore();
+
+    }
+
+    else if(
+        animation.type ===
+        "fist"
+    ) {
+
+        ctx.save();
+
+        ctx.globalAlpha =
+            1-progress;
+
+        ctx.strokeStyle =
+            "#fff";
+
+        ctx.lineWidth = 5;
+
+        ctx.beginPath();
+
+        ctx.arc(
+            p.x,
+            p.y,
+            55,
+            animation.angle-0.6,
+            animation.angle+0.6
+        );
+
+        ctx.stroke();
+
+        ctx.restore();
+
+    }
+
+    else if(
+        animation.type ===
+        "magic_staff"
+    ) {
+
+        ctx.save();
+
+        ctx.globalAlpha =
+            1-progress;
+
+        ctx.strokeStyle =
+            "#d66bff";
+
+        ctx.lineWidth = 6;
+
+        ctx.beginPath();
+
+        ctx.arc(
+            p.x,
+            p.y,
+            32,
+            animation.angle-0.3,
+            animation.angle+0.3
+        );
+
+        ctx.stroke();
+
+        ctx.restore();
+
+    }
+
+    else if(
+        animation.type ===
+        "multi"
+    ) {
+
+        ctx.save();
+
+        ctx.globalAlpha =
+            1-progress;
+
+        ctx.strokeStyle =
+            "#00f5ff";
+
+        ctx.lineWidth = 4;
+
+        ctx.beginPath();
+
+        ctx.arc(
+            p.x,
+            p.y,
+            40 +
+            progress*25,
+            animation.angle-0.6,
+            animation.angle+0.6
+        );
+
+        ctx.stroke();
+
+        ctx.restore();
+
+    }
+
+}
+
+
+/* =========================================================
+   CROSSHAIR
+========================================================= */
+
+function drawCrosshair() {
+
+    const x =
+        game.mouse.x;
+
+    const y =
+        game.mouse.y;
+
+    ctx.strokeStyle =
+        "rgba(255,255,255,0.7)";
+
+    ctx.lineWidth = 1;
+
+    ctx.beginPath();
+
+    ctx.moveTo(x-8,y);
+    ctx.lineTo(x+8,y);
+
+    ctx.moveTo(x,y-8);
+    ctx.lineTo(x,y+8);
+
+    ctx.stroke();
+
+}
+
+
+/* =========================================================
+   MINIMAP
+========================================================= */
+
+function drawMinimap() {
+
+    mCtx.clearRect(
+        0,
+        0,
+        mCanvas.width,
+        mCanvas.height
+    );
+
+    const scale =
+        mCanvas.width /
+        currentWorldSize;
+
+    mCtx.fillStyle =
+        ZONES[game.currentZone].color;
+
+    mCtx.fillRect(
+        0,
+        0,
+        mCanvas.width,
+        mCanvas.height
+    );
+
+
+    if(
+        game.currentZone === "town"
+    ) {
+
+        for(
+            const structure of STRUCTURES
+        ) {
+
+            mCtx.fillStyle =
+                structure.color;
+
+            mCtx.fillRect(
+                structure.x*scale-3,
+                structure.y*scale-3,
+                6,
+                6
+            );
+
+        }
+
+    }
+
+
+    for(
+        const monster of game.monsters
+    ) {
+
+        mCtx.fillStyle =
+            "#ff4757";
+
+        mCtx.beginPath();
+
+        mCtx.arc(
+            monster.x*scale,
+            monster.y*scale,
+            monster.isElite
+            ? 3
+            : 2,
+            0,
+            Math.PI*2
+        );
+
+        mCtx.fill();
+
+    }
+
+
+    for(
+        const item of game.groundItems
+    ) {
+
+        mCtx.fillStyle =
+            "#ffa502";
+
+        mCtx.fillRect(
+            item.x*scale-2,
+            item.y*scale-2,
+            4,
+            4
+        );
+
+    }
+
+
+    mCtx.fillStyle =
+        "#00f5ff";
+
+    mCtx.beginPath();
+
+    mCtx.arc(
+        game.player.x*scale,
+        game.player.y*scale,
+        4,
+        0,
+        Math.PI*2
+    );
+
+    mCtx.fill();
+
+}
+
+
+/* =========================================================
+   BIG MAP
+========================================================= */
+
+function drawBigMap() {
+
+    const rect =
+        bigMap.getBoundingClientRect();
+
+    bigMap.width =
+        Math.max(
+            500,
+            Math.floor(rect.width)
+        );
+
+    bigMap.height =
+        Math.max(
+            400,
+            Math.floor(rect.height)
+        );
+
+    const w =
+        bigMap.width;
+
+    const h =
+        bigMap.height;
+
+    bigMapCtx.clearRect(
+        0,
+        0,
+        w,
+        h
+    );
+
+    /*
+     * 전체 세계를 4000 x 4000 기준으로 표시.
+     */
+    bigMapCtx.fillStyle =
+        "#111";
+
+    bigMapCtx.fillRect(
+        0,
+        0,
+        w,
+        h
+    );
+
+    for(const key in ZONES) {
+
+        const zone =
+            ZONES[key];
+
+        const x =
+            zone.x /
+            WORLD_SIZE_NORMAL *
+            w;
+
+        const y =
+            zone.y /
+            WORLD_SIZE_NORMAL *
+            h;
+
+        bigMapCtx.fillStyle =
+            zone.color;
+
+        bigMapCtx.globalAlpha =
+            0.85;
+
+        bigMapCtx.fillRect(
+            x-70,
+            y-55,
+            140,
+            110
+        );
+
+        bigMapCtx.globalAlpha =
+            1;
+
+        bigMapCtx.strokeStyle =
+            key === game.currentZone
+            ? "#00f5ff"
+            : "#555";
+
+        bigMapCtx.lineWidth =
+            key === game.currentZone
+            ? 4
+            : 2;
+
+        bigMapCtx.strokeRect(
+            x-70,
+            y-55,
+            140,
+            110
+        );
+
+        bigMapCtx.fillStyle =
+            "#fff";
+
+        bigMapCtx.font =
+            "14px Arial";
+
+        bigMapCtx.textAlign =
+            "center";
+
+        bigMapCtx.fillText(
+            zone.name,
+            x,
+            y
+        );
+
+    }
+
+    /*
+     * 현재 플레이어 위치.
+     */
+    const px =
+        game.player.x /
+        currentWorldSize *
+        w;
+
+    const py =
+        game.player.y /
+        currentWorldSize *
+        h;
+
+    bigMapCtx.fillStyle =
+        "#00f5ff";
+
+    bigMapCtx.shadowColor =
+        "#00f5ff";
+
+    bigMapCtx.shadowBlur =
+        15;
+
+    bigMapCtx.beginPath();
+
+    bigMapCtx.arc(
+        px,
+        py,
+        8,
+        0,
+        Math.PI*2
+    );
+
+    bigMapCtx.fill();
+
+    bigMapCtx.shadowBlur = 0;
+
+}
+
+
+/* =========================================================
+   DRAW GAME
+========================================================= */
+
+function drawGame() {
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    ctx.save();
+
+    ctx.translate(
+        -game.camera.x,
+        -game.camera.y
+    );
+
+    drawWorld();
+
+    drawStructures();
+
+    drawGroundItems();
+
+    drawBullets();
+
+    drawMonsters();
+
+    drawEffects();
+
+    drawPlayer();
+
+    ctx.restore();
+
+    drawCrosshair();
+
+    drawMinimap();
+
+    updateUI();
+
+}
+
+
+/* =========================================================
+   MAIN LOOP
+========================================================= */
+
+function gameLoop() {
+
+    updateLogic();
+
+    if(gameStarted) {
+
+        drawGame();
+
+    }
+
+    requestAnimationFrame(
+        gameLoop
+    );
+
+}
+
+gameLoop();
+
 </script>
+
 </body>
 </html>
