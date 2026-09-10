@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RPG Shooter - Advanced</title>
+    <title>RPG Shooter - Final</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
         body { background: #111; color: #fff; font-family: Arial, sans-serif; overflow: hidden; }
@@ -11,68 +11,63 @@
         #game-container { position: relative; width: 100vw; height: 100vh; background: #111; }
         canvas { display: block; background: #161616; width: 100%; height: 100%; border: 1px solid #333; }
 
-        /* ===== 화면 전환 =====*/
         .screen { display: none; position: absolute; width: 100%; height: 100%; z-index: 100; }
         .screen.active { display: block; }
 
-        /* 메인 메뉴 */
         #main-menu { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); display: flex !important; flex-direction: column; justify-content: center; align-items: center; }
         #main-menu h1 { font-size: 60px; color: #00f5ff; margin-bottom: 30px; text-shadow: 0 0 20px #00f5ff; }
         #main-menu .menu-buttons { display: flex; flex-direction: column; gap: 20px; }
         #main-menu button { padding: 15px 60px; font-size: 24px; background: #00f5ff; color: #000; border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s; font-weight: bold; }
         #main-menu button:hover { background: #00d4ff; transform: scale(1.05); box-shadow: 0 0 20px #00f5ff; }
 
-        /* 게임 UI */
         .ui-panel { position: absolute; pointer-events: none; z-index: 10; }
         .interactive { pointer-events: auto; }
 
-        /* 일시정지 메뉴 */
         #pause-overlay { display: none; position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 50; flex-direction: column; justify-content: center; align-items: center; }
         #pause-overlay.active { display: flex !important; }
         #pause-overlay h2 { font-size: 48px; color: #00f5ff; margin-bottom: 40px; }
         #pause-overlay .menu-buttons { display: flex; flex-direction: column; gap: 15px; }
-        #pause-overlay button { padding: 12px 40px; font-size: 20px; background: #00f5ff; color: #000; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s; }
-        #pause-overlay button:hover { background: #00d4ff; transform: scale(1.05); }
+        #pause-overlay button { padding: 12px 40px; font-size: 20px; background: #00f5ff; color: #000; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
 
-        /* 상태 바 */
-        #stat-bar { top: 20px; left: 20px; background: rgba(0,0,0,0.85); padding: 15px; border-radius: 8px; border: 2px solid #00f5ff; min-width: 280px; }
+        #stat-bar { top: 20px; left: 20px; background: rgba(0,0,0,0.85); padding: 15px; border-radius: 8px; border: 2px solid #00f5ff; min-width: 300px; }
         .bar-container { background: #333; width: 100%; height: 15px; border-radius: 10px; margin: 5px 0 10px 0; overflow: hidden; }
         .bar { height: 100%; width: 100%; }
         #hp-bar { background: #ff4757; }
         #exp-bar { background: #2ed573; }
         #level-text { font-weight: bold; color: #ffa502; font-size: 18px; margin-bottom: 5px; }
         #zone-text { font-size: 14px; color: #00f5ff; margin-top: 5px; }
+        #interact-text { font-size: 12px; color: #ffff00; margin-top: 5px; }
 
-        /* 미니맵 */
         #minimap-container { top: 20px; right: 20px; background: rgba(0,0,0,0.85); border: 2px solid #666; border-radius: 6px; padding: 5px; }
         #minimap { background: #000; display: block; border: 1px solid #444; }
 
-        /* 인벤토리 */
         #inventory-toggle { top: 20px; right: 150px; background: #ffa502; color: black; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; border: none; }
         #inventory-toggle:hover { background: #ffb71a; }
 
-        #inventory { top: 70px; right: 20px; width: 350px; background: rgba(0,0,0,0.95); border: 2px solid #ff4757; border-radius: 8px; padding: 15px; display: none; max-height: 600px; overflow-y: auto; }
-        .inv-title { font-size: 16px; font-weight: bold; margin-bottom: 10px; text-align: center; border-bottom: 1px solid #444; padding-bottom: 5px; color: #ffa502; }
+        #inventory, #shop { top: 70px; right: 20px; width: 380px; background: rgba(0,0,0,0.95); border: 2px solid #ff4757; border-radius: 8px; padding: 15px; display: none; max-height: 600px; overflow-y: auto; }
+        
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .inv-title { font-size: 16px; font-weight: bold; text-align: center; border-bottom: 1px solid #444; padding-bottom: 5px; color: #ffa502; flex: 1; }
+        .close-btn { background: #ff4757; color: white; border: none; border-radius: 4px; padding: 5px 10px; cursor: pointer; font-weight: bold; font-size: 14px; }
+        .close-btn:hover { background: #ff3838; }
+
         .inv-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 15px; }
         .inv-slot { width: 50px; height: 50px; background: #222; border: 1px solid #555; border-radius: 4px; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; font-size: 24px; }
         .inv-slot:hover { border-color: #ffa502; background: #333; }
-        .inv-slot.equipped { border: 2px solid #ffa502; background: #444; }
         .item-count { position: absolute; bottom: 2px; right: 4px; font-size: 10px; color: #fff; background: rgba(0,0,0,0.7); padding: 0 2px; border-radius: 2px; }
-        .item-info { background: #1a1a1a; border-top: 1px solid #555; padding-top: 10px; font-size: 12px; color: #aaa; }
-        .item-rarity-common { color: #999; }
-        .item-rarity-rare { color: #0099ff; }
-        .item-rarity-epic { color: #ff00ff; }
-        .item-rarity-legendary { color: #ffaa00; }
 
-        /* 기술 바 */
+        .shop-item { background: #1a1a1a; border: 1px solid #555; border-radius: 4px; padding: 10px; margin-bottom: 10px; cursor: pointer; transition: all 0.3s; }
+        .shop-item:hover { border-color: #ffa502; background: #333; }
+        .shop-item-name { font-weight: bold; color: #00f5ff; }
+        .shop-item-price { color: #ffa502; font-size: 12px; }
+
         #skill-bar { bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 15px; background: rgba(0,0,0,0.85); padding: 10px 20px; border-radius: 12px; border: 2px solid #555; }
-        .skill-slot { width: 60px; height: 60px; background: #222; border: 2px solid #666; border-radius: 8px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; color: #fff; cursor: pointer; }
+        .skill-slot { width: 60px; height: 60px; background: #222; border: 2px solid #666; border-radius: 8px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; cursor: pointer; }
         .skill-slot:hover { border-color: #00f5ff; }
         .skill-name { margin-top: 10px; font-size: 11px; color: #ffa502; }
         .skill-slot .cooldown-overlay { position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; background: rgba(255,0,0,0.4); border-radius: 6px; transition: height 0.1s linear; }
         .skill-slot .key-bind { position: absolute; top: 2px; left: 4px; font-size: 10px; color: #aaa; }
 
-        /* 지역 선택 */
         #zone-select { top: 70px; left: 20px; background: rgba(0,0,0,0.95); border: 2px solid #00f5ff; border-radius: 8px; padding: 15px; display: none; }
         .zone-select-title { font-size: 14px; font-weight: bold; color: #00f5ff; margin-bottom: 10px; }
         .zone-buttons { display: flex; flex-direction: column; gap: 8px; }
@@ -80,20 +75,19 @@
         .zone-btn:hover { background: #00f5ff; color: #000; }
         .zone-btn.active { background: #00f5ff; color: #000; font-weight: bold; }
 
-        /* 알림 */
         #game-over { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.95); padding: 40px; border-radius: 10px; text-align: center; border: 2px solid #ff4757; z-index: 60; }
         #game-over h2 { color: #ff4757; font-size: 36px; margin-bottom: 20px; }
         #game-over button { background: #ff4757; color: white; border: none; padding: 10px 20px; font-size: 18px; border-radius: 5px; cursor: pointer; margin: 10px 5px; }
 
-        /* 드롭 아이템 알림 */
         .drop-notification { position: fixed; right: 20px; top: 200px; background: rgba(0,0,0,0.9); border: 2px solid #00f5ff; border-radius: 8px; padding: 12px 15px; max-width: 250px; z-index: 20; animation: slideIn 0.5s; }
         @keyframes slideIn { from { transform: translateX(300px); } to { transform: translateX(0); } }
+
+        .structure-interact { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.9); border: 2px solid #00f5ff; border-radius: 8px; padding: 15px 20px; color: #00f5ff; font-weight: bold; z-index: 25; }
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <!-- 메인 메뉴 -->
     <div id="main-menu" class="screen active">
         <h1>⚔️ RPG SHOOTER ⚔️</h1>
         <div class="menu-buttons">
@@ -102,11 +96,9 @@
         </div>
     </div>
 
-    <!-- 게임 화면 -->
     <div id="game-screen" class="screen">
         <canvas id="gameCanvas"></canvas>
 
-        <!-- 상태 바 -->
         <div id="stat-bar" class="ui-panel">
             <div id="level-text">LV. 1 네크로맨서</div>
             <div>HP</div>
@@ -115,34 +107,38 @@
             <div class="bar-container"><div id="exp-bar" class="bar"></div></div>
             <div id="score-text" style="font-size:12px; color:#aaa;">처치: 0 | 공격력: 15</div>
             <div id="zone-text">🗺️ 마을</div>
+            <div id="interact-text"></div>
         </div>
 
-        <!-- 지역 선택 -->
-        <div id="zone-select" class="ui-panel interactive">
-            <div class="zone-select-title">📍 지역 선택</div>
-            <div class="zone-buttons">
-                <button class="zone-btn active" onclick="changeZone('town')">마을</button>
-                <button class="zone-btn" onclick="changeZone('forest')">🌲 숲</button>
-                <button class="zone-btn" onclick="changeZone('mountain')">⛰️ 산</button>
-                <button class="zone-btn" onclick="changeZone('dungeon')">🏰 던전</button>
-                <button class="zone-btn" onclick="changeZone('desert')">🏜️ 사막</button>
-            </div>
-        </div>
-
-        <!-- 미니맵 -->
         <div id="minimap-container" class="ui-panel">
             <canvas id="minimap" width="120" height="120"></canvas>
         </div>
 
-        <!-- 인벤토리 토글 -->
         <button id="inventory-toggle" class="ui-panel interactive" onclick="toggleInventory()">[I] 인벤</button>
+        
         <div id="inventory" class="ui-panel interactive">
-            <div class="inv-title">📦 인벤토리</div>
+            <div class="panel-header">
+                <div class="inv-title">📦 인벤토리</div>
+                <button class="close-btn" onclick="toggleInventory()">✕</button>
+            </div>
             <div class="inv-grid" id="inv-grid"></div>
-            <div class="item-info" id="item-info"></div>
         </div>
 
-        <!-- 기술 바 -->
+        <div id="shop" class="ui-panel interactive">
+            <div class="panel-header">
+                <div class="inv-title">🛍️ 상점 (💰 <span id="gold-display">0</span>)</div>
+                <button class="close-btn" onclick="closeShop()">✕</button>
+            </div>
+            <div id="shop-grid"></div>
+        </div>
+
+        <div id="zone-select" class="ui-panel interactive">
+            <div class="zone-select-title">📍 지역 선택</div>
+            <div class="zone-buttons" id="zone-buttons"></div>
+        </div>
+
+        <div id="structure-interact" class="structure-interact" style="display: none;"></div>
+
         <div id="skill-bar" class="ui-panel interactive">
             <div class="skill-slot" onclick="useSkillQ()">
                 <span class="key-bind">Q</span>
@@ -165,7 +161,6 @@
             </div>
         </div>
 
-        <!-- 게임 오버 -->
         <div id="game-over" class="ui-panel interactive">
             <h2>게임 오버</h2>
             <div id="game-over-stats"></div>
@@ -174,7 +169,6 @@
         </div>
     </div>
 
-    <!-- 일시정지 메뉴 -->
     <div id="pause-overlay" class="screen">
         <h2>일시정지</h2>
         <div class="menu-buttons">
@@ -197,38 +191,63 @@
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    const WORLD_SIZE = 3000;
-    
+    const WORLD_SIZE_NORMAL = 4000;
+    const WORLD_SIZE_TOWN = 1500; // 마을은 작음
+
     const ZONES = {
-        town: { name: '마을', color: '#2a5a4a', minLevel: 1, monsterColor: '#ff6b6b', diffMult: 0.5 },
-        forest: { name: '🌲 숲', color: '#1a4d1a', minLevel: 5, monsterColor: '#ff8c42', diffMult: 1.0 },
-        mountain: { name: '⛰️ 산', color: '#4a3a2a', minLevel: 10, monsterColor: '#ffa500', diffMult: 1.5 },
-        dungeon: { name: '🏰 던전', color: '#2a2a4a', minLevel: 15, monsterColor: '#ff00ff', diffMult: 2.0 },
-        desert: { name: '🏜️ 사막', color: '#5a4a1a', minLevel: 20, monsterColor: '#ffff00', diffMult: 2.5 }
+        town: { name: '마을', color: '#2a5a4a', minLevel: 1, worldSize: WORLD_SIZE_TOWN, x: 750, y: 750, spawns: [] }, // 마을은 몬스터 없음
+        forest: { name: '🌲 숲', color: '#1a4d1a', minLevel: 5, worldSize: WORLD_SIZE_NORMAL, x: 1500, y: 500, spawns: ['wolf', 'deer', 'goblin'] },
+        mountain: { name: '⛰️ 산', color: '#4a3a2a', minLevel: 15, worldSize: WORLD_SIZE_NORMAL, x: 2500, y: 1500, spawns: ['orc', 'dragon_wyvern', 'wolf'] },
+        dungeon: { name: '🏰 던전', color: '#2a2a4a', minLevel: 25, worldSize: WORLD_SIZE_NORMAL, x: 1500, y: 2500, spawns: ['skeleton', 'ghoul', 'demon'] },
+        desert: { name: '🏜️ 사막', color: '#5a4a1a', minLevel: 40, worldSize: WORLD_SIZE_NORMAL, x: 3000, y: 3000, spawns: ['scorpion', 'sand_golem', 'pharaoh'] }
+    };
+
+    const STRUCTURES = [
+        { type: 'shop', name: '🛍️ 상점', x: 400, y: 300, size: 60, color: '#9b59b6' },
+        { type: 'forge', name: '⚒️ 검 강화소', x: 650, y: 400, size: 60, color: '#e74c3c' },
+        { type: 'casino', name: '🎲 도박장', x: 900, y: 250, size: 60, color: '#f39c12' }
+    ];
+
+    const MONSTERS = {
+        goblin: { name: '고블린', emoji: '👹', hp: 20, damage: 5, speed: 2.2, exp: 10, color: '#ff6b6b', vision: 450, attackRange: 300, loot: [{ item: 'gold', rate: 0.7, amount: 5 }] },
+        bat: { name: '박쥐', emoji: '🦇', hp: 15, damage: 3, speed: 3.0, exp: 8, color: '#6b5b95', vision: 420, attackRange: 280, loot: [{ item: 'gold', rate: 0.6, amount: 3 }] },
+        wolf: { name: '늑대', emoji: '🐺', hp: 40, damage: 10, speed: 2.8, exp: 20, color: '#8b7355', vision: 500, attackRange: 350, loot: [{ item: 'gold', rate: 0.5, amount: 10 }, { item: 'ruby', rate: 0.2, amount: 1 }] },
+        deer: { name: '사슴', emoji: '🦌', hp: 25, damage: 2, speed: 3.5, exp: 15, color: '#a0522d', vision: 480, attackRange: 320, loot: [{ item: 'gold', rate: 0.8, amount: 8 }] },
+        orc: { name: '오크', emoji: '👺', hp: 80, damage: 18, speed: 2.0, exp: 40, color: '#228b22', vision: 520, attackRange: 380, loot: [{ item: 'gold', rate: 0.6, amount: 30 }, { item: 'emerald', rate: 0.3, amount: 1 }], skill: 'power_strike' },
+        dragon_wyvern: { name: '드래곤', emoji: '🐉', hp: 150, damage: 35, speed: 2.5, exp: 100, color: '#ff00ff', vision: 600, attackRange: 420, loot: [{ item: 'gold', rate: 0.8, amount: 100 }, { item: 'dragon_scale', rate: 0.5, amount: 2 }], skill: 'fire_breath', isElite: true },
+        skeleton: { name: '해골', emoji: '💀', hp: 50, damage: 12, speed: 2.3, exp: 30, color: '#d3d3d3', vision: 480, attackRange: 340, loot: [{ item: 'gold', rate: 0.4, amount: 15 }] },
+        ghoul: { name: '구울', emoji: '👻', hp: 70, damage: 15, speed: 2.1, exp: 45, color: '#ffff00', vision: 510, attackRange: 360, loot: [{ item: 'gold', rate: 0.5, amount: 25 }, { item: 'ruby', rate: 0.25, amount: 1 }], skill: 'drain' },
+        demon: { name: '악마', emoji: '😈', hp: 120, damage: 28, speed: 2.4, exp: 80, color: '#ff0000', vision: 550, attackRange: 400, loot: [{ item: 'gold', rate: 0.7, amount: 60 }, { item: 'dragon_scale', rate: 0.3, amount: 1 }], skill: 'teleport', isElite: true },
+        scorpion: { name: '전갈', emoji: '🦂', hp: 60, damage: 16, speed: 2.6, exp: 50, color: '#ffaa00', vision: 500, attackRange: 360, loot: [{ item: 'gold', rate: 0.6, amount: 35 }] },
+        sand_golem: { name: '모래골렘', emoji: '⛩️', hp: 140, damage: 22, speed: 1.8, exp: 70, color: '#cd853f', vision: 480, attackRange: 340, loot: [{ item: 'gold', rate: 0.8, amount: 80 }], skill: 'stone_wall' },
+        pharaoh: { name: '파라오', emoji: '👑', hp: 180, damage: 40, speed: 2.2, exp: 150, color: '#ffd700', vision: 580, attackRange: 420, loot: [{ item: 'gold', rate: 0.9, amount: 150 }, { item: 'dragon_scale', rate: 0.6, amount: 3 }], skill: 'curse', isElite: true }
     };
 
     const ITEMS = {
-        potion: { name: '체력 포션', emoji: '🧪', rarity: 'common', type: 'consumable', value: 50 },
-        mana_potion: { name: '마나 포션', emoji: '💎', rarity: 'common', type: 'consumable', value: 30 },
+        potion: { name: '체력 포션', emoji: '🧪', rarity: 'common', type: 'consumable', value: 50, effect: () => { game.player.hp = Math.min(game.player.hp + 50, game.player.maxHp); } },
+        mana_potion: { name: '마나 포션', emoji: '💎', rarity: 'common', type: 'consumable', value: 30, effect: () => { } },
         gold: { name: '금화', emoji: '💰', rarity: 'common', type: 'currency', value: 1 },
         ruby: { name: '루비', emoji: '💍', rarity: 'rare', type: 'material', value: 100 },
         emerald: { name: '에메랄드', emoji: '💚', rarity: 'rare', type: 'material', value: 150 },
         sword: { name: '철검', emoji: '⚔️', rarity: 'rare', type: 'weapon', damage: 10, value: 200 },
         iron_armor: { name: '철갑옷', emoji: '🛡️', rarity: 'rare', type: 'armor', defense: 5, value: 180 },
         magic_staff: { name: '마법봉', emoji: '✨', rarity: 'epic', type: 'weapon', damage: 25, value: 500 },
-        dragon_scale: { name: '용의 비늘', emoji: '🐉', rarity: 'legendary', type: 'material', value: 1000 }
+        dragon_scale: { name: '용의 비늘', emoji: '🐲', rarity: 'legendary', type: 'material', value: 1000 },
+        blessed_sword: { name: '축복받은 검', emoji: '⚡', rarity: 'legendary', type: 'weapon', damage: 50, value: 5000, effect: () => { game.player.damage += 30; } }
     };
 
     let isPaused = false;
+    let currentWorldSize = WORLD_SIZE_TOWN;
+    let nearbyStructure = null;
 
     const game = {
         currentZone: 'town',
-        player: { x: 1500, y: 1500, radius: 18, speed: 4.5, hp: 100, maxHp: 100, level: 1, exp: 0, maxExp: 100, damage: 15, kills: 0 },
+        player: { x: 750, y: 750, radius: 18, speed: 4.5, hp: 100, maxHp: 100, level: 1, exp: 0, maxExp: 100, damage: 15, kills: 0, gold: 200, attackRange: 600 },
         bullets: [],
         monsters: [],
         items: [],
         keys: {},
-        mouse: { x: 1500, y: 1500 },
+        mouse: { x: 750, y: 750 },
         camera: { x: 0, y: 0 },
         skills: {
             q: { cooldown: 2000, lastUsed: 0 },
@@ -237,19 +256,153 @@
         },
         inventory: [
             { id: 'potion', name: 'POTION', count: 5 },
-            { id: 'gold', name: 'GOLD', count: 100 },
-            { id: 'ruby', name: 'RUBY', count: 0 }
+            { id: 'gold', name: 'GOLD', count: 200 }
         ],
-        equipment: {
-            weapon: null,
-            armor: null
-        }
+        equipment: { weapon: null, armor: null }
     };
 
     function startGame() {
         document.getElementById('main-menu').classList.remove('active');
         document.getElementById('game-screen').classList.add('active');
+        initZoneSelect();
         loop();
+    }
+
+    function initZoneSelect() {
+        const container = document.getElementById('zone-buttons');
+        container.innerHTML = '';
+        Object.keys(ZONES).forEach(zoneKey => {
+            const zone = ZONES[zoneKey];
+            const btn = document.createElement('button');
+            btn.className = 'zone-btn' + (zoneKey === 'town' ? ' active' : '');
+            btn.textContent = zone.name;
+            btn.onclick = () => changeZone(zoneKey);
+            container.appendChild(btn);
+        });
+    }
+
+    function changeZone(zone) {
+        if (game.player.level < ZONES[zone].minLevel) {
+            alert(`레벨 ${ZONES[zone].minLevel} 이상 필요`);
+            return;
+        }
+        game.currentZone = zone;
+        game.monsters = [];
+        game.items = [];
+        currentWorldSize = ZONES[zone].worldSize;
+        game.player.x = ZONES[zone].x;
+        game.player.y = ZONES[zone].y;
+        nearbyStructure = null;
+        document.querySelectorAll('.zone-btn').forEach(btn => btn.classList.remove('active'));
+        
+        // 버튼 찾기 및 활성화
+        const buttons = document.querySelectorAll('.zone-btn');
+        const zoneNames = Object.keys(ZONES);
+        const index = zoneNames.indexOf(zone);
+        if(index >= 0 && buttons[index]) {
+            buttons[index].classList.add('active');
+        }
+        
+        document.getElementById('zone-text').innerText = `🗺️ ${ZONES[zone].name}`;
+    }
+
+    function toggleZoneSelect() {
+        const zs = document.getElementById('zone-select');
+        zs.style.display = zs.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function toggleInventory() {
+        const inv = document.getElementById("inventory");
+        inv.style.display = inv.style.display === "block" ? "none" : "block";
+        if (inv.style.display === "block") renderInventory();
+    }
+
+    function openShop() {
+        const shop = document.getElementById("shop");
+        shop.style.display = "block";
+        renderShop();
+    }
+
+    function closeShop() {
+        document.getElementById("shop").style.display = "none";
+    }
+
+    function renderInventory() {
+        const grid = document.getElementById("inv-grid");
+        if(!grid) return;
+        grid.innerHTML = "";
+        for (let i = 0; i < 25; i++) {
+            const slot = document.createElement("div");
+            slot.className = "inv-slot";
+            if (i < game.inventory.length) {
+                const item = game.inventory[i];
+                const itemData = ITEMS[item.id];
+                if(itemData) {
+                    slot.textContent = itemData.emoji;
+                    slot.title = `${itemData.name}\n수량: ${item.count}`;
+                    if(item.count > 1) {
+                        const count = document.createElement("div");
+                        count.className = "item-count";
+                        count.textContent = item.count;
+                        slot.appendChild(count);
+                    }
+                    slot.onclick = () => useItem(item.id);
+                }
+            }
+            grid.appendChild(slot);
+        }
+    }
+
+    function renderShop() {
+        const shopGrid = document.getElementById("shop-grid");
+        shopGrid.innerHTML = "";
+        document.getElementById("gold-display").textContent = game.player.gold;
+        
+        const shopItems = [
+            { id: 'potion', count: 50 },
+            { id: 'mana_potion', count: 30 },
+            { id: 'sword', count: 200 },
+            { id: 'iron_armor', count: 180 },
+            { id: 'magic_staff', count: 500 },
+            { id: 'blessed_sword', count: 5000 }
+        ];
+
+        shopItems.forEach(shop => {
+            const itemData = ITEMS[shop.id];
+            const div = document.createElement('div');
+            div.className = 'shop-item';
+            div.innerHTML = `
+                <div class="shop-item-name">${itemData.emoji} ${itemData.name}</div>
+                <div class="shop-item-price">💰 ${shop.count}</div>
+            `;
+            div.onclick = () => buyItem(shop.id, shop.count);
+            shopGrid.appendChild(div);
+        });
+    }
+
+    function buyItem(itemId, price) {
+        if (game.player.gold < price) {
+            alert('금화가 부족합니다!');
+            return;
+        }
+        game.player.gold -= price;
+        addToInventory(itemId);
+        renderShop();
+    }
+
+    function useItem(itemId) {
+        const item = game.inventory.find(i => i.id === itemId);
+        if(!item || item.count <= 0) return;
+        
+        const itemData = ITEMS[itemId];
+        if(itemData.type === 'consumable') {
+            if(itemData.effect) itemData.effect();
+            item.count--;
+            if(item.count <= 0) {
+                game.inventory = game.inventory.filter(i => i.count > 0);
+            }
+            renderInventory();
+        }
     }
 
     function goToMenu() {
@@ -263,22 +416,38 @@
         document.getElementById('pause-overlay').classList.toggle('active');
     }
 
-    function changeZone(zone) {
-        if (game.player.level < ZONES[zone].minLevel) {
-            alert(`레벨 ${ZONES[zone].minLevel} 이상 필요`);
+    function checkNearbyStructure() {
+        nearbyStructure = null;
+        const interactText = document.getElementById('interact-text');
+        
+        if(game.currentZone !== 'town') {
+            interactText.textContent = '';
             return;
         }
-        game.currentZone = zone;
-        game.monsters = [];
-        game.items = [];
-        document.querySelectorAll('.zone-btn').forEach(btn => btn.classList.remove('active'));
-        event.target.classList.add('active');
-        document.getElementById('zone-text').innerText = `🗺️ ${ZONES[zone].name}`;
+
+        STRUCTURES.forEach(struct => {
+            const dist = Math.hypot(game.player.x - struct.x, game.player.y - struct.y);
+            if(dist < 80) {
+                nearbyStructure = struct;
+                interactText.textContent = `[F] ${struct.name}`;
+            }
+        });
+        
+        if(!nearbyStructure) {
+            interactText.textContent = '';
+        }
     }
 
-    function toggleZoneSelect() {
-        const zs = document.getElementById('zone-select');
-        zs.style.display = zs.style.display === 'block' ? 'none' : 'block';
+    function interactStructure() {
+        if(!nearbyStructure) return;
+        
+        if(nearbyStructure.type === 'shop') {
+            openShop();
+        } else if(nearbyStructure.type === 'forge') {
+            alert('🔨 검 강화소\n\n검을 강화하여 공격력을 높일 수 있습니다.\n(현재 개발 중)');
+        } else if(nearbyStructure.type === 'casino') {
+            alert('🎲 도박장\n\n금화를 걸고 도박을 할 수 있습니다.\n(현재 개발 중)');
+        }
     }
 
     window.addEventListener('keydown', function(e) {
@@ -286,6 +455,7 @@
         const key = e.key.toLowerCase();
         game.keys[key] = true;
         if(key === 'i') toggleInventory();
+        if(key === 'f') interactStructure();
         if(key === 'q') useSkillQ();
         if(key === 'e') useSkillE();
         if(key === 'r') useSkillR();
@@ -312,57 +482,15 @@
         }
     });
 
-    function toggleInventory() {
-        const inv = document.getElementById("inventory");
-        if(inv.style.display === "block") {
-            inv.style.display = "none";
-        } else {
-            inv.style.display = "block";
-            renderInventory();
-        }
-    }
-
-    function renderInventory() {
-        const grid = document.getElementById("inv-grid");
-        if(!grid) return;
-        grid.innerHTML = "";
-        for (let i = 0; i < 20; i++) {
-            const slot = document.createElement("div");
-            slot.className = "inv-slot";
-            if (i < game.inventory.length) {
-                const item = game.inventory[i];
-                const itemData = ITEMS[item.id];
-                if(itemData) {
-                    slot.textContent = itemData.emoji;
-                    slot.title = `${itemData.name}\n${itemData.rarity}`;
-                    if(item.count > 1) {
-                        const count = document.createElement("div");
-                        count.className = "item-count";
-                        count.textContent = item.count;
-                        slot.appendChild(count);
-                    }
-                    slot.onclick = () => useItem(item.id);
-                }
-            }
-            grid.appendChild(slot);
-        }
-    }
-
-    function useItem(itemId) {
-        const item = game.inventory.find(i => i.id === itemId);
-        if(!item || item.count <= 0) return;
-        
-        const itemData = ITEMS[itemId];
-        if(itemData.type === 'consumable' && itemId === 'potion') {
-            game.player.hp = Math.min(game.player.hp + 50, game.player.maxHp);
-            item.count--;
-            renderInventory();
-        }
-    }
-
     function shootNormal() {
-        if(isPaused) return;
         const angle = Math.atan2(game.mouse.y - game.player.y, game.mouse.x - game.player.x);
+        const dist = Math.hypot(game.mouse.x - game.player.x, game.mouse.y - game.player.y);
+        
+        // 사정거리 제한
+        if(dist > game.player.attackRange) {
+            return;
+        }
+
         const speed = 8;
         const damage = game.player.damage + (game.equipment.weapon?.damage || 0);
         game.bullets.push({
@@ -412,28 +540,41 @@
     }
 
     function spawnMonster() {
-        if(game.monsters.length >= 30 || isPaused) return;
+        if(game.monsters.length >= 40 || isPaused || game.currentZone === 'town') return;
+        
         const zone = ZONES[game.currentZone];
+        const monsterType = zone.spawns[Math.floor(Math.random() * zone.spawns.length)];
+        const monsterData = MONSTERS[monsterType];
+        
         const angle = Math.random() * Math.PI * 2;
-        const dist = 450 + Math.random() * 200;
+        const dist = 500 + Math.random() * 300;
         let mx = game.player.x + Math.cos(angle) * dist;
         let my = game.player.y + Math.sin(angle) * dist;
-        mx = Math.max(40, Math.min(mx, WORLD_SIZE-40));
-        my = Math.max(40, Math.min(my, WORLD_SIZE-40));
+        mx = Math.max(40, Math.min(mx, currentWorldSize-40));
+        my = Math.max(40, Math.min(my, currentWorldSize-40));
         
-        const isElite = Math.random() > (0.9 - zone.diffMult * 0.1);
-        const baseHP = 30 * zone.diffMult;
-        const baseDmg = 7 * zone.diffMult;
+        const level = Math.max(game.player.level - 3, 1) + Math.floor(Math.random() * 5);
+        const hpMult = 1 + (level * 0.15);
         
         game.monsters.push({
+            type: monsterType,
             x: mx, y: my,
-            radius: isElite ? 22 : 15,
-            speed: isElite ? 1.6 : 2.3,
-            hp: isElite ? baseHP * 3 : baseHP,
-            maxHp: isElite ? baseHP * 3 : baseHP,
-            damage: isElite ? baseDmg * 2.5 : baseDmg,
-            color: isElite ? '#ffbe0b' : zone.monsterColor,
-            isElite: isElite
+            radius: 15,
+            speed: monsterData.speed,
+            hp: monsterData.hp * hpMult,
+            maxHp: monsterData.hp * hpMult,
+            damage: monsterData.damage * (1 + level * 0.1),
+            color: monsterData.color,
+            emoji: monsterData.emoji,
+            vision: monsterData.vision,
+            attackRange: monsterData.attackRange,
+            exp: monsterData.exp * level,
+            level: level,
+            isElite: monsterData.isElite,
+            loot: monsterData.loot,
+            skill: monsterData.skill,
+            pursuing: false,
+            lastSkillUse: 0
         });
     }
 
@@ -449,15 +590,17 @@
         
         game.player.x += moveX * game.player.speed;
         game.player.y += moveY * game.player.speed;
-        game.player.x = Math.max(game.player.radius, Math.min(game.player.x, WORLD_SIZE - game.player.radius));
-        game.player.y = Math.max(game.player.radius, Math.min(game.player.y, WORLD_SIZE - game.player.radius));
+        game.player.x = Math.max(game.player.radius, Math.min(game.player.x, currentWorldSize - game.player.radius));
+        game.player.y = Math.max(game.player.radius, Math.min(game.player.y, currentWorldSize - game.player.radius));
         game.camera.x = game.player.x - canvas.width / 2;
         game.camera.y = game.player.y - canvas.height / 2;
+
+        checkNearbyStructure();
 
         for(let i = game.bullets.length - 1; i >= 0; i--) {
             let b = game.bullets[i];
             b.x += b.vx; b.y += b.vy;
-            if(b.x < 0 || b.x > WORLD_SIZE || b.y < 0 || b.y > WORLD_SIZE) {
+            if(b.x < 0 || b.x > currentWorldSize || b.y < 0 || b.y > currentWorldSize) {
                 game.bullets.splice(i, 1);
                 continue;
             }
@@ -471,7 +614,7 @@
                         dropLoot(m);
                         game.monsters.splice(j, 1);
                         game.player.kills++;
-                        gainExp(m.isElite ? 35 : 15);
+                        gainExp(m.exp);
                     }
                     break;
                 }
@@ -479,11 +622,19 @@
         }
 
         game.monsters.forEach(function(m) {
-            let angle = Math.atan2(game.player.y - m.y, game.player.x - m.x);
-            m.x += Math.cos(angle) * m.speed;
-            m.y += Math.sin(angle) * m.speed;
-            let dist = Math.hypot(game.player.x - m.x, game.player.y - m.y);
-            if(dist < game.player.radius + m.radius) {
+            const distToPlayer = Math.hypot(game.player.x - m.x, game.player.y - m.y);
+            
+            if(distToPlayer < m.vision) {
+                m.pursuing = true;
+                let angle = Math.atan2(game.player.y - m.y, game.player.x - m.x);
+                m.x += Math.cos(angle) * m.speed;
+                m.y += Math.sin(angle) * m.speed;
+            } else {
+                m.pursuing = false;
+            }
+
+            // 몬스터는 attackRange 내에서만 공격
+            if(distToPlayer < m.attackRange + game.player.radius) {
                 game.player.hp -= m.damage * 0.02;
                 if(game.player.hp <= 0) {
                     game.player.hp = 0;
@@ -491,9 +642,9 @@
                     if(go) {
                         go.style.display = "block";
                         document.getElementById('game-over-stats').innerHTML = `
-                            <p>레벨: ${game.player.level}</p>
-                            <p>처치: ${game.player.kills}</p>
-                            <p>경험치: ${game.player.exp}</p>
+                            <p>최종 레벨: ${game.player.level}</p>
+                            <p>처치한 몬스터: ${game.player.kills}</p>
+                            <p>보유 금화: ${game.player.gold}</p>
                         `;
                     }
                 }
@@ -504,44 +655,36 @@
             let item = game.items[i];
             let dist = Math.hypot(game.player.x - item.x, game.player.y - item.y);
             if(dist < game.player.radius + item.radius) {
-                addToInventory(item.id);
+                if(item.id === 'gold') {
+                    game.player.gold += item.amount || 1;
+                } else {
+                    addToInventory(item.id);
+                }
                 game.items.splice(i, 1);
             }
         }
     }
 
     function dropLoot(monster) {
-        const itemRarity = Math.random();
-        let itemId;
-        if(itemRarity > 0.95) {
-            const legendaryItems = ['dragon_scale'];
-            itemId = legendaryItems[Math.floor(Math.random() * legendaryItems.length)];
-        } else if(itemRarity > 0.85) {
-            const epicItems = ['magic_staff'];
-            itemId = epicItems[Math.floor(Math.random() * epicItems.length)];
-        } else if(itemRarity > 0.6) {
-            const rareItems = ['ruby', 'emerald', 'sword', 'iron_armor'];
-            itemId = rareItems[Math.floor(Math.random() * rareItems.length)];
-        } else if(itemRarity > 0.3) {
-            itemId = Math.random() > 0.5 ? 'mana_potion' : 'gold';
-        } else {
-            itemId = 'gold';
-        }
-
-        game.items.push({
-            x: monster.x, y: monster.y, radius: 7,
-            id: itemId,
-            color: '#00f5ff'
+        monster.loot.forEach(lootData => {
+            if(Math.random() < lootData.rate) {
+                game.items.push({
+                    x: monster.x, y: monster.y, radius: 7,
+                    id: lootData.item,
+                    amount: lootData.amount || 1,
+                    color: '#00f5ff'
+                });
+                showDropNotification(lootData.item, lootData.amount || 1);
+            }
         });
-
-        showDropNotification(itemId);
     }
 
-    function showDropNotification(itemId) {
+    function showDropNotification(itemId, amount = 1) {
         const itemData = ITEMS[itemId];
         const notif = document.createElement('div');
         notif.className = 'drop-notification';
-        notif.textContent = `${itemData.emoji} ${itemData.name}`;
+        const text = itemId === 'gold' ? `${itemData.emoji} ${amount} 획득` : `${itemData.emoji} ${itemData.name} 획득`;
+        notif.textContent = text;
         document.body.appendChild(notif);
         setTimeout(() => notif.remove(), 3000);
     }
@@ -559,13 +702,13 @@
 
     function gainExp(amount) {
         game.player.exp += amount;
-        if(game.player.exp >= game.player.maxExp) {
+        while(game.player.exp >= game.player.maxExp && game.player.level < 100) {
             game.player.exp -= game.player.maxExp;
             game.player.level++;
-            game.player.maxExp = Math.floor(game.player.maxExp * 1.3);
-            game.player.maxHp += 20;
+            game.player.maxExp = Math.floor(game.player.maxExp * 1.2);
+            game.player.maxHp += 25;
             game.player.hp = game.player.maxHp;
-            game.player.damage += 5;
+            game.player.damage += 3;
         }
     }
 
@@ -576,8 +719,8 @@
         const st = document.getElementById("score-text");
         if(hb) hb.style.width = Math.max(0, (game.player.hp / game.player.maxHp * 100)) + "%";
         if(eb) eb.style.width = Math.min(100, (game.player.exp / game.player.maxExp * 100)) + "%";
-        if(lt) lt.innerText = "LV. " + game.player.level + " 네크로맨서";
-        if(st) st.innerText = "처치: " + game.player.kills + " | 공격력: " + game.player.damage;
+        if(lt) lt.innerText = "LV. " + game.player.level + "/100 네크로맨서";
+        if(st) st.innerText = "처치: " + game.player.kills + " | 공격력: " + game.player.damage + " | 💰" + game.player.gold;
         
         const now = Date.now();
         ['q','e','r'].forEach(function(sk) {
@@ -600,16 +743,31 @@
         ctx.strokeStyle = "#3a3a3a";
         ctx.lineWidth = 1;
         const spacing = 100;
-        for(let x=0; x<=WORLD_SIZE; x+=spacing) {
-            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, WORLD_SIZE); ctx.stroke();
+        for(let x=0; x<=currentWorldSize; x+=spacing) {
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, currentWorldSize); ctx.stroke();
         }
-        for(let y=0; y<=WORLD_SIZE; y+=spacing) {
-            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(WORLD_SIZE, y); ctx.stroke();
+        for(let y=0; y<=currentWorldSize; y+=spacing) {
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(currentWorldSize, y); ctx.stroke();
         }
         
         ctx.strokeStyle = "#ff4757";
         ctx.lineWidth = 4;
-        ctx.strokeRect(0, 0, WORLD_SIZE, WORLD_SIZE);
+        ctx.strokeRect(0, 0, currentWorldSize, currentWorldSize);
+
+        // 구조물 그리기 (마을에서만)
+        if(game.currentZone === 'town') {
+            STRUCTURES.forEach(struct => {
+                ctx.fillStyle = struct.color;
+                ctx.fillRect(struct.x - struct.size/2, struct.y - struct.size/2, struct.size, struct.size);
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(struct.x - struct.size/2, struct.y - struct.size/2, struct.size, struct.size);
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(struct.name, struct.x, struct.y + 5);
+            });
+        }
 
         game.items.forEach(function(item) {
             ctx.fillStyle = item.color;
@@ -617,12 +775,18 @@
         });
 
         game.monsters.forEach(function(m) {
-            ctx.fillStyle = m.color;
+            ctx.fillStyle = m.pursuing ? '#ff6b6b' : m.color;
             ctx.beginPath(); ctx.arc(m.x, m.y, m.radius, 0, Math.PI*2); ctx.fill();
+            
             ctx.fillStyle = "rgba(0,0,0,0.6)";
-            ctx.fillRect(m.x - m.radius, m.y - m.radius - 10, m.radius * 2, 4);
+            ctx.fillRect(m.x - m.radius, m.y - m.radius - 20, m.radius * 2, 4);
             ctx.fillStyle = "#ff4757";
-            ctx.fillRect(m.x - m.radius, m.y - m.radius - 10, (m.hp / m.maxHp) * m.radius * 2, 4);
+            ctx.fillRect(m.x - m.radius, m.y - m.radius - 20, (m.hp / m.maxHp) * m.radius * 2, 4);
+
+            ctx.fillStyle = "#ffff00";
+            ctx.font = "bold 11px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText("Lv." + m.level, m.x, m.y - m.radius - 25);
         });
 
         game.bullets.forEach(function(b) {
@@ -637,6 +801,18 @@
         ctx.strokeStyle = "#ffffff";
         ctx.lineWidth = 3;
         ctx.stroke();
+
+        // 플레이어 공격 범위 시각화 (디버그용)
+        ctx.strokeStyle = "rgba(155, 89, 182, 0.2)";
+        ctx.beginPath();
+        ctx.arc(game.player.x, game.player.y, game.player.attackRange, 0, Math.PI*2);
+        ctx.stroke();
+
+        ctx.fillStyle = "#ffff00";
+        ctx.font = "bold 12px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("Lv." + game.player.level, game.player.x, game.player.y - game.player.radius - 25);
+
         ctx.restore();
     }
 
@@ -645,22 +821,22 @@
         const zone = ZONES[game.currentZone];
         mCtx.fillStyle = "#0a0a0a";
         mCtx.fillRect(0, 0, mCanvas.width, mCanvas.height);
-        const scale = mCanvas.width / WORLD_SIZE;
+        const scale = mCanvas.width / currentWorldSize;
         
         mCtx.fillStyle = "#00ffcc";
         mCtx.beginPath();
         mCtx.arc(game.player.x * scale, game.player.y * scale, 4, 0, Math.PI*2);
         mCtx.fill();
         
-        mCtx.fillStyle = zone.monsterColor;
+        mCtx.fillStyle = zone.color;
         game.monsters.forEach(function(m) {
             mCtx.beginPath();
-            mCtx.arc(m.x * scale, m.y * scale, 2, 0, Math.PI*2);
+            mCtx.arc(m.x * scale, m.y * scale, m.pursuing ? 3 : 2, 0, Math.PI*2);
             mCtx.fill();
         });
     }
 
-    setInterval(spawnMonster, 1500);
+    setInterval(spawnMonster, 1200);
     renderInventory();
 
     function loop() {
@@ -676,10 +852,27 @@
     }
 
     function showCredits() {
-        alert('RPG Shooter Advanced\n\n기능:\n- 5개 지역 (마을, 숲, 산, 던전, 사막)\n- 다양한 아이템 (포션, 장비, 재료)\n- 기술 스킬 (Q: 멀티, E: 힐, R: 얼티)\n- 인벤토리 시스템\n- 엘리트 몬스터\n- 일시정지(ESC)');
-    }
+        alert(`RPG Shooter Ultimate Edition
 
-    document.getElementById('inventory-toggle').addEventListener('click', toggleInventory);
+✨ 주요 기능:
+- 5개 지역 (마을은 안전지역)
+- 12종류 몬스터 (각각 다른 능력)
+- 9가지 아이템
+- 마을 구조물 (상점, 검강화소, 도박장)
+- 레벨 1~100 시스템
+- 시야 시스템 (몬스터가 플레이어를 추적)
+- 사정거리 제한 (플레이어 600, 몬스터별 다름)
+- 각 몬스터/플레이어 레벨 표시
+
+🎮 조작:
+- 마우스: 공격 (범위 제한)
+- WASD: 이동
+- Q/E/R: 스킬
+- I: 인벤토리
+- F: 구조물 상호작용
+- M: 지역 선택
+- ESC: 일시정지`);
+    }
 </script>
 </body>
 </html>
