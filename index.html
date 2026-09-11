@@ -2440,6 +2440,9 @@ quest:{
    UTIL
 ========================================================= */
 
+/* 후반 기능 패치가 로드되기 전에도 안전하게 호출할 수 있는 기본 추적기 */
+function updateQuestTracker() {}
+
 function clamp(v,min,max) {
 
     return Math.max(
@@ -3999,10 +4002,10 @@ function renderSkillWindow() {
         const card =
             document.createElement("div");
 
+        const unlocked = game.skillsUnlocked.includes(skillId);
+
         card.className =
             "skill-card" + (unlocked ? "" : " locked");
-
-        const unlocked = game.skillsUnlocked.includes(skillId);
         const index =
             game.skillHotbar.indexOf(
                 skillId
@@ -9396,6 +9399,381 @@ __setHudVisibilityV7();
 })();
 </script>
 
+<script>
+/* =========================================================
+   GAMEPLAY UPDATE — 기능만 추가/보정, CSS 변경 없음
+========================================================= */
+(function(){
+    const UPDATE = { transitionUntil: 0, lastZone: null };
+
+    /* 신규 지역 */
+    MONSTERS.ruin_guardian = {
+        name:"폐허의 수호자", emoji:"🗿", hp:210, damage:32, speed:1.25,
+        exp:130, color:"#b58b62", vision:900, attackRange:62,
+        loot:[{item:"gold",rate:.85,amount:120},{item:"emerald",rate:.35,amount:1}], isElite:true
+    };
+    MONSTERS.wraith = {
+        name:"망령", emoji:"👻", hp:85, damage:24, speed:2.35,
+        exp:75, color:"#8ea7ff", vision:1000, attackRange:52,
+        loot:[{item:"gold",rate:.65,amount:45},{item:"arcane_core",rate:.08,amount:1}]
+    };
+    ZONES.ruins = {
+        name:"🏛️ 폐허", color:"#40364f", minLevel:8, worldSize:WORLD_SIZE_NORMAL,
+        x:3200, y:900, safeRadius:300, spawns:["ruin_guardian","wraith","skeleton"]
+    };
+    if(typeof QUEST_POOL !== "undefined"){
+        QUEST_POOL.push(
+            {id:"ruins_3",giver:"ruins",name:"폐허의 흔적",desc:"폐허의 몬스터 3마리를 처치하세요.",target:3,rewardExp:300,rewardGold:300,monster:"ruins"},
+            {id:"ruins_7",giver:"ruins",name:"수호자 격파",desc:"폐허의 몬스터 7마리를 처치하세요.",target:7,rewardExp:520,rewardGold:600,monster:"ruins"}
+        );
+    }
+    STRUCTURES.push({type:"quest",name:"📜 폐허 연구자",x:3200,y:620,size:58,color:"#b58b62",zone:"ruins",npc:true});
+
+    function beginZoneMotion(){
+        UPDATE.transitionUntil = performance.now() + 650;
+        game.monsters = [];
+        game.bullets = [];
+        game.groundItems = [];
+        game.effects = [];
+        lastSpawnTime = performance.now() + 500;
+        nearbyStructure = null;
+    }
+
+    /* 지역 이동/귀환 후 스폰 주기를 항상 새로 시작 */
+    const oldChangeZoneUpdate = changeZone;
+    changeZone = function(key){
+        const before = game.currentZone;
+        oldChangeZoneUpdate(key);
+        if(before !== game.currentZone) beginZoneMotion();
+    };
+    const oldReturnChannelUpdate = updateReturnChannel;
+    updateReturnChannel = function(){
+        const before = game.currentZone;
+        oldReturnChannelUpdate();
+        if(before !== game.currentZone) beginZoneMotion();
+    };
+
+    /* 직업 시설: 고유 스킬은 무료 습득, 전용 장비만 판매 */
+    openJobShop = function(job){
+        const j = JOBS[job];
+        if(!j) return;
+        let panel = document.getElementById("dialogue-panel");
+        if(!panel){ panel=document.createElement("div"); panel.id="dialogue-panel"; document.body.appendChild(panel); }
+        const skill = SKILLS[j.skill];
+        const ownsSkill = game.skillsUnlocked.includes(j.skill);
+        panel.innerHTML = `
+            <div class="dialogue-title">${j.emoji} ${j.name} 시설</div>
+            <div class="dialogue-body">
+                ${j.desc}<br><br>
+                ${skill.emoji} <b>${skill.name}</b> — ${skill.desc}<br>
+                <span style="color:#2ed573">직업 전용 스킬은 무료로 습득합니다.</span>
+            </div>
+            <button class="class-btn" id="free-job-skill" ${ownsSkill?"disabled":""}>
+                ${ownsSkill ? "이미 습득한 스킬" : "무료로 스킬 습득"}
+            </button>
+            <button class="dialogue-choice" id="job-gear-buy">전용 장비 구매</button>
+            <button class="dialogue-choice" id="job-shop-close">닫기</button>`;
+        panel.style.display="block";
+        panel.querySelector("#free-job-skill").onclick=()=>{
+            if(game.player.job !== job){ showDropNotification("🔒 먼저 해당 직업으로 전직해야 합니다."); return; }
+            if(!game.skillsUnlocked.includes(j.skill)) game.skillsUnlocked.push(j.skill);
+            if(!game.skillHotbar.includes(j.skill)){
+                const empty=game.skillHotbar.indexOf(null);
+                if(empty!==-1) game.skillHotbar[empty]=j.skill;
+            }
+            showDropNotification(`${skill.emoji} ${skill.name}을(를) 무료로 습득했습니다.`);
+            renderSkillWindow(); renderSkillBar(); openJobShop(job);
+        };
+        panel.querySelector("#job-gear-buy").onclick=()=>buyJobGearUpdate(job);
+        panel.querySelector("#job-shop-close").onclick=()=>panel.style.display="none";
+    };
+
+    function buyJobGearUpdate(job){
+        const j=JOBS[job];
+        if(game.player.job!==job){showDropNotification("🔒 현재 직업과 맞지 않습니다.");return;}
+        const prices={weapon:450,armor:400};
+        for(const [kind,id] of [["weapon",j.weapon],["armor",j.armor]]){
+            if(getInventoryIndex(id)!==-1 || game.equipment[kind]===id) continue;
+            if(game.player.gold < prices[kind]){showDropNotification("💰 장비를 구매할 금화가 부족합니다.");return;}
+        }
+        for(const [kind,id] of [["weapon",j.weapon],["armor",j.armor]]){
+            if(getInventoryIndex(id)!==-1 || game.equipment[kind]===id) continue;
+            game.player.gold-=prices[kind]; addToInventory(id,1);
+            showDropNotification(`${ITEMS[id].emoji} ${ITEMS[id].name} 구매`);
+        }
+        syncGoldInventory(); renderInventory(); updateUI();
+    }
+
+    /* 활/마법 직업 스킬의 실제 발동 구현 */
+    function useFireball(){
+        const a=game.player.facingAngle;
+        game.bullets.push({type:"skill",skill:"fireball",x:game.player.x,y:game.player.y,
+            vx:Math.cos(a)*11,vy:Math.sin(a)*11,damage:getTotalAttackDamage()*1.7,
+            radius:9,travelled:0,maxDistance:780,color:"#ff6b35",splash:70});
+        game.player.attackAnimation={type:"magic_staff",start:performance.now(),duration:260,angle:a};
+    }
+    function useQuickshot(){
+        const a=game.player.facingAngle;
+        for(let i=-1;i<=1;i++) game.bullets.push({type:"skill",skill:"quickshot",x:game.player.x,y:game.player.y,
+            vx:Math.cos(a+i*.12)*13,vy:Math.sin(a+i*.12)*13,damage:getTotalAttackDamage()*.72,
+            radius:5,travelled:0,maxDistance:900,color:"#ffd166"});
+        game.player.attackAnimation={type:"multi",start:performance.now(),duration:240,angle:a};
+    }
+    const oldUseSkillUpdate=useSkill;
+    useSkill=function(skillId){
+        if(skillId!=="fireball" && skillId!=="quickshot") return oldUseSkillUpdate(skillId);
+        const skill=SKILLS[skillId];
+        if(!skill || !game.skillsUnlocked.includes(skillId) || !skillReady(skillId)) return;
+        const cost=skill.manaCost||0;
+        if(game.player.mana<cost){showDropNotification(`💧 마나가 부족합니다. (${cost} MP 필요)`);return;}
+        if(skillId==="fireball") useFireball(); else useQuickshot();
+        game.player.mana-=cost; skillLastUsed[skillId]=performance.now(); updateUI();
+    };
+
+    /* 화염구 폭발 피해 */
+    const oldUpdateBulletsUpdate=updateBullets;
+    updateBullets=function(){
+        const before=new Map(game.bullets.map(b=>[b,b.x]));
+        oldUpdateBulletsUpdate();
+        for(const b of before.keys()){
+            if(b.skill!=="fireball" || game.bullets.includes(b)) continue;
+            for(const m of [...game.monsters]){
+                if(Math.hypot(b.x-m.x,b.y-m.y)<= (b.splash||0)+m.radius){
+                    m.hp-=getTotalAttackDamage()*.65;
+                    if(m.hp<=0) killMonster(m);
+                }
+            }
+            game.effects.push({type:"explosion",x:b.x,y:b.y,start:performance.now(),duration:350});
+        }
+    };
+
+    /* 일반 퀘스트 처치 카운터 연결: 숲의 첫걸음 포함 */
+    const oldKillUpdate=killMonster;
+    killMonster=function(monster){
+        const result=oldKillUpdate(monster);
+        const q=game.quest?.active;
+        if(q && q.source==="normal" && game.quest.progress<q.target){
+            const valid=q.monster==="any" || q.monster===game.currentZone;
+            if(valid){game.quest.progress=Math.min(q.target,game.quest.progress+1);updateQuestTracker?.();}
+        }
+        return result;
+    };
+
+    /* 몬스터별 순찰/추격/마지막 목격 위치/고유 공격 */
+    const oldSpawnUpdate=spawnMonster;
+    spawnMonster=function(){
+        const before=game.monsters.length;
+        oldSpawnUpdate();
+        const m=game.monsters[game.monsters.length-1];
+        if(game.monsters.length>before && m){m.homeX=m.x;m.homeY=m.y;m.lastSeenX=m.x;m.lastSeenY=m.y;m.state="patrol";m.nextAbility=performance.now()+1800+Math.random()*2500;m.patrolAngle=Math.random()*Math.PI*2;}
+    };
+    const oldAIUpdate=updateMonsters;
+    updateMonsters=function(){
+        const now=performance.now();
+        for(const m of game.monsters){
+            if(m.homeX===undefined){m.homeX=m.x;m.homeY=m.y;m.lastSeenX=m.x;m.lastSeenY=m.y;m.state="patrol";m.nextAbility=now+2000;}
+            const d=Math.hypot(game.player.x-m.x,game.player.y-m.y);
+            const sight=Math.max(m.vision||500,900);
+            if(d<=sight){m.lastSeenX=game.player.x;m.lastSeenY=game.player.y;m.state="chase";}
+            else if(m.state==="chase" && Math.hypot(m.lastSeenX-m.x,m.lastSeenY-m.y)<28)m.state="patrol";
+            if(m.state==="patrol"){
+                m.patrolAngle+=(Math.random()-.5)*.12;
+                const tx=m.homeX+Math.cos(m.patrolAngle)*90,ty=m.homeY+Math.sin(m.patrolAngle)*90;
+                const pd=Math.hypot(tx-m.x,ty-m.y);
+                if(pd>8){m.x+=(tx-m.x)/pd*(m.speed*.42);m.y+=(ty-m.y)/pd*(m.speed*.42);}
+            }else{
+                const tx=m.lastSeenX,ty=m.lastSeenY,dx=tx-m.x,dy=ty-m.y,ld=Math.hypot(dx,dy);
+                if(ld>m.attackRange+game.player.radius){m.x+=dx/ld*m.speed;m.y+=dy/ld*m.speed;}
+            }
+            m.x=clamp(m.x,30,currentWorldSize-30);m.y=clamp(m.y,30,currentWorldSize-30);
+            if(now>=(m.nextAbility||0) && d<Math.max(650,m.vision||500)){
+                m.nextAbility=now+ (m.isElite?2600:4200)+Math.random()*1600;
+                if(m.type==="bat"||m.type==="wolf"||m.type==="wraith") {m.x+= (game.player.x-m.x)/(d||1)*45;m.y+=(game.player.y-m.y)/(d||1)*45;}
+                if(m.type==="dragon_wyvern"||m.type==="demon"||m.type==="pharaoh"||m.type==="ruin_guardian"){
+                    game.effects.push({type:"playerHit",x:game.player.x,y:game.player.y,start:now,duration:260});
+                    if(now>=game.player.invincibleUntil)game.player.hp=Math.max(0,game.player.hp-Math.max(3,m.damage*.45));
+                }
+                if(m.type==="ghoul")m.hp=Math.min(m.maxHp,m.hp+m.maxHp*.12);
+            }
+        }
+        /* 기존 공격 판정은 유지하되, 새 위치/추격 상태를 사용 */
+        oldAIUpdate();
+    };
+
+    /* 활 전용 장비: 기존 playerAttack가 처리하지 않던 ranged 타입 보정 */
+    const oldPlayerAttackUpdate = playerAttack;
+    playerAttack = function(){
+        const weapon = getEquippedWeapon();
+        if(!weapon || weapon.attackType !== "ranged"){
+            oldPlayerAttackUpdate();
+            return;
+        }
+        if(!gameStarted || gameOver || isPaused) return;
+        const now = performance.now();
+        if(now - game.player.lastAttack < (weapon.cooldown || 500)) return;
+        game.player.lastAttack = now;
+        const angle = game.player.facingAngle;
+        game.bullets.push({
+            type:"ranged", skill:"bow", x:game.player.x, y:game.player.y,
+            vx:Math.cos(angle)*(weapon.projectileSpeed||12),
+            vy:Math.sin(angle)*(weapon.projectileSpeed||12),
+            damage:getTotalAttackDamage(), radius:5, travelled:0,
+            maxDistance:weapon.range||650, color:"#ffd166"
+        });
+        game.player.attackAnimation={type:"multi",start:now,duration:180,angle};
+    };
+
+    /* 지역/귀환 전환 때 플레이어 주변부터 다시 살아 움직이게 함 */
+    const oldDrawGameUpdate=drawGame;
+    drawGame=function(){
+        oldDrawGameUpdate();
+        if(performance.now()<UPDATE.transitionUntil){
+            ctx.save();ctx.fillStyle="rgba(0,0,0,.16)";ctx.fillRect(0,0,canvas.width,canvas.height);ctx.restore();
+        }
+    };
+
+    initZoneSelect();
+})();
+</script>
+
+<script>
+/* FINAL GAMEPLAY PATCH: 느린 몬스터, 안전지대 이탈, 이름/레벨 표시 */
+(function(){
+    const originalSpawn = spawnMonster;
+    const originalUpdate = updateMonsters;
+    const SAFE_BUFFER = 90;
+
+    spawnMonster = function(){
+        const before = game.monsters.length;
+        originalSpawn();
+        const monster = game.monsters[game.monsters.length - 1];
+        if(game.monsters.length > before && monster){
+            monster.speed = Math.min(monster.speed || 1, 1.35);
+            monster.baseSpeed = monster.speed;
+            monster.homeX = monster.x;
+            monster.homeY = monster.y;
+            monster.lastSeenX = monster.x;
+            monster.lastSeenY = monster.y;
+            monster.state = "patrol";
+            monster.patrolAngle = Math.random() * Math.PI * 2;
+            monster.nextPatrolTurn = performance.now() + 900;
+        }
+    };
+
+    updateMonsters = function(){
+        const zone = ZONES[game.currentZone];
+        const safeRadius = zone?.safeRadius || 0;
+        const playerInSafeZone = !!zone &&
+            Math.hypot(game.player.x - zone.x, game.player.y - zone.y) < safeRadius;
+        const now = performance.now();
+
+        for(const monster of game.monsters){
+            const distanceToPlayer = distance(game.player, monster);
+            const monsterToSafeZone = zone
+                ? Math.hypot(monster.x - zone.x, monster.y - zone.y)
+                : Infinity;
+
+            /* 보호구역 안에서는 추적하지 않고, 사정거리 밖까지 물러난 뒤 순찰 */
+            if(playerInSafeZone){
+                monster.state = "patrol";
+                if(monsterToSafeZone < safeRadius + SAFE_BUFFER){
+                    const dx = monster.x - zone.x;
+                    const dy = monster.y - zone.y;
+                    const len = Math.hypot(dx, dy) || 1;
+                    monster.x = zone.x + dx / len * (safeRadius + SAFE_BUFFER);
+                    monster.y = zone.y + dy / len * (safeRadius + SAFE_BUFFER);
+                }
+            } else if(distanceToPlayer <= (monster.vision || 500)) {
+                monster.state = "chase";
+                monster.lastSeenX = game.player.x;
+                monster.lastSeenY = game.player.y;
+            } else {
+                monster.state = "patrol";
+            }
+
+            if(monster.state === "chase" && !playerInSafeZone){
+                const dx = game.player.x - monster.x;
+                const dy = game.player.y - monster.y;
+                const len = Math.hypot(dx, dy) || 1;
+                const speed = Math.min(monster.baseSpeed || monster.speed || 1, 1.35);
+                if(distanceToPlayer > monster.attackRange + game.player.radius){
+                    monster.x += dx / len * speed;
+                    monster.y += dy / len * speed;
+                }
+            } else {
+                if(now >= (monster.nextPatrolTurn || 0)){
+                    monster.patrolAngle = (monster.patrolAngle || 0) + (Math.random() - .5) * 1.4;
+                    monster.nextPatrolTurn = now + 900 + Math.random() * 1600;
+                }
+                const radius = 80;
+                const targetX = (monster.homeX ?? monster.x) + Math.cos(monster.patrolAngle || 0) * radius;
+                const targetY = (monster.homeY ?? monster.y) + Math.sin(monster.patrolAngle || 0) * radius;
+                const dx = targetX - monster.x;
+                const dy = targetY - monster.y;
+                const len = Math.hypot(dx, dy) || 1;
+                const speed = Math.min(monster.baseSpeed || monster.speed || 1, 1.35) * .45;
+                monster.x += dx / len * speed;
+                monster.y += dy / len * speed;
+            }
+
+            monster.x = clamp(monster.x, 30, currentWorldSize - 30);
+            monster.y = clamp(monster.y, 30, currentWorldSize - 30);
+        }
+
+        /* 공격 판정만 기존 로직으로 처리하되, 기존 이동은 막음 */
+        const savedSpeeds = game.monsters.map(m => [m, m.speed]);
+        for(const [monster] of savedSpeeds) monster.speed = 0;
+        originalUpdate();
+        for(const [monster, speed] of savedSpeeds) monster.speed = speed;
+    };
+
+    const originalDraw = drawMonsters;
+    drawMonsters = function(){
+        for(const monster of game.monsters){
+            const data = MONSTERS[monster.type];
+            monster.displayName = data?.name || monster.name || monster.type;
+            monster.displayLevel = Math.max(1, game.player.level + (monster.isElite ? 2 : 0));
+        }
+        originalDraw();
+        for(const monster of game.monsters){
+            ctx.save();
+            ctx.textAlign = "center";
+            ctx.font = monster.isElite ? "bold 13px Arial" : "12px Arial";
+            ctx.fillStyle = monster.isElite ? "#ffd166" : "#fff";
+            ctx.strokeStyle = "#000";
+            ctx.lineWidth = 3;
+            const label = `${monster.displayName}  Lv.${monster.displayLevel}`;
+            const y = monster.y - monster.radius - 23;
+            ctx.strokeText(label, monster.x, y);
+            ctx.fillText(label, monster.x, y);
+            ctx.restore();
+        }
+    };
+
+    /* 기존 UI를 덮어쓰지 않고 게임 화면 기준으로 위치만 보정 */
+    function positionUI(){
+        const positions = {
+            "hp-status":["22px","22px"],
+            "exp-status":["22px","65px"],
+            "mana-status":["22px","108px"],
+            "stats-toggle":["22px","155px"]
+        };
+        for(const [id,[left,top]] of Object.entries(positions)){
+            const el=document.getElementById(id);
+            if(el){el.style.left=left;el.style.top=top;}
+        }
+
+        const minimap = document.getElementById("minimap-container");
+        if(minimap){
+            minimap.style.left = "auto";
+            minimap.style.right = "20px";
+            minimap.style.top = "20px";
+        }
+    }
+    positionUI();
+})();
+</script>
+
 </body>
 </html>
 
@@ -10670,6 +11048,287 @@ __setHudVisibilityV7();
   renderItemHotbar();
   updateQuestTracker();
 
+  /* 튜토리얼 복구: 새 게임마다 촌장 대화부터 다시 시작 */
+  const restoreTutorialStart = startGame;
+  startGame = function(){
+    restoreTutorialStart();
+    game.tutorialFlow = {
+      finished: false,
+      step: -1,
+      progress: 0,
+      dialogue: 0,
+      dialogueOpen: false,
+      greeted: false,
+      readyToTurnIn: false,
+      completedSteps: []
+    };
+    game.quest = {active:null, progress:0, completedIds:[], giver:null};
+    setTimeout(() => {
+      if(gameStarted && !gameOver && typeof showChiefDialogue === "function") {
+        showChiefDialogue(0);
+      }
+    }, 140);
+  };
+
+  const restoreTutorialRestart = restartGame;
+  restartGame = function(){
+    restoreTutorialRestart();
+    game.tutorialFlow = {
+      finished: false,
+      step: -1,
+      progress: 0,
+      dialogue: 0,
+      dialogueOpen: false,
+      greeted: false,
+      readyToTurnIn: false,
+      completedSteps: []
+    };
+    game.quest = {active:null, progress:0, completedIds:[], giver:null};
+    setTimeout(() => {
+      if(gameStarted && !gameOver && typeof showChiefDialogue === "function") {
+        showChiefDialogue(0);
+      }
+    }, 140);
+  };
+
 })();
 
 </script>
+
+<style id="final-map-size-fix">
+/* 지도 크기 최종 보정 */
+#minimap-container {
+  width: 160px !important;
+  height: 160px !important;
+  padding: 4px !important;
+}
+
+#minimap {
+  width: 150px !important;
+  height: 150px !important;
+}
+
+#map-window {
+  width: min(620px, 88vw) !important;
+  height: min(560px, 76vh) !important;
+  padding: 12px !important;
+}
+
+#big-map {
+  width: 100% !important;
+  height: calc(100% - 42px) !important;
+}
+
+@media (max-width: 700px) {
+  #minimap-container {
+    width: 128px !important;
+    height: 128px !important;
+    padding: 3px !important;
+  }
+
+  #minimap {
+    width: 120px !important;
+    height: 120px !important;
+  }
+
+  #map-window {
+    width: 92vw !important;
+    height: 70vh !important;
+    padding: 10px !important;
+  }
+}
+
+/* FINAL UI LAYOUT: 고정 크기 기준으로 겹침을 방지한다. */
+#hp-status,
+#exp-status,
+#mana-status {
+  left: 20px !important;
+  width: 240px !important;
+}
+
+#hp-status { top: 20px !important; }
+#exp-status { top: 63px !important; }
+#mana-status { top: 106px !important; }
+
+#stats-toggle {
+  top: 150px !important;
+  left: 20px !important;
+  width: 92px !important;
+  height: 34px !important;
+  padding: 0 !important;
+}
+
+#active-quest-tracker {
+  left: 20px !important;
+  top: 194px !important;
+  width: 240px !important;
+  max-width: 240px !important;
+}
+
+#minimap-container {
+  top: 20px !important;
+  right: 20px !important;
+  width: 160px !important;
+  height: 160px !important;
+  padding: 4px !important;
+}
+
+#minimap {
+  width: 150px !important;
+  height: 150px !important;
+}
+
+#map-toggle,
+#inventory-toggle,
+#skill-toggle {
+  top: 194px !important;
+  height: 34px !important;
+  padding: 0 9px !important;
+  font-size: 12px !important;
+  white-space: nowrap !important;
+}
+
+#map-toggle {
+  right: 190px !important;
+  width: 90px !important;
+}
+
+#inventory-toggle {
+  right: 105px !important;
+  width: 78px !important;
+}
+
+#skill-toggle {
+  right: 20px !important;
+  width: 76px !important;
+}
+
+#return-town-button {
+  top: 238px !important;
+  right: 20px !important;
+  height: 34px !important;
+  min-width: 92px !important;
+}
+
+#return-channel {
+  top: 278px !important;
+  right: 20px !important;
+}
+
+#skill-bar {
+  left: 20px !important;
+  bottom: 20px !important;
+  top: auto !important;
+  transform: none !important;
+}
+
+#item-hotbar {
+  left: 50% !important;
+  right: auto !important;
+  bottom: 20px !important;
+  top: auto !important;
+  transform: translateX(-50%) !important;
+}
+
+#map-window {
+  top: 50% !important;
+  left: 50% !important;
+  width: min(620px, 88vw) !important;
+  height: min(560px, 76vh) !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+@media (max-width: 700px) {
+  #hp-status,
+  #exp-status,
+  #mana-status {
+    left: 10px !important;
+    width: 195px !important;
+  }
+
+  #hp-status { top: 10px !important; }
+  #exp-status { top: 50px !important; }
+  #mana-status { top: 90px !important; }
+
+  #stats-toggle {
+    top: 130px !important;
+    left: 10px !important;
+    width: 82px !important;
+    height: 30px !important;
+  }
+
+  #active-quest-tracker {
+    left: 10px !important;
+    top: 168px !important;
+    width: 195px !important;
+    max-width: 195px !important;
+  }
+
+  #minimap-container {
+    top: 10px !important;
+    right: 10px !important;
+    width: 128px !important;
+    height: 128px !important;
+    padding: 3px !important;
+  }
+
+  #minimap {
+    width: 120px !important;
+    height: 120px !important;
+  }
+
+  #map-toggle,
+  #inventory-toggle,
+  #skill-toggle {
+    top: 150px !important;
+    height: 30px !important;
+    font-size: 10px !important;
+    padding: 0 4px !important;
+  }
+
+  #map-toggle {
+    left: 10px !important;
+    right: auto !important;
+    width: 90px !important;
+  }
+
+  #inventory-toggle {
+    left: 105px !important;
+    right: auto !important;
+    width: 68px !important;
+  }
+
+  #skill-toggle {
+    left: 178px !important;
+    right: auto !important;
+    width: 62px !important;
+  }
+
+  #return-town-button {
+    top: 188px !important;
+    right: 10px !important;
+    height: 30px !important;
+    min-width: 82px !important;
+  }
+
+  #return-channel {
+    top: 224px !important;
+    right: 10px !important;
+  }
+
+  #skill-bar {
+    left: 10px !important;
+    bottom: 10px !important;
+  }
+
+  #item-hotbar {
+    bottom: 10px !important;
+    max-width: calc(100vw - 20px) !important;
+  }
+
+  #map-window {
+    width: 92vw !important;
+    height: 70vh !important;
+  }
+}
+</style>
