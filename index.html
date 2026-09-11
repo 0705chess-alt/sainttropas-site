@@ -1204,6 +1204,33 @@ canvas {
 .tut-title,.dialogue-title,.class-title{color:#00f5ff;font-size:22px;font-weight:bold;text-align:center;margin-bottom:10px}.tut-body,.dialogue-body,.class-body{color:#ddd;font-size:13px;line-height:1.65}.tut-quest{margin-top:12px;background:#191919;border:1px solid #555;border-radius:7px;padding:12px}.tut-btn,.class-btn{width:100%;margin-top:10px;background:#00f5ff;color:#000;border:0;border-radius:6px;padding:10px;font-weight:bold;cursor:pointer}.class-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.class-card{background:#191919;border:1px solid #555;border-radius:7px;padding:10px;text-align:center;cursor:pointer}.class-card:hover{border-color:#00f5ff;background:#242424}.job-note{font-size:10px;color:#aaa;margin-top:5px}.dialogue-choice{width:100%;margin-top:8px;background:#222;color:#fff;border:1px solid #555;border-radius:6px;padding:9px;cursor:pointer}.dialogue-choice:hover{border-color:#00f5ff}
 .zone-btn.locked{opacity:.45}.zone-btn:disabled{opacity:.45;cursor:default}
 
+
+/* V8 UI FIX */
+#status-info{display:none!important;}
+#hp-status,#exp-status,#mana-status{left:22px!important;width:245px!important;}
+#hp-status{top:23px!important;}
+#exp-status{top:66px!important;}
+#mana-status{top:109px!important;}
+#stats-toggle{top:198px!important;left:22px!important;}
+#minimap-container{top:22px!important;right:22px!important;padding:4px!important;}
+#minimap{width:180px!important;height:180px!important;}
+#map-toggle{top:198px!important;right:192px!important;}
+#inventory-toggle{top:198px!important;right:100px!important;}
+#skill-toggle{top:198px!important;right:22px!important;}
+#item-hotbar{bottom:22px!important;gap:3px!important;padding:4px 5px!important;}
+#skill-bar{bottom:104px!important;gap:4px!important;padding:5px 6px!important;}
+#tutorial-overlay{display:none;}
+#tutorial-overlay.v8-open{display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;}
+@media (max-width:700px){
+ #minimap-container{top:10px!important;right:10px!important;}
+ #minimap{width:140px!important;height:140px!important;}
+ #map-toggle{top:156px!important;right:150px!important;}
+ #inventory-toggle{top:156px!important;right:76px!important;}
+ #skill-toggle{top:156px!important;right:10px!important;}
+ #hp-status,#exp-status,#mana-status{left:10px!important;width:190px!important;}
+ #hp-status{top:10px!important}.exp-status{top:50px!important}.mana-status{top:90px!important}
+ #stats-toggle{top:130px!important;left:10px!important;}
+}
 </style>
 </head>
 
@@ -8605,7 +8632,1058 @@ setInterval(()=>{if(gameStarted&&!gameOver)checkNearbyStructure();},150);
 // 시작 즉시 작은 기본 UI 갱신
 renderItemHotbar();renderSkillBar();updateUI();
 
+
+
+/* =========================================================
+   V7 FIX: start tutorial / menu HUD / quest state / motion
+========================================================= */
+
+/* 메뉴에서는 전투 HUD를 절대 표시하지 않는다. */
+const __setHudVisibilityV7 = () => {
+    const playing = !!gameStarted && !document.getElementById('main-menu')?.classList.contains('active');
+    const item = document.getElementById('item-hotbar');
+    const skill = document.getElementById('skill-bar');
+    if(item) item.style.display = playing ? 'flex' : 'none';
+    if(skill) skill.style.display = playing ? 'flex' : 'none';
+};
+
+/* 퀘스트 상태를 새 구조로 완전히 초기화. */
+function hardResetQuestStateV7(){
+    game.quest = {
+        active: null,
+        progress: 0,
+        completedIds: [],
+        giver: null
+    };
+}
+
+/* 튜토리얼을 무조건 1번부터 시작. */
+function beginTutorialV7(){
+    if(!gameStarted || gameOver) return;
+    hardResetQuestStateV7();
+    const q = TUTORIALS[0];
+    if(!q) return;
+    setQuest(q, 'tutorial', 'town');
+    showTutorialOverlay();
+}
+
+/* 원본 시작 함수를 감싸서 화면 활성화 후 튜토리얼을 확실히 띄운다. */
+const __startGameV7 = startGame;
+startGame = function(){
+    __startGameV7();
+    const main = document.getElementById('main-menu');
+    const screen = document.getElementById('game-screen');
+    if(main) main.classList.remove('active');
+    if(screen) screen.classList.add('active');
+    gameStarted = true;
+    gameOver = false;
+    isPaused = false;
+    hardResetQuestStateV7();
+    __setHudVisibilityV7();
+    renderItemHotbar();
+    renderSkillBar();
+    setTimeout(beginTutorialV7, 120);
+};
+
+const __restartGameV7 = restartGame;
+restartGame = function(){
+    __restartGameV7();
+    hardResetQuestStateV7();
+    game.player.job = null;
+    game.inventory[0] = {id:'potion', count:5};
+    const clubIndex = game.inventory.findIndex(x=>x && x.id==='wood_club');
+    if(clubIndex === -1) game.inventory[1] = {id:'wood_club',count:1};
+    game.equipment.weapon='wood_club';
+    game.skillsUnlocked=['slash'];
+    game.skillHotbar=['slash',null,null,null,null];
+    game.itemHotbar=[0,1,null,null,null];
+    __setHudVisibilityV7();
+    renderInventory();
+    renderSkillBar();
+    renderItemHotbar();
+    setTimeout(beginTutorialV7, 120);
+};
+
+const __goToMenuV7 = goToMenu;
+goToMenu = function(){
+    __goToMenuV7();
+    const tut=document.getElementById('tutorial-overlay');
+    const cls=document.getElementById('class-select-panel');
+    const dlg=document.getElementById('dialogue-panel');
+    if(tut) tut.style.display='none';
+    if(cls) cls.style.display='none';
+    if(dlg) dlg.style.display='none';
+    const item=document.getElementById('item-hotbar');
+    const skill=document.getElementById('skill-bar');
+    if(item) item.style.display='none';
+    if(skill) skill.style.display='none';
+    hardResetQuestStateV7();
+};
+
+/* 매 프레임 메뉴/게임 상태와 HUD 표시를 동기화. */
+const __drawGameV7 = drawGame;
+drawGame = function(){
+    __setHudVisibilityV7();
+    __drawGameV7();
+};
+
+/* 튜토리얼 첫 화면을 별도 문구로 명확하게 표시. */
+const __showTutorialV7 = showTutorialOverlay;
+showTutorialOverlay = function(){
+    __showTutorialV7();
+    const p=document.getElementById('tutorial-overlay');
+    if(p && game.quest.active){
+        const q=game.quest.active;
+        p.innerHTML = `
+          <div class="tut-title">📘 ${q.name}</div>
+          <div class="tut-body">게임을 시작하기 전에 기본 조작과 RPG 시스템을 배워봅시다.</div>
+          <div class="tut-quest">
+            <b>${q.desc}</b>
+            <div style="margin-top:8px;color:#00f5ff">진행도: ${Math.min(game.quest.progress,q.target)} / ${q.target}</div>
+            <div style="margin-top:6px;color:#aaa">보상: EXP ${q.rewardExp} · 💰 ${q.rewardGold}</div>
+          </div>
+          <button class="tut-btn" onclick="document.getElementById('tutorial-overlay').style.display='none'">튜토리얼 시작</button>`;
+        p.style.display='block';
+    }
+};
+
+/* 튜토리얼 단계는 퀘스트 창에 '마을 일반 퀘스트'로 섞이지 않는다. */
+const __openQuestV7 = openQuestPanel;
+openQuestPanel = function(zone=game.currentZone){
+    ensureQuestState();
+    if(game.quest.active?.source==='tutorial'){
+        __showTutorialV7();
+        return;
+    }
+    return __openQuestV7(zone);
+};
+
+/* 더 역동적인 이동 모션: 몸 흔들림 + 발/팔 스텝 + 그림자 + 방향 기울기. */
+const __drawPlayerV7Base = drawPlayer;
+drawPlayer = function(){
+    const p=game.player;
+    const moving = !!(game.keys.w||game.keys.a||game.keys.s||game.keys.d||game.keys.arrowup||game.keys.arrowdown||game.keys.arrowleft||game.keys.arrowright);
+    const t=performance.now();
+    const phase = p.movementAnimation || 0;
+    const bob = moving ? Math.sin(phase*2.7)*4 : Math.sin(t/500)*0.8;
+    const step = moving ? Math.sin(phase*2.7)*6 : 0;
+    const lean = moving ? Math.cos(phase*2.7)*0.10 : 0;
+
+    ctx.save();
+    ctx.translate(p.x, p.y+bob);
+    ctx.rotate(lean);
+
+    /* 그림자 */
+    ctx.save();
+    ctx.globalAlpha=.28;
+    ctx.fillStyle='#000';
+    ctx.beginPath();
+    ctx.ellipse(0, p.radius+8, p.radius*1.15, 6, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+
+    /* 발 */
+    ctx.strokeStyle='#1b1b1b';
+    ctx.lineWidth=6;
+    ctx.lineCap='round';
+    ctx.beginPath();
+    ctx.moveTo(-6, 12); ctx.lineTo(-6-step*.35, 24);
+    ctx.moveTo(6, 12); ctx.lineTo(6+step*.35, 24);
+    ctx.stroke();
+
+    /* 팔 흔들림 */
+    ctx.strokeStyle='#bfefff';
+    ctx.lineWidth=6;
+    ctx.beginPath();
+    ctx.moveTo(-13,-2); ctx.lineTo(-21-step*.30, 8+step*.25);
+    ctx.moveTo(13,-2); ctx.lineTo(21+step*.30, 8-step*.25);
+    ctx.stroke();
+
+    /* 몸 */
+    ctx.beginPath();
+    ctx.arc(0,0,p.radius,0,Math.PI*2);
+    ctx.fillStyle='#00f5ff';
+    ctx.fill();
+    ctx.strokeStyle='#fff';
+    ctx.lineWidth=2;
+    ctx.stroke();
+
+    /* 얼굴 방향 표시 */
+    ctx.fillStyle='#07343a';
+    const ex=Math.cos(p.facingAngle)*7, ey=Math.sin(p.facingAngle)*7;
+    ctx.beginPath(); ctx.arc(ex-2,ey-2,2.4,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(ex+4,ey+2,2.4,0,Math.PI*2); ctx.fill();
+
+    ctx.restore();
+
+    drawWeapon();
+    drawAttackAnimation();
+};
+
+/* 안전하게 시작 상태를 동기화. */
+__setHudVisibilityV7();
+
+
+
+/* =========================================================
+   V8 FIX: exact UI layout + reliable tutorial + player level
+========================================================= */
+(function(){
+    function v8HideMenuHud(){
+        const playing=!!gameStarted && !document.getElementById('main-menu')?.classList.contains('active');
+        ['item-hotbar','skill-bar'].forEach(id=>{
+            const el=document.getElementById(id); if(el) el.style.display=playing?'flex':'none';
+        });
+    }
+
+    function v8ForceTutorial(){
+        if(!gameStarted || gameOver) return;
+        hardResetQuestStateV7();
+        const q=(typeof TUTORIALS!=='undefined' && TUTORIALS.length)?TUTORIALS[0]:null;
+        if(!q) return;
+        game.quest={active:null,progress:0,completedIds:[],giver:null};
+        setQuest(q,'tutorial','town');
+        let p=document.getElementById('tutorial-overlay');
+        if(!p){ p=document.createElement('div'); p.id='tutorial-overlay'; document.body.appendChild(p); }
+        p.innerHTML=`<div class="tut-title">📘 ${q.name}</div>
+        <div class="tut-body">튜토리얼을 시작합니다. 이동, 전투, 장비와 RPG 시스템을 하나씩 배워봅시다.</div>
+        <div class="tut-quest"><b>${q.desc}</b>
+        <div style="margin-top:8px;color:#00f5ff">진행도: 0 / ${q.target}</div>
+        <div style="margin-top:6px;color:#aaa">보상: EXP ${q.rewardExp} · 💰 ${q.rewardGold}</div></div>
+        <button class="tut-btn" onclick="document.getElementById('tutorial-overlay').classList.remove('v8-open');document.getElementById('tutorial-overlay').style.display='none';">튜토리얼 시작</button>`;
+        p.classList.add('v8-open');
+        p.style.display='block';
+        p.style.zIndex='10000';
+    }
+
+    /* startGame 이후에도 확실하게 실행 */
+    const oldStartV8=startGame;
+    startGame=function(){
+        oldStartV8();
+        v8HideMenuHud();
+        setTimeout(v8ForceTutorial,80);
+        setTimeout(v8ForceTutorial,350);
+    };
+
+    const oldRestartV8=restartGame;
+    restartGame=function(){
+        oldRestartV8();
+        hardResetQuestStateV7();
+        game.player.job=null;
+        game.player.level=1; game.player.exp=0; game.player.maxExp=100;
+        game.inventory[0]={id:'potion',count:5};
+        game.inventory[1]={id:'wood_club',count:1};
+        game.inventory[2]=null;
+        game.equipment.weapon='wood_club';
+        game.skillsUnlocked=['slash'];
+        game.skillHotbar=['slash',null,null,null,null];
+        game.itemHotbar=[0,1,null,null,null];
+        v8HideMenuHud();
+        renderInventory(); renderSkillBar(); renderItemHotbar();
+        setTimeout(v8ForceTutorial,80); setTimeout(v8ForceTutorial,350);
+    };
+
+    const oldMenuV8=goToMenu;
+    goToMenu=function(){
+        oldMenuV8();
+        v8HideMenuHud();
+        const p=document.getElementById('tutorial-overlay');
+        if(p){p.classList.remove('v8-open');p.style.display='none';}
+    };
+
+    /* 게임 루프에서도 메뉴 HUD가 절대 살아나지 않게 */
+    const oldDrawGameV8=drawGame;
+    drawGame=function(){ v8HideMenuHud(); oldDrawGameV8(); };
+
+    /* 맵 경계에서 모션이 실제 위치를 밀어내지 않도록 시각 모션만 사용 */
+    const oldUpdatePlayerV8=updatePlayer;
+    updatePlayer=function(){
+        oldUpdatePlayerV8();
+        game.player.x=clamp(game.player.x,game.player.radius,currentWorldSize-game.player.radius);
+        game.player.y=clamp(game.player.y,game.player.radius,currentWorldSize-game.player.radius);
+    };
+
+    /* 플레이어 머리 위 레벨 */
+    const oldDrawPlayerV8=drawPlayer;
+    drawPlayer=function(){
+        oldDrawPlayerV8();
+        if(!gameStarted || gameOver) return;
+        const p=game.player;
+        ctx.save();
+        ctx.font='bold 13px Arial';
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        const text='Lv. '+p.level;
+        const y=p.y-p.radius-16;
+        const w=ctx.measureText(text).width+12;
+        ctx.fillStyle='rgba(0,0,0,.72)';
+        ctx.fillRect(p.x-w/2,y-9,w,18);
+        ctx.fillStyle='#ffd166';
+        ctx.fillText(text,p.x,y);
+        ctx.restore();
+    };
+
+    /* 기존 레벨/처치/지역 박스 완전 제거 */
+    const status=document.getElementById('status-info');
+    if(status) status.style.display='none';
+    v8HideMenuHud();
+})();
+
+
+
+</script>
+<style id="v9-ui-fix">
+/* V9: screenshot-based UI */
+#status-info{display:none!important;}
+#hp-status,#exp-status,#mana-status{left:35px!important;width:308px!important;}
+#hp-status{top:33px!important}.exp-status{top:87px!important}.mana-status{top:141px!important}
+#stats-toggle{left:35px!important;top:253px!important;padding:10px 16px!important;font-size:15px!important}
+#minimap-container{top:33px!important;right:45px!important;padding:5px!important}
+#minimap{width:225px!important;height:225px!important}
+#map-toggle{top:252px!important;right:255px!important}
+#inventory-toggle{top:252px!important;right:145px!important}
+#skill-toggle{top:252px!important;right:45px!important}
+#skill-bar{bottom:121px!important;gap:5px!important;padding:5px 6px!important}
+#item-hotbar{bottom:20px!important;gap:4px!important;padding:4px 5px!important}
+.item-hud-slot{width:54px!important;height:54px!important;font-size:23px!important}
+#skill-bar .hotbar-slot{width:54px!important;height:54px!important}
+#tutorial-overlay{z-index:2147483000!important}
+@media(max-width:800px){
+ #hp-status,#exp-status,#mana-status{left:18px!important;width:235px!important}
+ #hp-status{top:18px!important}.exp-status{top:61px!important}.mana-status{top:104px!important}
+ #stats-toggle{left:18px!important;top:190px!important}
+ #minimap-container{top:18px!important;right:18px!important}
+ #minimap{width:170px!important;height:170px!important}
+ #map-toggle{top:196px!important;right:190px!important}
+ #inventory-toggle{top:196px!important;right:100px!important}
+ #skill-toggle{top:196px!important;right:18px!important}
+}
+</style>
+<script>
+/* =========================================================
+   V9 FIX: reliable tutorial, wood club, slow proportional motion,
+   attack weapon movement, transparent safe-zone boundary, UI
+========================================================= */
+(function(){
+  const WOOD='wood_club';
+
+  function forceStartingLoadout(){
+    if(!game || !game.player) return;
+    game.player.job=null;
+    game.player.level=1; game.player.exp=0; game.player.maxExp=100;
+    game.player.hp=game.player.maxHp=100;
+    game.player.mana=game.player.maxMana=100;
+    game.player.damage=15;
+    game.player.facingAngle=0;
+    game.player.lastAttack=0;
+    game.inventory=Array(20).fill(null);
+    game.inventory[0]={id:'potion',count:5};
+    game.inventory[1]={id:'gold',count:200};
+    game.inventory[2]={id:WOOD,count:1};
+    game.equipment={weapon:WOOD,armor:null};
+    game.weaponUpgrade=game.weaponUpgrade||{};
+    game.weaponUpgrade[WOOD]=0;
+    game.skillsUnlocked=['slash'];
+    game.skillHotbar=['slash',null,null,null,null];
+    game.itemHotbar=[0,2,null,null,null];
+    game.selectedItemHotbar=0; game.selectedSkillHotbar=0;
+    game.quest={active:null,progress:0,completedIds:[],giver:null};
+    renderInventory(); renderSkillWindow(); renderSkillBar(); renderItemHotbar(); updateUI();
+  }
+
+  function showTutorialV9(){
+    if(!gameStarted || gameOver) return;
+    const q=TUTORIALS && TUTORIALS[0]; if(!q) return;
+    /* 첫 진입에서만 초기화하고, 화면을 닫았다가 다시 그리지 않는다. */
+    if(!game.quest || !game.quest.active || game.quest.active.source!=='tutorial'){
+      game.quest={active:{...q,source:'tutorial',giver:'town'},progress:0,completedIds:[],giver:'town'};
+    }
+    let p=document.getElementById('tutorial-overlay');
+    if(!p){
+      p=document.createElement('div'); p.id='tutorial-overlay';
+      document.body.appendChild(p);
+    }
+    p.innerHTML=`<div class="tut-title">📘 ${game.quest.active.name}</div>
+      <div class="tut-body">게임을 시작했습니다! 먼저 기본 조작을 배워봅시다.</div>
+      <div class="tut-quest"><b>${game.quest.active.desc}</b>
+      <div style="margin-top:8px;color:#00f5ff">진행도: ${Math.min(game.quest.progress,game.quest.active.target)} / ${game.quest.active.target}</div>
+      <div style="margin-top:6px;color:#aaa">보상: EXP ${game.quest.active.rewardExp} · 💰 ${game.quest.active.rewardGold}</div></div>
+      <button class="tut-btn" id="v9-tutorial-start">튜토리얼 시작</button>`;
+    p.classList.add('v8-open'); p.style.display='block'; p.style.visibility='visible'; p.style.opacity='1';
+    const b=document.getElementById('v9-tutorial-start');
+    if(b) b.onclick=()=>{p.style.display='none';p.classList.remove('v8-open');game.tutorialStarted=true;};
+  }
+
+  /* 시작/재시작 직후 원래 reset이 무엇을 하더라도 최종 상태를 강제 */
+  const oldStartV9=startGame;
+  startGame=function(){
+    oldStartV9();
+    forceStartingLoadout();
+    game.tutorialStarted=false;
+    setTimeout(()=>{forceStartingLoadout();showTutorialV9();},30);
+    setTimeout(()=>{if(gameStarted&&!gameOver)showTutorialV9();},250);
+  };
+  const oldRestartV9=restartGame;
+  restartGame=function(){
+    oldRestartV9();
+    forceStartingLoadout(); game.tutorialStarted=false;
+    setTimeout(()=>{forceStartingLoadout();showTutorialV9();},30);
+    setTimeout(()=>{if(gameStarted&&!gameOver)showTutorialV9();},250);
+  };
+
+  /* 기본 스킬을 강타로 고정. 멀티샷은 궁수 전용으로만 유지 */
+  function forceBasicSkill(){
+    if(!gameStarted) return;
+    if(!game.player.job){
+      game.skillsUnlocked=['slash'];
+      game.skillHotbar=['slash',null,null,null,null];
+      renderSkillBar();
+    }
+  }
+
+  /* 이동 속도에 비례하는 느린 모션. 기존 위치 계산은 그대로 두고
+     애니메이션 위상만 실제 이동 거리로 보정한다. */
+  const oldUpdatePlayerV9=updatePlayer;
+  updatePlayer=function(){
+    const beforeX=game.player.x,beforeY=game.player.y;
+    const beforePhase=game.player.movementAnimation||0;
+    oldUpdatePlayerV9();
+    const dist=Math.hypot(game.player.x-beforeX,game.player.y-beforeY);
+    /* 원본이 프레임당 +0.2 하던 것을 제거하고 실제 이동량에 비례시킨다. */
+    game.player.movementAnimation=beforePhase + dist*0.025;
+  };
+
+  /* 공격/이동 모두 원래 플레이어 그리기를 사용하되, 이동 모션은 천천히 한다. */
+  const oldDrawPlayerV9=drawPlayer;
+  drawPlayer=function(){
+    oldDrawPlayerV9();
+  };
+
+  /* 공격할 때 무기도 플레이어가 휘두르는 방향으로 움직인다. */
+  const oldDrawWeaponV9=drawWeapon;
+  drawWeapon=function(){
+    const p=game.player, a=p.attackAnimation;
+    const originalAngle=p.facingAngle;
+    if(a && a.type && a.start){
+      const pr=Math.min(1,Math.max(0,(performance.now()-a.start)/(a.duration||250)));
+      /* 0 -> 앞으로 크게 휘두름 -> 원위치 */
+      p.facingAngle=(a.angle===undefined?originalAngle:a.angle) + Math.sin(pr*Math.PI)*0.85;
+    }
+    oldDrawWeaponV9();
+    p.facingAngle=originalAngle;
+  };
+
+  /* 안전 구역은 내부를 칠하지 않고 경계선만 표시 */
+  const oldDrawStructV9=drawStructures;
+  drawStructures=function(){
+    oldDrawStructV9();
+    const zone=ZONES[game.currentZone]; if(!zone||!zone.safeRadius)return;
+    ctx.save();ctx.globalAlpha=0.95;ctx.strokeStyle='#2388ff';ctx.lineWidth=4;
+    ctx.beginPath();ctx.arc(zone.x,zone.y,zone.safeRadius,0,Math.PI*2);ctx.stroke();ctx.restore();
+  };
+
+  /* UI가 다른 함수에 의해 다시 바뀌지 않도록 게임 중 최종 동기화 */
+  const syncV9=()=>{
+    const playing=!!gameStarted&&!document.getElementById('main-menu')?.classList.contains('active');
+    ['item-hotbar','skill-bar'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display=playing?'flex':'none';});
+    forceBasicSkill();
+  };
+  setInterval(syncV9,300);
+  syncV9();
+})();
+</script>
+
+
+
+<!-- V11 FINAL OVERRIDES -->
+<style id="v11-final-ui">
+/* 메뉴에서는 전투 HUD를 구조적으로 숨김 */
+#item-hotbar,
+#skill-bar { display:none !important; }
+
+/* 게임 중에만 표시. v11 JS가 inline display:flex를 넣음 */
+#item-hotbar.v11-visible,
+#skill-bar.v11-visible { display:flex !important; }
+
+/* 더 짧고 컴팩트한 핫바 */
+#item-hotbar {
+  position:fixed !important;
+  left:50% !important;
+  right:auto !important;
+  bottom:18px !important;
+  transform:translateX(-50%) !important;
+  gap:3px !important;
+  padding:3px 4px !important;
+  border-radius:7px !important;
+  z-index:99999 !important;
+}
+#item-hotbar .item-hud-slot {
+  width:43px !important;
+  height:43px !important;
+  min-width:43px !important;
+  font-size:19px !important;
+  border-radius:5px !important;
+}
+#item-hotbar .item-key { font-size:8px !important; }
+#item-hotbar .item-hud-count { font-size:8px !important; }
+
+/* 스킬 핫바도 작고 짧게 */
+#skill-bar {
+  position:fixed !important;
+  left:50% !important;
+  right:auto !important;
+  bottom:70px !important;
+  transform:translateX(-50%) !important;
+  gap:3px !important;
+  padding:3px 4px !important;
+  border-radius:7px !important;
+  z-index:99998 !important;
+}
+#skill-bar .skill-slot {
+  width:43px !important;
+  height:43px !important;
+  min-width:43px !important;
+  font-size:9px !important;
+  border-radius:5px !important;
+}
+#skill-bar .skill-slot .skill-icon { font-size:17px !important; }
+#skill-bar .skill-slot .skill-name { font-size:8px !important; }
+#skill-bar .skill-slot .key-bind { font-size:8px !important; }
+
+/* 오른쪽 상단 버튼은 미니맵과 겹치지 않게 아래로 */
+#minimap-container { top:20px !important; right:20px !important; }
+#map-toggle,#inventory-toggle,#skill-toggle {
+  top:224px !important;
+  font-size:12px !important;
+  padding:8px 11px !important;
+}
+#map-toggle { right:188px !important; }
+#inventory-toggle { right:102px !important; }
+#skill-toggle { right:20px !important; }
+
+/* 왼쪽 상태 UI */
+#hp-status,#exp-status,#mana-status { left:20px !important; width:235px !important; }
+#hp-status { top:20px !important; }
+#exp-status { top:62px !important; }
+#mana-status { top:104px !important; }
+#stats-toggle { left:20px !important; top:151px !important; }
+
+@media(max-width:900px){
+  #item-hotbar { bottom:10px !important; }
+  #skill-bar { bottom:62px !important; }
+  #item-hotbar .item-hud-slot,#skill-bar .skill-slot { width:40px !important; height:40px !important; min-width:40px !important; }
+  #minimap-container { top:12px !important; right:12px !important; }
+  #map-toggle,#inventory-toggle,#skill-toggle { top:184px !important; }
+  #map-toggle { right:151px !important; }
+  #inventory-toggle { right:79px !important; }
+  #skill-toggle { right:12px !important; }
+}
+</style>
+<script>
+(function(){
+  const WOOD = 'wood_club';
+
+  function v11SetHud(){
+    const menu = document.getElementById('main-menu');
+    const playing = !!gameStarted && !gameOver && !(menu && menu.classList.contains('active'));
+    ['item-hotbar','skill-bar'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(!el) return;
+      el.classList.toggle('v11-visible', playing);
+      el.style.setProperty('display', playing ? 'flex' : 'none', 'important');
+    });
+  }
+
+  function v11StartLoadout(){
+    if(!game || !game.player) return;
+    game.currentZone='town';
+    currentWorldSize=WORLD_SIZE_TOWN;
+    game.player.x=750; game.player.y=750;
+    game.player.level=1; game.player.exp=0; game.player.maxExp=100;
+    game.player.hp=100; game.player.maxHp=100;
+    game.player.mana=100; game.player.maxMana=100;
+    game.player.damage=15; game.player.kills=0; game.player.gold=200;
+    game.player.job=null;
+    game.player.facingAngle=0; game.player.lastAttack=0;
+    game.player.movementAnimation=0;
+    game.player.attackAnimation={type:null,start:0,duration:250,angle:0};
+    game.inventory=Array(20).fill(null);
+    game.inventory[0]={id:'potion',count:5};
+    game.inventory[1]={id:'gold',count:200};
+    game.inventory[2]={id:WOOD,count:1};
+    game.equipment={weapon:WOOD,armor:null};
+    game.weaponUpgrade={wood_club:0,sword:0,long_sword:0,magic_staff:0,blessed_sword:0};
+    game.skillsUnlocked=['slash'];
+    game.skillHotbar=['slash',null,null,null,null];
+    game.itemHotbar=[0,2,null,null,null];
+    game.selectedItemHotbar=0; game.selectedSkillHotbar=0;
+    game.quest={active:null,progress:0,completedIds:[],giver:null};
+    game.monsters=[]; game.bullets=[]; game.groundItems=[]; game.effects=[];
+    game.keys={};
+    nearbyStructure=null; structurePromptDismissed=false;
+    lastReturnTime=-Infinity; returnChannelStart=0;
+    const hideIds=['tutorial-overlay','class-select-panel','dialogue-panel','game-over','structure-interact'];
+    hideIds.forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
+    const st=document.getElementById('status-info');if(st)st.style.display='none';
+    game.camera.x=0;game.camera.y=0;
+    if(typeof initZoneSelect==='function') initZoneSelect();
+    renderInventory();renderSkillWindow();renderSkillBar();renderItemHotbar();updateUI();
+  }
+
+  /* 시작/재시작 시 다른 패치가 무엇을 했든 최종값을 다시 설정 */
+  const baseStart = startGame;
+  startGame=function(){
+    const input=document.getElementById('player-name-input');
+    game.player.name=(input?.value||'').trim()||'플레이어';
+    gameStarted=true;gameOver=false;isPaused=false;
+    document.getElementById('main-menu')?.classList.remove('active');
+    document.getElementById('game-screen')?.classList.add('active');
+    v11StartLoadout();
+    v11SetHud();
+    setTimeout(()=>{ v11StartLoadout(); v11SetHud(); if(typeof beginTutorialNow==='function') beginTutorialNow(); },60);
+  };
+
+  restartGame=function(){
+    gameStarted=true;gameOver=false;isPaused=false;
+    document.getElementById('main-menu')?.classList.remove('active');
+    document.getElementById('game-screen')?.classList.add('active');
+    v11StartLoadout();v11SetHud();
+    setTimeout(()=>{v11StartLoadout();v11SetHud();if(typeof beginTutorialNow==='function') beginTutorialNow();},60);
+  };
+
+  const baseMenu = goToMenu;
+  goToMenu=function(){
+    baseMenu();
+    gameStarted=false;gameOver=false;isPaused=false;
+    const t=document.getElementById('tutorial-overlay');if(t)t.style.display='none';
+    const c=document.getElementById('class-select-panel');if(c)c.style.display='none';
+    const d=document.getElementById('dialogue-panel');if(d)d.style.display='none';
+    v11SetHud();
+  };
+
+  /* 강타: 실제 근접 공격으로 동작 */
+  const baseUseSkill = useSkill;
+  useSkill=function(skillId){
+    if(skillId !== 'slash') return baseUseSkill(skillId);
+    const skill=SKILLS.slash;
+    if(!skill || !gameStarted || gameOver || isPaused) return;
+    if(!game.skillsUnlocked.includes('slash')) return;
+    if(!skillReady('slash')) return;
+    const manaCost=skill.manaCost||0;
+    if(game.player.mana<manaCost){showDropNotification(`💧 마나가 부족합니다. (${manaCost} MP 필요)`);return;}
+    const weapon=getEquippedWeapon();
+    const range=(weapon?.range||72)+8;
+    const arc=(weapon?.arc||1.35)+0.15;
+    performMeleeAttack(range,arc,Math.round(getTotalAttackDamage()*1.35),'slash',game.player.facingAngle);
+    game.player.mana=Math.max(0,game.player.mana-manaCost);
+    skillLastUsed.slash=performance.now();
+    updateUI();
+  };
+
+  /* 기본 이동/공격 입력은 그대로. Q에서는 이제 강타가 실제 발동 */
+  const baseKeydown = document.onkeydown;
+  /* drawAttackAnimation에 강타/몽둥이/장검 등의 시각 효과 추가 */
+  const baseDrawAttack = drawAttackAnimation;
+  drawAttackAnimation=function(){
+    const a=game.player.attackAnimation;
+    if(a && a.type && ['slash','wood_club','long_sword','sword','blessed_sword'].includes(a.type)){
+      const now=performance.now();
+      const p=Math.max(0,Math.min(1,(now-a.start)/(a.duration||250)));
+      const weapon=getEquippedWeapon();
+      const radius=(weapon?.range||72)*0.92;
+      const arc=weapon?.arc||1.35;
+      const start=a.angle-arc/2+p*arc*0.9;
+      const end=start+arc*0.58;
+      ctx.save();
+      ctx.globalAlpha=(1-p)*0.82;
+      ctx.strokeStyle=a.type==='slash'?'#ffd166':(a.type==='wood_club'?'#c98b52':'#ffffff');
+      ctx.lineWidth=a.type==='wood_club'?9:7;
+      ctx.lineCap='round';
+      ctx.beginPath();ctx.arc(game.player.x,game.player.y,radius,start,end);ctx.stroke();
+      ctx.restore();
+      return;
+    }
+    baseDrawAttack();
+  };
+
+  /* 무기별 외형을 완전히 분리 */
+  const oldDrawWeapon = drawWeapon;
+  drawWeapon=function(){
+    const id=game.equipment?.weapon;
+    const w=getEquippedWeapon();
+    if(!w || !id) return;
+    const p=game.player;
+    const a=p.facingAngle;
+    const now=performance.now();
+    const anim=p.attackAnimation;
+    let swing=0;
+    if(anim && anim.type && anim.start){
+      const pr=Math.max(0,Math.min(1,(now-anim.start)/(anim.duration||250)));
+      swing=Math.sin(pr*Math.PI)*(id==='wood_club'?0.72:1.0);
+    }
+    const ang=a+swing;
+    const hx=p.x+Math.cos(ang)*10, hy=p.y+Math.sin(ang)*10;
+    const ux=Math.cos(ang),uy=Math.sin(ang),px=-uy,py=ux;
+    const lvl=getWeaponUpgradeLevel();
+
+    ctx.save();
+    ctx.lineCap='round';ctx.lineJoin='round';
+
+    if(id==='wood_club'){
+      /* 굵고 짧은 갈색 몽둥이 */
+      const bx=hx-ux*6, by=hy-uy*6;
+      const tx=hx+ux*42, ty=hy+uy*42;
+      ctx.strokeStyle='#6b3f22';ctx.lineWidth=12;
+      ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(tx,ty);ctx.stroke();
+      ctx.strokeStyle='#a9693f';ctx.lineWidth=8;
+      ctx.beginPath();ctx.moveTo(hx,hy);ctx.lineTo(tx,ty);ctx.stroke();
+      ctx.fillStyle='#d69a62';ctx.beginPath();ctx.arc(tx,ty,6,0,Math.PI*2);ctx.fill();
+    }else if(id==='sword'){
+      /* 철검: 얇은 은색 직선 칼날 + 가드 */
+      const bx=hx,by=hy,tx=hx+ux*52,ty=hy+uy*52;
+      ctx.strokeStyle='#c7cbd1';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(tx,ty);ctx.stroke();
+      ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(bx+px*2,by+py*2);ctx.lineTo(tx+px*2,ty+py*2);ctx.stroke();
+      ctx.strokeStyle='#5b3924';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(hx-ux*9+px*8,hy-uy*9+py*8);ctx.lineTo(hx-ux*9-px*8,hy-uy*9-py*8);ctx.stroke();
+      ctx.strokeStyle='#e0b54d';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(hx-ux*3+px*7,hy-uy*3+py*7);ctx.lineTo(hx-ux*3-px*7,hy-uy*3-py*7);ctx.stroke();
+    }else if(id==='long_sword'){
+      const bx=hx,by=hy,tx=hx+ux*65,ty=hy+uy*65;
+      ctx.strokeStyle='#b9d9ef';ctx.lineWidth=9;ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(tx,ty);ctx.stroke();
+      ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(bx+px*2,by+py*2);ctx.lineTo(tx+px*2,ty+py*2);ctx.stroke();
+      ctx.strokeStyle='#744421';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(hx-ux*10+px*10,hy-uy*10+py*10);ctx.lineTo(hx-ux*10-px*10,hy-uy*10-py*10);ctx.stroke();
+    }else if(id==='blessed_sword'){
+      const bx=hx,by=hy,tx=hx+ux*72,ty=hy+uy*72;
+      ctx.shadowColor='#ffe66d';ctx.shadowBlur=12;
+      ctx.strokeStyle='#ffe66d';ctx.lineWidth=10;ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(tx,ty);ctx.stroke();
+      ctx.strokeStyle='#fff7c2';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(bx+px*2,by+py*2);ctx.lineTo(tx+px*2,ty+py*2);ctx.stroke();
+      ctx.shadowBlur=0;
+    }else if(id==='magic_staff'){
+      const tx=hx+ux*42,ty=hy+uy*42;
+      ctx.strokeStyle='#6f4aa8';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(hx,hy);ctx.lineTo(tx,ty);ctx.stroke();
+      ctx.fillStyle='#d66bff';ctx.shadowColor='#d66bff';ctx.shadowBlur=12;ctx.beginPath();ctx.arc(tx,ty,7,0,Math.PI*2);ctx.fill();
+    }else if(id==='fire_staff'){
+      const tx=hx+ux*45,ty=hy+uy*45;
+      ctx.strokeStyle='#6b3d25';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(hx,hy);ctx.lineTo(tx,ty);ctx.stroke();
+      ctx.fillStyle='#ff7a18';ctx.shadowColor='#ff7a18';ctx.shadowBlur=15;ctx.beginPath();ctx.arc(tx,ty,9,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#ffe066';ctx.beginPath();ctx.arc(tx,ty,4,0,Math.PI*2);ctx.fill();
+    }else if(id==='hunter_bow'){
+      const cx=hx+ux*24,cy=hy+uy*24;
+      ctx.strokeStyle='#8b5a2b';ctx.lineWidth=5;ctx.beginPath();ctx.arc(cx,cy,20,ang-Math.PI*0.65,ang+Math.PI*0.65);ctx.stroke();
+      ctx.strokeStyle='#ddd';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx+Math.cos(ang-Math.PI*0.65)*20,cy+Math.sin(ang-Math.PI*0.65)*20);ctx.lineTo(cx+Math.cos(ang+Math.PI*0.65)*20,cy+Math.sin(ang+Math.PI*0.65)*20);ctx.stroke();
+      ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx-ux*10,cy-uy*10);ctx.lineTo(cx+ux*28,cy+uy*28);ctx.stroke();
+    }else{
+      oldDrawWeapon();ctx.restore();return;
+    }
+
+    if(lvl>=3){
+      ctx.globalAlpha=.25;ctx.strokeStyle='#00f5ff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(hx,hy,8,0,Math.PI*2);ctx.stroke();
+    }
+    ctx.restore();
+  };
+
+  /* 플레이어 기본 표시와 함께 무기가 공격 방향으로 더 크게 움직이도록 유지 */
+  const oldPlayerAttackFn=playerAttack;
+  playerAttack=function(){
+    oldPlayerAttackFn();
+  };
+
+  /* 메뉴/게임 전환 때 HUD 최종 상태 동기화 */
+  const oldDrawGame = drawGame;
+  drawGame=function(){
+    v11SetHud();
+    oldDrawGame();
+  };
+  setInterval(v11SetHud,120);
+  v11SetHud();
+})();
 </script>
 
 </body>
 </html>
+
+
+
+<style id="v10-final-fix">
+/* ================================
+   V10 UI - completely rearranged
+   ================================ */
+#status-info{display:none!important}
+#hp-status,#exp-status,#mana-status{
+  left:20px!important;
+  width:250px!important;
+}
+#hp-status{top:20px!important}
+#exp-status{top:64px!important}
+#mana-status{top:108px!important}
+#stats-toggle{
+  left:20px!important;
+  top:158px!important;
+  padding:9px 15px!important;
+  font-size:14px!important;
+}
+#minimap-container{
+  top:20px!important;
+  right:20px!important;
+  padding:5px!important;
+}
+#minimap{width:190px!important;height:190px!important}
+#map-toggle,#inventory-toggle,#skill-toggle{
+  top:222px!important;
+  padding:9px 12px!important;
+  font-size:13px!important;
+}
+#map-toggle{right:210px!important}
+#inventory-toggle{right:113px!important}
+#skill-toggle{right:20px!important}
+#item-hotbar{
+  left:auto!important;
+  right:20px!important;
+  bottom:20px!important;
+  transform:none!important;
+  gap:4px!important;
+  padding:4px 5px!important;
+  border-radius:7px!important;
+}
+#skill-bar{
+  left:20px!important;
+  bottom:20px!important;
+  transform:none!important;
+  gap:4px!important;
+  padding:4px 5px!important;
+  border-radius:7px!important;
+}
+.item-hud-slot{width:48px!important;height:48px!important;font-size:21px!important}
+.skill-slot{width:50px!important;height:50px!important}
+#tutorial-overlay{z-index:2147483647!important}
+#tutorial-overlay:not(.v8-open){visibility:hidden!important}
+@media(max-width:900px){
+  #hp-status,#exp-status,#mana-status{left:12px!important;width:205px!important}
+  #hp-status{top:12px!important}.exp-status{top:52px!important}.mana-status{top:92px!important}
+  #stats-toggle{left:12px!important;top:135px!important}
+  #minimap-container{top:12px!important;right:12px!important}
+  #minimap{width:150px!important;height:150px!important}
+  #map-toggle,#inventory-toggle,#skill-toggle{top:174px!important;font-size:11px!important;padding:7px 9px!important}
+  #map-toggle{right:150px!important}.inventory-toggle{right:78px!important}.skill-toggle{right:12px!important}
+  #item-hotbar{right:12px!important;bottom:12px!important}
+  #skill-bar{left:12px!important;bottom:12px!important}
+}
+</style>
+<script>
+/* =========================================================
+   V10 FINAL - hard fixes, no stacked UI/tut surprises
+========================================================= */
+(function(){
+  const WOOD='wood_club';
+  let starting = false;
+  let suppressQuestNoticeUntil = 0;
+
+  function forceCleanState(){
+    game.currentZone='town';
+    currentWorldSize=WORLD_SIZE_TOWN;
+    game.player.x=750; game.player.y=750;
+    game.player.hp=100; game.player.maxHp=100;
+    game.player.mana=100; game.player.maxMana=100;
+    game.player.level=1; game.player.exp=0; game.player.maxExp=100;
+    game.player.damage=15; game.player.kills=0; game.player.gold=200;
+    game.player.job=null;
+    game.player.statPoints=0;
+    game.player.stats={str:0,vit:0,int:0,dex:0};
+    game.player.facingAngle=0; game.player.lastAttack=0;
+    game.player.invincibleUntil=0;
+    game.player.movementAnimation=0;
+    game.player.attackAnimation={type:null,start:0,duration:250,angle:0};
+    game.inventory=Array(20).fill(null);
+    game.inventory[0]={id:'potion',count:5};
+    game.inventory[1]={id:'gold',count:200};
+    game.inventory[2]={id:WOOD,count:1};
+    game.equipment={weapon:WOOD,armor:null};
+    game.weaponUpgrade={sword:0,magic_staff:0,blessed_sword:0,wood_club:0};
+    game.skillsUnlocked=['slash'];
+    game.skillHotbar=['slash',null,null,null,null];
+    game.itemHotbar=[0,2,null,null,null];
+    game.selectedItemHotbar=0;
+    game.selectedSkillHotbar=0;
+    game.quest={active:null,progress:0,completedIds:[],giver:null};
+    game.bullets=[]; game.monsters=[]; game.groundItems=[]; game.effects=[]; game.keys={};
+    nearbyStructure=null; structurePromptDismissed=false;
+    lastReturnTime=-Infinity; returnChannelStart=0;
+    const ids=['game-over','structure-interact','tutorial-overlay','class-select-panel','dialogue-panel'];
+    for(const id of ids){const e=document.getElementById(id);if(e)e.style.display='none';}
+    const status=document.getElementById('status-info');if(status)status.style.display='none';
+    game.camera.x=0; game.camera.y=0;
+    initZoneSelect(); renderInventory(); renderSkillWindow(); renderSkillBar(); renderItemHotbar(); updateUI();
+  }
+
+  function beginTutorialNow(){
+    if(!gameStarted || gameOver) return;
+    suppressQuestNoticeUntil=performance.now()+1800;
+    game.quest={active:null,progress:0,completedIds:[],giver:null};
+    const q=TUTORIALS[0];
+    if(!q) return;
+    game.quest={active:{...q,source:'tutorial',giver:'town'},progress:0,completedIds:[],giver:'town'};
+    let el=document.getElementById('tutorial-overlay');
+    if(!el){
+      el=document.createElement('div');el.id='tutorial-overlay';document.body.appendChild(el);
+    }
+    el.innerHTML=`
+      <div class="tut-title">📘 ${q.name}</div>
+      <div class="tut-body">모험을 시작하기 전에 기본 조작을 배워봅시다.</div>
+      <div class="tut-quest">
+        <b>${q.desc}</b>
+        <div style="margin-top:8px;color:#00f5ff">진행도: 0 / ${q.target}</div>
+        <div style="margin-top:6px;color:#aaa">보상: EXP ${q.rewardExp} · 💰 ${q.rewardGold}</div>
+      </div>
+      <button class="tut-btn" id="v10-tut-go">튜토리얼 시작</button>`;
+    el.style.display='block';
+    el.style.visibility='visible';
+    el.style.opacity='1';
+    el.style.pointerEvents='auto';
+    el.classList.add('v8-open');
+    const btn=document.getElementById('v10-tut-go');
+    if(btn) btn.onclick=()=>{
+      el.style.display='none';
+      el.style.visibility='hidden';
+      el.classList.remove('v8-open');
+      game.tutorialStarted=true;
+    };
+  }
+
+  /* Completely replace the old stacked start wrappers. */
+  startGame=function(){
+    const input=document.getElementById('player-name-input');
+    game.player.name=(input?.value||'').trim()||'플레이어';
+    gameStarted=true; gameOver=false; isPaused=false; starting=true;
+    document.getElementById('main-menu')?.classList.remove('active');
+    document.getElementById('game-screen')?.classList.add('active');
+    try{ resetGameState(); }catch(e){}
+    forceCleanState();
+    setTimeout(()=>{ if(gameStarted&&!gameOver) beginTutorialNow(); },40);
+    setTimeout(()=>{ if(gameStarted&&!gameOver) beginTutorialNow(); },180);
+    setTimeout(()=>{ starting=false; },500);
+  };
+
+  restartGame=function(){
+    gameStarted=true; gameOver=false; isPaused=false;
+    document.getElementById('main-menu')?.classList.remove('active');
+    document.getElementById('game-screen')?.classList.add('active');
+    forceCleanState();
+    setTimeout(()=>{ if(gameStarted&&!gameOver) beginTutorialNow(); },40);
+  };
+
+  const originalMenu=goToMenu;
+  goToMenu=function(){
+    originalMenu();
+    const t=document.getElementById('tutorial-overlay'); if(t){t.style.display='none';t.style.visibility='hidden';t.classList.remove('v8-open');}
+    const c=document.getElementById('class-select-panel'); if(c)c.style.display='none';
+    ['item-hotbar','skill-bar'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
+  };
+
+  /* Never show the startup false-completion toast. */
+  const originalNotify=showDropNotification;
+  showDropNotification=function(message){
+    if(performance.now()<suppressQuestNoticeUntil && /퀘스트|완료/.test(String(message))) return;
+    return originalNotify(message);
+  };
+
+  /* Quest progress: clamp at target and only announce the first completion. */
+  updateQuestProgress=function(monster){
+    ensureQuestState();
+    const q=currentQuestDefinition();
+    if(!q || q.kind==='level') return;
+    if(q.kind!=='kill') return;
+    const valid=q.monster==='any' || (q.monster && game.currentZone===q.monster);
+    if(!valid || game.quest.progress>=q.target) return;
+    const before=game.quest.progress;
+    game.quest.progress=Math.min(q.target,before+1);
+    if(before<q.target && game.quest.progress===q.target && performance.now()>=suppressQuestNoticeUntil){
+      showDropNotification('📜 목표 달성! 퀘스트 창에서 확인하세요.');
+    }
+  };
+
+  /* Tutorial kill quests use the same stable counter, without repeated clear spam. */
+  onTutorialProgress=function(kind,amount=1){
+    ensureQuestState();
+    const q=currentQuestDefinition();
+    if(!q || q.kind!==kind || game.quest.progress>=q.target) return;
+    if(kind==='level') game.quest.progress=Math.max(game.quest.progress,game.player.level);
+    else game.quest.progress=Math.min(q.target,game.quest.progress+amount);
+    if(game.quest.progress>=q.target && q.kind==='level') claimQuest(true);
+    else if(game.quest.progress>=q.target && q.kind!=='level') claimQuest(true);
+  };
+
+  /* No filled safe-zone circle: boundary only. Also keep NPC/structures visible. */
+  drawStructures=function(){
+    const zone=ZONES[game.currentZone];
+    if(zone && zone.safeRadius && game.currentZone!=='town'){
+      ctx.save();
+      ctx.strokeStyle='#2388ff'; ctx.lineWidth=4; ctx.globalAlpha=0.95;
+      ctx.beginPath();ctx.arc(zone.x,zone.y,zone.safeRadius,0,Math.PI*2);ctx.stroke();
+      ctx.restore();
+    }
+    for(const structure of STRUCTURES){
+      if((structure.zone||'town')!==game.currentZone) continue;
+      ctx.save();
+      ctx.fillStyle=structure.color;
+      ctx.fillRect(structure.x-structure.size/2,structure.y-structure.size/2,structure.size,structure.size);
+      ctx.strokeStyle=nearbyStructure===structure?'#00f5ff':'#222';
+      ctx.lineWidth=nearbyStructure===structure?4:2;
+      ctx.strokeRect(structure.x-structure.size/2,structure.y-structure.size/2,structure.size,structure.size);
+      ctx.fillStyle='#fff';ctx.font='20px Arial';ctx.textAlign='center';
+      ctx.fillText(structure.name.split(' ')[0],structure.x,structure.y+7);
+      ctx.restore();
+    }
+  };
+
+  /* Motion phase = actual distance moved; slower than before and proportional to speed. */
+  const baseUpdatePlayer=updatePlayer;
+  updatePlayer=function(){
+    const bx=game.player.x, by=game.player.y, phase=game.player.movementAnimation||0;
+    baseUpdatePlayer();
+    const dist=Math.hypot(game.player.x-bx,game.player.y-by);
+    game.player.movementAnimation=phase + dist*0.055;
+  };
+
+  /* More noticeable weapon swing on attack, while preserving idle aiming. */
+  const baseDrawWeapon=drawWeapon;
+  drawWeapon=function(){
+    const p=game.player, a=p.attackAnimation;
+    const original=p.facingAngle;
+    if(a && a.type && a.start){
+      const pr=Math.max(0,Math.min(1,(performance.now()-a.start)/(a.duration||250)));
+      const swing=Math.sin(pr*Math.PI)*1.15;
+      p.facingAngle=(a.angle ?? original)+swing;
+    }
+    baseDrawWeapon();
+    p.facingAngle=original;
+  };
+
+  /* Override player render with slower body motion and level label. */
+  drawPlayer=function(){
+    const p=game.player, now=performance.now();
+    const moving=Math.abs(p.movementAnimation-(p._lastMotionPhase||0))>0.0001;
+    const phase=p.movementAnimation||0;
+    p._lastMotionPhase=phase;
+    const walk=phase*1.35;
+    const bob=moving?Math.sin(walk)*2.4:0;
+    const step=moving?Math.sin(walk)*3.6:0;
+    const lean=moving?Math.cos(walk)*0.045:0;
+    ctx.save();
+    ctx.translate(p.x,p.y+bob);ctx.rotate(lean);
+    ctx.save();ctx.globalAlpha=.28;ctx.fillStyle='#000';ctx.beginPath();ctx.ellipse(0,p.radius+8,p.radius*1.1,5,0,0,Math.PI*2);ctx.fill();ctx.restore();
+    ctx.strokeStyle='#1b1b1b';ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(-6,12);ctx.lineTo(-6-step*.4,23);ctx.moveTo(6,12);ctx.lineTo(6+step*.4,23);ctx.stroke();
+    ctx.strokeStyle='#bfefff';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(-13,-2);ctx.lineTo(-21-step*.28,8+step*.18);ctx.moveTo(13,-2);ctx.lineTo(21+step*.28,8-step*.18);ctx.stroke();
+    ctx.beginPath();ctx.arc(0,0,p.radius,0,Math.PI*2);ctx.fillStyle='#00f5ff';ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+    const ex=Math.cos(p.facingAngle)*7,ey=Math.sin(p.facingAngle)*7;ctx.fillStyle='#07343a';ctx.beginPath();ctx.arc(ex-2,ey-2,2.3,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(ex+4,ey+2,2.3,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+    drawWeapon();drawAttackAnimation();
+    ctx.save();ctx.font='bold 12px Arial';ctx.textAlign='center';ctx.textBaseline='middle';const text='Lv. '+p.level;const y=p.y-p.radius-18;const w=ctx.measureText(text).width+10;ctx.fillStyle='rgba(0,0,0,.78)';ctx.fillRect(p.x-w/2,y-8,w,16);ctx.fillStyle='#ffd166';ctx.fillText(text,p.x,y);ctx.restore();
+  };
+
+  /* Keep HUD visible only during gameplay. */
+  function syncHud(){
+    const playing=!!gameStarted && !document.getElementById('main-menu')?.classList.contains('active');
+    for(const id of ['item-hotbar','skill-bar']){const e=document.getElementById(id);if(e)e.style.display=playing?'flex':'none';}
+    const st=document.getElementById('status-info');if(st)st.style.display='none';
+  }
+  setInterval(syncHud,250);
+  syncHud();
+})();
+</script>
