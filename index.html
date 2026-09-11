@@ -9465,6 +9465,132 @@ __setHudVisibilityV7();
   #item-hotbar{right:12px!important;bottom:12px!important}
   #skill-bar{left:12px!important;bottom:12px!important}
 }
+
+/* ===== FINAL CLEAN UI + HOTBAR + ENHANCEMENT VISUAL FIX ===== */
+#item-hotbar{
+  position:fixed!important;
+  left:50%!important;
+  bottom:18px!important;
+  top:auto!important;
+  right:auto!important;
+  transform:translateX(-50%)!important;
+  width:max-content!important;
+  max-width:calc(100vw - 24px)!important;
+  display:flex!important;
+  flex:0 0 auto!important;
+  flex-wrap:nowrap!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:5px!important;
+  padding:5px!important;
+  box-sizing:border-box!important;
+  background:rgba(0,0,0,.82)!important;
+  border:1px solid #555!important;
+  border-radius:9px!important;
+  z-index:2147483647!important;
+}
+.item-hud-slot{
+  flex:0 0 50px!important;
+  width:50px!important;
+  min-width:50px!important;
+  max-width:50px!important;
+  height:50px!important;
+  min-height:50px!important;
+  padding:0!important;
+  box-sizing:border-box!important;
+}
+#skill-bar{
+  position:fixed!important;
+  left:18px!important;
+  bottom:18px!important;
+  top:auto!important;
+  right:auto!important;
+  transform:none!important;
+  width:max-content!important;
+  max-width:calc(100vw - 24px)!important;
+  display:flex!important;
+  flex-wrap:nowrap!important;
+  gap:5px!important;
+  padding:5px!important;
+  border:1px solid #555!important;
+  border-radius:9px!important;
+  z-index:2147483646!important;
+}
+.skill-slot{
+  flex:0 0 50px!important;
+  width:50px!important;
+  min-width:50px!important;
+  height:50px!important;
+}
+#hp-status,#exp-status,#mana-status{
+  left:18px!important;
+  width:235px!important;
+}
+#hp-status{top:18px!important}
+#exp-status{top:61px!important}
+#mana-status{top:104px!important}
+#stats-toggle{
+  top:147px!important;
+  left:18px!important;
+}
+#minimap-container{
+  top:18px!important;
+  right:18px!important;
+}
+#minimap{width:170px!important;height:170px!important}
+#map-toggle{
+  top:196px!important;
+  right:190px!important;
+}
+#inventory-toggle{
+  top:196px!important;
+  right:100px!important;
+}
+#skill-toggle{
+  top:196px!important;
+  right:18px!important;
+}
+#return-town-button{
+  top:238px!important;
+  right:18px!important;
+}
+#return-channel{
+  top:276px!important;
+  right:18px!important;
+}
+#quest-panel,#stats-panel,#inventory,#skill-window,#shop,#forge-panel,#craft-panel{
+  max-width:calc(100vw - 30px)!important;
+}
+#tutorial-overlay{
+  position:fixed!important;
+  left:50%!important;
+  top:50%!important;
+  transform:translate(-50%,-50%)!important;
+  width:min(520px,92vw)!important;
+  max-height:80vh!important;
+  overflow:auto!important;
+  z-index:2147483647!important;
+}
+@media(max-width:800px){
+  #item-hotbar{
+    left:50%!important;
+    bottom:10px!important;
+  }
+  .item-hud-slot{flex-basis:44px!important;width:44px!important;min-width:44px!important;height:44px!important}
+  #skill-bar{left:10px!important;bottom:10px!important}
+  .skill-slot{flex-basis:44px!important;width:44px!important;min-width:44px!important;height:44px!important}
+  #hp-status,#exp-status,#mana-status{left:10px!important;width:200px!important}
+  #hp-status{top:10px!important}.exp-status{top:50px!important}.mana-status{top:90px!important}
+  #stats-toggle{left:10px!important;top:130px!important}
+  #minimap-container{top:10px!important;right:10px!important}
+  #minimap{width:140px!important;height:140px!important}
+  #map-toggle{top:160px!important;right:145px!important}
+  #inventory-toggle{top:160px!important;right:75px!important}
+  #skill-toggle{top:160px!important;right:10px!important}
+  #return-town-button{top:198px!important;right:10px!important}
+  #return-channel{top:234px!important;right:10px!important}
+}
+
 </style>
 <script>
 /* =========================================================
@@ -9686,4 +9812,864 @@ __setHudVisibilityV7();
   setInterval(syncHud,250);
   syncHud();
 })();
+
+/* =========================================================
+   FINAL PATCH 2 — 통합 버그 수정
+   - 촌장 중심의 순차형 튜토리얼
+   - 튜토리얼 전용 상태와 일반 퀘스트 완전 분리
+   - 전직 후 촌장은 다시 튜토리얼을 주지 않음
+   - 장비 장착 시 인벤토리에서 실제로 빠짐
+   - 인벤토리 슬롯 드래그/드롭 이동 + 핫바 인덱스 안정화
+   - 핫바 검은 박스 가로 확장 방지
+   - 강화 단계별 무기 외형/오라/임팩트 강화
+   - HUD 위치 최종 고정
+   ========================================================= */
+(function(){
+  const TUTORIAL_KEY='tutorialFlow_v3';
+  const CHIEF_NAME='📜 마을 촌장';
+  const TOWN_REPEAT_QUEST={
+    id:'town_repeat_hunt',giver:'town',name:'마을 수련 임무',
+    desc:'아무 지역에서 몬스터 3마리를 처치하세요.',target:3,
+    rewardExp:90,rewardGold:120,monster:'any',repeatable:true
+  };
+
+  const tutSteps=[
+    {kind:'kill',target:2,name:'첫 사냥',desc:'숲으로 나가 몬스터 2마리를 처치하세요.',rewardExp:80,rewardGold:50,monster:'any'},
+    {kind:'move',target:1,name:'가방 정리',desc:'인벤토리를 열고 아이템 하나를 다른 칸으로 옮겨보세요.',rewardExp:100,rewardGold:60},
+    {kind:'skill',target:2,name:'스킬 훈련',desc:'단축키 Q를 사용해 스킬을 2번 사용하세요.',rewardExp:120,rewardGold:80},
+    {kind:'kill',target:5,name:'사냥 훈련',desc:'숲의 몬스터 5마리를 처치하세요.',rewardExp:140,rewardGold:100,monster:'forest'},
+  ];
+  const dialogues=[
+    '어서 오게, 젊은 모험가. 나는 이 마을의 촌장일세.',
+    '이 마을은 초보 모험가들이 세상으로 나가기 전에 마지막으로 준비하는 곳이지.',
+    '처음에는 복잡해 보일 수 있지만, 이동하고 싸우고 장비와 스킬을 익히면 금방 적응할 수 있다네.',
+    '내가 자네에게 몇 가지 임무를 순서대로 주겠네. 하나씩 끝내면 자연스럽게 더 강해질 걸세.',
+    '마지막 훈련까지 마치면 자네는 5레벨에 도달하고, 그때 진짜 직업을 선택할 수 있네.',
+    '그럼 첫 번째 임무를 시작하게. 숲으로 가서 몬스터를 처치하고 돌아오게나.'
+  ];
+
+  function loadTutorialFlow(){
+    try{
+      const raw=localStorage.getItem(TUTORIAL_KEY);
+      if(raw){
+        const saved=JSON.parse(raw);
+        if(saved&&typeof saved==='object') return saved;
+      }
+    }catch(e){}
+    return {finished:false,step:-1,progress:0,dialogue:0,dialogueOpen:false,greeted:false,readyToTurnIn:false,completedSteps:[]};
+  }
+  function saveTutorialFlow(){
+    try{localStorage.setItem(TUTORIAL_KEY,JSON.stringify(game.tutorialFlow));}catch(e){}
+  }
+  function ensureFlow(){
+    if(!game.tutorialFlow) game.tutorialFlow=loadTutorialFlow();
+    const f=game.tutorialFlow;
+    if(typeof f.step!=='number')f.step=-1;
+    if(typeof f.progress!=='number')f.progress=0;
+    if(typeof f.dialogue!=='number')f.dialogue=0;
+    if(typeof f.greeted!=='boolean')f.greeted=false;
+    if(typeof f.readyToTurnIn!=='boolean')f.readyToTurnIn=false;
+    if(!Array.isArray(f.completedSteps))f.completedSteps=[];
+    if(typeof f.finished!=='boolean')f.finished=false;
+    saveTutorialFlow();
+    return f;
+  }
+  function tutorialActive(){ const f=ensureFlow(); return !f.finished && gameStarted && !gameOver; }
+  function setTutorialOverlay(html,open=true){
+    let p=document.getElementById('tutorial-overlay');
+    if(!p){p=document.createElement('div');p.id='tutorial-overlay';document.body.appendChild(p);}
+    p.classList.add('v8-open');p.style.display=open?'block':'none';p.style.visibility=open?'visible':'hidden';p.style.opacity=open?'1':'0';p.style.pointerEvents=open?'auto':'none';p.style.zIndex='2147483647';
+    if(html!==null)p.innerHTML=html;
+    return p;
+  }
+  function closeTutorialOverlay(){ const p=document.getElementById('tutorial-overlay'); if(p){p.classList.remove('v8-open');p.style.display='none';p.style.pointerEvents='none';} }
+
+  function showChiefDialogue(page=0){
+    const f=ensureFlow();
+    if(!tutorialActive() || game.player.job || f.greeted) return;
+    f.dialogue=Math.max(0,Math.min(page,dialogues.length-1));
+    f.dialogueOpen=true;
+    saveTutorialFlow();
+    let p=document.getElementById('dialogue-panel');
+    if(!p){p=document.createElement('div');p.id='dialogue-panel';document.body.appendChild(p);}
+    p.innerHTML=`
+      <div class="dialogue-title">${CHIEF_NAME}</div>
+      <div class="dialogue-body">
+        <div style="font-size:15px;color:#fff;margin-bottom:12px;line-height:1.8">${dialogues[f.dialogue]}</div>
+        <div style="font-size:11px;color:#888">${f.dialogue+1} / ${dialogues.length}</div>
+      </div>
+      <button class="tut-btn" id="chief-dialogue-next">${f.dialogue===dialogues.length-1?'첫 임무 받기':'다음'}</button>`;
+    p.style.display='block';p.style.zIndex='2147483646';
+    updateQuestTracker();
+    document.getElementById('chief-dialogue-next').onclick=()=>{
+      if(f.dialogue < dialogues.length-1) showChiefDialogue(f.dialogue+1);
+      else {
+        p.style.display='none';
+        f.dialogueOpen=false;
+        f.greeted=true;
+        saveTutorialFlow();
+        startTutorialStep(0);
+        updateQuestTracker();
+      }
+    };
+  }
+
+  function showTutorialStep(){
+    const f=ensureFlow();
+    const q=tutSteps[f.step];
+    if(!q) return;
+    setTutorialOverlay(`
+      <div class="tut-title">📘 ${q.name}</div>
+      <div class="tut-body">촌장이 준 순서형 훈련입니다. 퀘스트를 끝내면 다음 대화와 임무로 바로 이어집니다.</div>
+      <div class="tut-quest">
+        <b>${q.desc}</b>
+        <div style="margin-top:8px;color:#00f5ff">진행도: ${Math.min(f.progress,q.target)} / ${q.target}</div>
+        <div style="margin-top:6px;color:#aaa">보상: EXP ${q.rewardExp} · 💰 ${q.rewardGold}</div>
+      </div>
+      <button class="tut-btn" id="tutorial-go-btn">임무 시작</button>`,true);
+    document.getElementById('tutorial-go-btn').onclick=()=>closeTutorialOverlay();
+  }
+
+  function startTutorialStep(step){
+    const f=ensureFlow();
+    if(f.finished || game.player.job || f.completedSteps.includes(step)) return;
+    f.step=step;f.progress=0;f.readyToTurnIn=false;
+    saveTutorialFlow();
+    showTutorialStep();
+    updateQuestTracker();
+  }
+  function tutorialProgress(kind,amount=1,extra={}){
+    const f=ensureFlow();
+    if(!tutorialActive() || f.step<0 || f.dialogueOpen || game.player.job) return;
+    const q=tutSteps[f.step];
+    if(!q || q.kind!==kind) return;
+    if(q.monster && extra.zone && q.monster!=='any' && q.monster!==extra.zone) return;
+    if(q.kind==='talk') f.progress=1; else f.progress=Math.min(q.target,f.progress+amount);
+    if(f.progress>=q.target){
+      f.progress=q.target;
+      f.readyToTurnIn=true;
+      saveTutorialFlow();
+      closeTutorialOverlay();
+      showDropNotification(`📜 ${q.name} 목표 달성! 촌장에게 돌아가세요.`);
+      updateQuestTracker();
+    }
+  }
+  function turnInTutorialAtChief(){
+    const f=ensureFlow();
+    const q=tutSteps[f.step];
+    if(!q || !f.readyToTurnIn) return false;
+    const npc=getQuestNpc('town');
+    if(game.currentZone!=='town' || !npc || Math.hypot(game.player.x-npc.x,game.player.y-npc.y)>150){
+      showDropNotification('📜 퀘스트를 준 촌장에게 돌아가야 보상을 받을 수 있습니다.');
+      return false;
+    }
+    game.player.gold += q.rewardGold;
+    syncGoldInventory();
+    if(q.rewardExp) gainExp(q.rewardExp);
+    f.completedSteps.push(f.step);
+    showDropNotification(`🎉 ${q.name} 완료! 보상을 받았습니다.`);
+    const finishedStep=f.step;
+    f.progress=0;f.readyToTurnIn=false;
+    if(finishedStep < tutSteps.length-1){
+      const next=finishedStep+1;
+      f.step=next;
+      saveTutorialFlow();
+      setTimeout(()=>{if(tutorialActive())showTutorialStep();updateQuestTracker();},180);
+    }else{
+      f.step=-1;
+      saveTutorialFlow();
+      finishTutorial();
+    }
+    renderInventory();renderItemHotbar();updateUI();updateQuestTracker();
+    return true;
+  }
+  function finishTutorial(){
+    const f=ensureFlow();
+    /* 남은 경험치만 채워 정확히 Lv.5에서 전직 선택으로 넘어가게 한다. */
+    while(game.player.level<5){
+      const need=Math.max(0,game.player.maxExp-game.player.exp);
+      if(need<=0)break;
+      gainExp(need);
+    }
+    if(game.player.level>5){
+      game.player.level=5;game.player.exp=0;game.player.maxExp=195;
+    }
+    f.finished=true;f.step=-1;f.progress=0;f.dialogueOpen=false;f.readyToTurnIn=false;f.greeted=true;
+    saveTutorialFlow();
+    try{localStorage.setItem('rpgTutorialCompleted','1');}catch(e){}
+    closeTutorialOverlay();
+    const d=document.getElementById('dialogue-panel');if(d)d.style.display='none';
+    showDropNotification('🏆 튜토리얼 완료! Lv.5에서 전직을 선택하세요.');
+    setTimeout(()=>{if(gameStarted&&!gameOver&&!game.player.job && typeof showClassSelection==='function')showClassSelection();},250);
+  }
+
+  function resetTutorialState(){
+    game.tutorialFlow=loadTutorialFlow();
+    game.tutorialStarted=false;
+  }
+
+  /* 시작 상태를 한 곳에서 다시 정의 — 기존 여러 reset 래퍼의 부작용 차단 */
+  function applyFinalStartState(name){
+    game.currentZone='town';currentWorldSize=WORLD_SIZE_TOWN;
+    const p=game.player;p.x=750;p.y=750;p.hp=100;p.maxHp=100;p.mana=100;p.maxMana=100;
+    p.level=1;p.exp=0;p.maxExp=100;p.damage=15;p.kills=0;p.gold=200;p.job=null;
+    p.name=name||'플레이어';p.statPoints=0;p.stats={str:0,vit:0,int:0,dex:0};
+    p.facingAngle=0;p.lastAttack=0;p.invincibleUntil=0;p.movementAnimation=0;p.attackAnimation={type:null,start:0,duration:250,angle:0};
+    game.inventory=Array(20).fill(null);
+    game.inventory[0]={id:'potion',count:5};
+    game.inventory[1]={id:'gold',count:200};
+    /* 나무몽둥이는 처음부터 장착 상태이며, 장착된 장비가 인벤토리에 중복으로 남지 않게 한다. */
+    game.equipment={weapon:'wood_club',armor:null};
+    game.weaponUpgrade={sword:0,magic_staff:0,blessed_sword:0,long_sword:0,wood_club:0};
+    game.skillsUnlocked=['slash'];game.skillHotbar=['slash',null,null,null,null];
+    game.itemHotbar=[0,null,null,null,null];game.selectedItemHotbar=0;game.selectedSkillHotbar=0;
+    game.bullets=[];game.monsters=[];game.groundItems=[];game.effects=[];game.keys={};
+    nearbyStructure=null;structurePromptDismissed=false;lastReturnTime=-Infinity;returnChannelStart=0;
+    game.camera.x=0;game.camera.y=0;resetTutorialState();
+    const ids=['game-over','structure-interact','class-select-panel','dialogue-panel','quest-panel','inventory','skill-window','shop','map-window','zone-select','forge-panel','craft-panel'];
+    ids.forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
+    closeTutorialOverlay();
+    renderInventory();renderSkillWindow();renderSkillBar();renderItemHotbar();updateUI();initZoneSelect();
+  }
+
+  startGame=function(){
+    const input=document.getElementById('player-name-input');
+    const name=input?.value?.trim()||'플레이어';
+    document.getElementById('main-menu')?.classList.remove('active');
+    document.getElementById('game-screen')?.classList.add('active');
+    gameStarted=true;gameOver=false;isPaused=false;
+    applyFinalStartState(name);
+    setTimeout(()=>{
+      const f=ensureFlow();
+      if(!f.finished&&!f.greeted){showChiefDialogue(0);}
+      else if(!f.finished&&f.step>=0 && !f.dialogueOpen){showTutorialStep();}
+      updateQuestTracker();
+    },120);
+  };
+  restartGame=function(){
+    gameStarted=true;gameOver=false;isPaused=false;
+    document.getElementById('main-menu')?.classList.remove('active');
+    document.getElementById('game-screen')?.classList.add('active');
+    applyFinalStartState(game.player?.name||'플레이어');
+    setTimeout(()=>{
+      const f=ensureFlow();
+      if(!f.finished&&!f.greeted){showChiefDialogue(0);}
+      else if(!f.finished&&f.step>=0 && !f.dialogueOpen){showTutorialStep();}
+      updateQuestTracker();
+    },120);
+  };
+
+  /* 촌장 상호작용/퀘스트 창 */
+  function updateQuestTracker(){
+    let box=document.getElementById('active-quest-tracker');
+    if(!box){
+      box=document.createElement('div');box.id='active-quest-tracker';
+      document.body.appendChild(box);
+    }
+    const f=ensureFlow();
+    let q=null,progress=0,ready=false;
+    if(tutorialActive() && !game.player.job && f.step>=0 && !f.dialogueOpen){q=tutSteps[f.step];progress=f.progress;ready=f.readyToTurnIn;}
+    else if(game.quest?.active){q=game.quest.active;progress=game.quest.progress;ready=progress>=q.target;}
+    if(!q){box.style.display='none';return;}
+    box.style.display='block';
+    box.innerHTML=`<div class="aqt-title">${q.source==='tutorial'?'📘 튜토리얼':'📜 진행 중인 임무'}</div><div class="aqt-name">${q.name}</div><div class="aqt-desc">${q.desc}</div><div class="aqt-progress">${Math.min(progress,q.target)} / ${q.target}</div><div class="aqt-goal">${ready?'✅ 목표 달성 — 퀘스트를 준 NPC에게 돌아가세요':'진행 중'}</div>`;
+  }
+
+  openQuestPanel=function(zone=game.currentZone){
+    const panel=document.getElementById('quest-panel'),content=document.getElementById('quest-content');
+    if(!panel||!content)return;
+    closeAllPanels();panel.style.display='block';
+    const f=ensureFlow();
+    if(tutorialActive() && !game.player.job && f.step>=0){
+      const q=tutSteps[f.step];
+      content.innerHTML=`<div class="quest-card"><div class="quest-name">📘 ${q.name}</div><div class="quest-desc">${q.desc}</div><div class="quest-progress">${Math.min(f.progress,q.target)} / ${q.target}</div><div class="quest-desc">${f.readyToTurnIn?'✅ 목표 달성. 촌장에게 돌아가 보상을 받으세요.':'진행 중...'}</div></div>`;
+      return;
+    }
+    if(zone==='town'){
+      const active=game.quest?.active;
+      if(active){
+        content.innerHTML=`<div class="quest-card"><div class="quest-name">${active.name}</div><div class="quest-desc">${active.desc}</div><div class="quest-progress">${Math.min(game.quest.progress,active.target)} / ${active.target}</div><div class="quest-desc">${game.quest.progress>=active.target?'✅ 목표 달성 — 촌장에게 돌아오세요.':'진행 중...'}</div>${game.quest.progress>=active.target&&game.currentZone==='town'?'<button class="quest-btn" onclick="claimQuest()">보상 받기</button>':''}</div>`;
+      }else{
+        content.innerHTML=`<div class="quest-card"><div class="quest-name">${TOWN_REPEAT_QUEST.name}</div><div class="quest-desc">${TOWN_REPEAT_QUEST.desc}</div><div class="quest-desc" style="margin-top:6px">보상: EXP ${TOWN_REPEAT_QUEST.rewardExp} · 💰 ${TOWN_REPEAT_QUEST.rewardGold}</div><button class="quest-btn" onclick="acceptQuest('__town_repeat__')">퀘스트 받기</button></div>`;
+      }
+      return;
+    }
+    const available=(typeof QUEST_POOL!=='undefined'?QUEST_POOL.filter(q=>q.giver===zone):[]);
+    content.innerHTML=available.length?available.slice(0,4).map(q=>`<div class="quest-card"><div class="quest-name">${q.name}</div><div class="quest-desc">${q.desc}</div><div class="quest-desc" style="margin-top:6px">보상: EXP ${q.rewardExp} · 💰 ${q.rewardGold}</div><button class="quest-btn" onclick="acceptQuest('${q.id}')">퀘스트 받기</button></div>`).join(''):`<div class="quest-card"><div class="quest-name">📜 퀘스트 없음</div><div class="quest-desc">현재 이 지역에서 받을 수 있는 퀘스트가 없습니다.</div></div>`;
+  };
+
+  acceptQuest=function(id){
+    ensureQuestState();
+    if(game.quest.active){showDropNotification('📜 진행 중인 퀘스트를 먼저 완료하세요.');return;}
+    if(id==='__town_repeat__'){
+      game.quest={active:{...TOWN_REPEAT_QUEST,source:'normal',giver:'town'},progress:0,completedIds:[],giver:'town'};
+      openQuestPanel('town');showDropNotification('📜 마을 수련 임무를 수락했습니다.');return;
+    }
+    const q=(typeof QUEST_POOL!=='undefined'?QUEST_POOL.find(x=>x.id===id):null);
+    if(!q)return;
+    game.quest={active:{...q,source:'normal',giver:q.giver},progress:0,completedIds:[],giver:q.giver};
+    openQuestPanel(q.giver);
+  };
+  claimQuest=function(){
+    const q=game.quest?.active;if(!q||game.quest.progress<q.target)return;
+    const npc=getQuestNpc(q.giver);
+    if(game.currentZone!==q.giver || !npc || Math.hypot(game.player.x-npc.x,game.player.y-npc.y)>150){
+      showDropNotification(`📜 ${q.name}을(를) 준 NPC에게 돌아가야 보상을 받을 수 있습니다.`);
+      updateQuestTracker();return;
+    }
+    game.player.gold+=(q.rewardGold||0);syncGoldInventory();gainExp(q.rewardExp||0);
+    game.quest={active:null,progress:0,completedIds:[],giver:null};
+    renderInventory();updateUI();closeAllPanels();showDropNotification(`🎉 ${q.name} 완료! 보상을 받았습니다.`);
+    updateQuestTracker();
+  };
+
+  /* inventory — 장비 장착 시 장착 슬롯과 인벤토리를 정확히 교환 */
+  equipItem=function(id){
+    const item=ITEMS[id];if(!item)return;
+    const index=game.inventory.findIndex(x=>x?.id===id);
+    if(index<0)return;
+    if(item.classes&&item.classes[0]!=='all'&&!item.classes.includes(game.player.job)){
+      showDropNotification(`🔒 ${item.name}은 현재 직업으로 장착할 수 없습니다.`);return;
+    }
+    if(item.type!=='weapon'&&item.type!=='armor')return;
+    const slot=item.type==='weapon'?'weapon':'armor';
+    const oldId=game.equipment[slot];
+    /* 같은 장비를 다시 누르면 중복 처리하지 않는다. */
+    if(oldId===id){showDropNotification(`${item.emoji} ${item.name}은 이미 장착 중입니다.`);return;}
+    if(oldId){
+      const existing=game.inventory.find(x=>x?.id===oldId);
+      if(existing) existing.count=(existing.count||0)+1;
+      else {
+        const empty=game.inventory.findIndex(x=>!x);
+        if(empty<0){showDropNotification('🎒 기존 장비를 넣을 공간이 없습니다.');return;}
+        game.inventory[empty]={id:oldId,count:1};
+      }
+    }
+    const stack=game.inventory[index];
+    stack.count=(stack.count||1)-1;
+    if(stack.count<=0)game.inventory[index]=null;
+    game.equipment[slot]=id;
+    /* 핫바에서 사라진 인덱스는 자동 정리 */
+    for(let i=0;i<5;i++)if(game.itemHotbar[i]===index && !game.inventory[index])game.itemHotbar[i]=null;
+    renderInventory();renderItemHotbar();updateUI();
+    showDropNotification(`${item.emoji} ${item.name} 장착`);
+  };
+
+  function unequip(slot){
+    const id=game.equipment[slot];if(!id)return;
+    const existing=game.inventory.find(x=>x?.id===id);
+    if(existing)existing.count=(existing.count||0)+1;
+    else{const empty=game.inventory.findIndex(x=>!x);if(empty<0){showDropNotification('🎒 인벤토리가 가득 찼습니다.');return;}game.inventory[empty]={id,count:1};}
+    game.equipment[slot]=null;renderInventory();renderItemHotbar();updateUI();
+  }
+  unequipWeapon=()=>unequip('weapon');
+  unequipArmor=()=>unequip('armor');
+
+  /* 인벤 슬롯 이동: 인덱스 자체는 그대로 유지하므로 hotbar 참조도 안정적 */
+  swapInventorySlots=function(a,b){
+    if(!Number.isInteger(a)||!Number.isInteger(b)||a<0||b<0||a>=game.inventory.length||b>=game.inventory.length||a===b)return;
+    const t=game.inventory[a];game.inventory[a]=game.inventory[b];game.inventory[b]=t;
+    renderInventory();renderItemHotbar();
+    tutorialProgress('move');
+  };
+
+  renderInventory=function(){
+    const grid=document.getElementById('inv-grid');if(!grid)return;grid.innerHTML='';
+    for(let index=0;index<game.inventory.length;index++){
+      const item=game.inventory[index],slot=document.createElement('div');slot.className='inv-slot';
+      if(!item){slot.classList.add('empty');}
+      else{
+        const data=ITEMS[item.id];
+        if(!data){grid.appendChild(slot);continue;}
+        slot.innerHTML=`${data.emoji}<span class="item-count">${item.count}</span>`;
+        slot.title=`${data.name}\n클릭: 사용/장착\n드래그: 다른 칸으로 이동`;
+        slot.onclick=()=>{
+          if(data.type==='weapon'||data.type==='armor')equipItem(item.id);
+          else if(data.type==='consumable')useInventorySlot(index);
+        };
+      }
+      slot.draggable=!!item;
+      slot.ondragstart=e=>{if(!item)return;e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/inventory-index',String(index));};
+      slot.ondragover=e=>e.preventDefault();
+      slot.ondrop=e=>{e.preventDefault();const from=Number(e.dataTransfer.getData('text/inventory-index'));if(Number.isInteger(from))swapInventorySlots(from,index);};
+      grid.appendChild(slot);
+    }
+    updateEquipmentUI();renderInventoryHotbar();
+  };
+
+  /* 핫바 인덱스 무효화 방지 + 컨테이너 크기 자체를 내용에 맞춤 */
+  function cleanHotbar(){
+    for(let i=0;i<5;i++){
+      const idx=game.itemHotbar[i];
+      if(!Number.isInteger(idx)||!game.inventory[idx])game.itemHotbar[i]=null;
+    }
+  }
+  renderItemHotbar=function(){
+    const container=document.getElementById('item-hotbar');if(!container)return;
+    if(container.parentElement!==document.body)document.body.appendChild(container);
+    cleanHotbar();container.innerHTML='';
+    for(let i=0;i<5;i++){
+      const slot=document.createElement('div');slot.className='item-hud-slot';slot.innerHTML=`<span class="item-key">${i+1}</span>`;
+      const idx=game.itemHotbar[i],item=Number.isInteger(idx)?game.inventory[idx]:null;
+      if(item&&ITEMS[item.id]){const d=ITEMS[item.id];slot.innerHTML+=`${d.emoji}<span class="item-hud-count">${item.count}</span>`;slot.title=d.name;}
+      if(game.selectedItemHotbar===i)slot.classList.add('selected');
+      slot.onclick=()=>{game.selectedItemHotbar=i;useItemHotbar();renderItemHotbar();};
+      slot.ondragover=e=>e.preventDefault();
+      slot.ondrop=e=>{e.preventDefault();const from=Number(e.dataTransfer.getData('text/inventory-index'));if(Number.isInteger(from)&&game.inventory[from]){game.itemHotbar[i]=from;game.selectedItemHotbar=i;renderInventory();renderItemHotbar();}};
+      slot.oncontextmenu=e=>{e.preventDefault();game.itemHotbar[i]=null;renderInventory();renderItemHotbar();};
+      container.appendChild(slot);
+    }
+    container.style.cssText='position:fixed!important;left:50%!important;right:auto!important;top:auto!important;bottom:18px!important;transform:translateX(-50%)!important;display:flex!important;width:fit-content!important;min-width:0!important;max-width:calc(100vw - 24px)!important;flex-wrap:nowrap!important;gap:4px!important;padding:4px 5px!important;box-sizing:border-box!important;background:rgba(0,0,0,.82)!important;border:2px solid #555!important;border-radius:8px!important;z-index:2147483646!important;overflow:hidden!important;pointer-events:auto!important;';
+  };
+
+  renderInventoryHotbar=function(){
+    const c=document.getElementById('inventory-hotbar');if(!c)return;c.innerHTML='';
+    for(let i=0;i<5;i++){
+      const slot=document.createElement('div');slot.className='hotbar-slot';slot.innerHTML=`<span class="hotbar-number">${i+1}</span>`;
+      const idx=game.itemHotbar[i],item=Number.isInteger(idx)?game.inventory[idx]:null;
+      if(item&&ITEMS[item.id]){const d=ITEMS[item.id];slot.innerHTML+=`${d.emoji}<span class="hotbar-count">${item.count}</span>`;}
+      if(game.selectedItemHotbar===i)slot.classList.add('selected');
+      slot.onclick=()=>{game.selectedItemHotbar=i;useItemHotbar();renderInventoryHotbar();renderItemHotbar();};
+      slot.ondragover=e=>e.preventDefault();slot.ondrop=e=>{e.preventDefault();const idx2=Number(e.dataTransfer.getData('text/inventory-index'));if(Number.isInteger(idx2)&&game.inventory[idx2]){game.itemHotbar[i]=idx2;renderInventory();renderItemHotbar();}};
+      slot.oncontextmenu=e=>{e.preventDefault();game.itemHotbar[i]=null;renderInventory();renderItemHotbar();};
+      c.appendChild(slot);
+    }
+  };
+
+  /* 튜토리얼 진행 이벤트 연결 */
+  const baseKillMonster=killMonster;
+  killMonster=function(monster){
+    const result=baseKillMonster(monster);
+    const zone=game.currentZone;
+    tutorialProgress('kill',1,{zone});
+    return result;
+  };
+  const baseUseSkillHotbar=useSkillHotbar;
+  useSkillHotbar=function(){
+    const f=ensureFlow(),before=f.progress;const result=baseUseSkillHotbar();
+    if(tutorialActive()&&f.step>=0&&tutSteps[f.step]?.kind==='skill'&&f.progress===before) tutorialProgress('skill',1);
+    return result;
+  };
+
+  /* 촌장/NPC 상호작용 최종 통합 */
+  checkNearbyStructure=function(){
+    nearbyStructure=null;let closest=Infinity;
+    for(const s of STRUCTURES){if((s.zone||'town')!==game.currentZone)continue;const d=Math.hypot(game.player.x-s.x,game.player.y-s.y);if(d<125&&d<closest){closest=d;nearbyStructure=s;}}
+    const box=document.getElementById('structure-interact'),button=document.getElementById('interact-button');
+    if(!box||!button)return;
+    if(nearbyStructure){box.style.display='block';button.textContent=nearbyStructure.name;}
+    else box.style.display='none';
+  };
+  interactStructure=function(){
+    if(!nearbyStructure)return;
+    const s=nearbyStructure;document.getElementById('structure-interact').style.display='none';
+    if(s.name===CHIEF_NAME || (s.type==='quest'&&s.zone==='town')){
+      const f=ensureFlow();
+      if(tutorialActive()&&!game.player.job){
+        if(!f.greeted){ showChiefDialogue(0); return; }
+        if(f.readyToTurnIn){ turnInTutorialAtChief(); return; }
+        showTutorialStep();
+      }else openQuestPanel('town');
+      return;
+    }
+    if(s.type==='quest')openQuestPanel(s.zone||game.currentZone);
+    else if(s.type==='job')openJobShop(s.job);
+    else if(s.type==='npc')openDialogue(s);
+    else{
+      /* 원래 구조물 로직은 타입별 글로벌 함수가 이미 존재할 수 있으므로 기존 동작을 대신 호출 */
+      if(s.type==='shop')openShop?.();
+      else if(s.type==='forge')openForge?.();
+      else if(s.type==='craft')openCraft?.();
+    }
+  };
+
+  /* 강화 단계별 외형 — 무기 끝부분에 aura + strike impact + 플레이어 aura */
+  const tierByLevel=l=>l>=20?{c:'#ffd700',blur:30}:l>=15?{c:'#ff8c00',blur:25}:l>=10?{c:'#c66cff',blur:21}:l>=5?{c:'#4dabf7',blur:17}:l>=1?{c:'#00f5ff',blur:11}:null;
+  function drawForgeFX(){
+    const lv=getWeaponUpgradeLevel(),t=tierByLevel(lv);if(!t)return;const p=game.player,now=performance.now();
+    const pulse=1+Math.sin(now/140)*.08;
+    ctx.save();ctx.globalAlpha=.18+Math.min(.36,lv*.012);ctx.strokeStyle=t.c;ctx.shadowColor=t.c;ctx.shadowBlur=t.blur;ctx.lineWidth=2+Math.min(4,lv/5);
+    ctx.beginPath();ctx.arc(p.x,p.y,(p.radius+9+lv*.35)*pulse,0,Math.PI*2);ctx.stroke();
+    if(lv>=10){ctx.globalAlpha=.18;ctx.beginPath();ctx.arc(p.x,p.y,p.radius+18+Math.sin(now/110)*4,0,Math.PI*2);ctx.stroke();}
+    ctx.restore();
+  }
+  const basePlayerDraw=drawPlayer;
+  drawPlayer=function(){drawForgeFX();basePlayerDraw();};
+  const baseWeaponDraw=drawWeapon;
+  drawWeapon=function(){
+    const lv=getWeaponUpgradeLevel(),t=tierByLevel(lv);const p=game.player;
+    if(t){
+      const a=p.facingAngle||0,dist=46+Math.min(20,lv),wx=p.x+Math.cos(a)*dist,wy=p.y+Math.sin(a)*dist,now=performance.now();
+      ctx.save();ctx.globalAlpha=.85;ctx.fillStyle=t.c;ctx.shadowColor=t.c;ctx.shadowBlur=t.blur;
+      ctx.beginPath();ctx.arc(wx,wy,3.5+lv*.18+Math.sin(now/90)*1.2,0,Math.PI*2);ctx.fill();
+      if(p.attackAnimation?.type&&p.attackAnimation.start){const pr=Math.max(0,Math.min(1,(now-p.attackAnimation.start)/(p.attackAnimation.duration||250)));const imp=Math.sin(pr*Math.PI);
+        ctx.globalAlpha=.65*imp;ctx.strokeStyle=t.c;ctx.lineWidth=2.5+lv*.16;ctx.beginPath();ctx.arc(wx,wy,10+imp*(16+lv*.5),0,Math.PI*2);ctx.stroke();
+      }
+      ctx.restore();
+    }
+    baseWeaponDraw();
+  };
+
+  /* HUD 최종 위치 */
+  const css=document.createElement('style');css.id='final-integrated-fix-css';
+  css.textContent=`
+    #hp-status,#exp-status,#mana-status{left:22px!important;width:245px!important}
+    #hp-status{top:22px!important}.exp-status{top:65px!important}.mana-status{top:108px!important}
+    #stats-toggle{left:22px!important;top:155px!important}
+    #minimap-container{top:20px!important;right:20px!important}
+    #map-toggle{top:208px!important;right:192px!important}
+    #inventory-toggle{top:208px!important;right:100px!important}
+    #skill-toggle{top:208px!important;right:20px!important}
+    #return-town-button{top:250px!important;right:20px!important}
+    #return-channel{top:286px!important;right:20px!important}
+    #active-quest-tracker{position:fixed;left:22px;top:305px;width:270px;max-width:calc(100vw - 44px);background:rgba(0,0,0,.86);border:1px solid #ffd166;border-radius:8px;padding:9px 11px;z-index:60;pointer-events:none;box-shadow:0 4px 18px rgba(0,0,0,.25)}
+    .aqt-title{font-size:10px;color:#ffd166;font-weight:bold;margin-bottom:4px}.aqt-name{font-size:13px;color:#fff;font-weight:bold}.aqt-desc{font-size:10px;color:#aaa;line-height:1.45;margin-top:3px}.aqt-progress{font-size:12px;color:#00f5ff;font-weight:bold;margin-top:5px}.aqt-goal{font-size:10px;color:#2ed573;margin-top:3px}
+    #item-hotbar{width:fit-content!important;min-width:0!important;max-width:calc(100vw - 24px)!important;flex-wrap:nowrap!important}
+    #item-hotbar .item-hud-slot{flex:0 0 48px!important;width:48px!important;height:48px!important}
+    #skill-bar{bottom:90px!important}
+    @media(max-width:700px){
+      #hp-status,#exp-status,#mana-status{left:10px!important;width:195px!important}
+      #hp-status{top:10px!important}.exp-status{top:50px!important}.mana-status{top:90px!important}
+      #stats-toggle{left:10px!important;top:130px!important}
+      #map-toggle{top:156px!important;right:150px!important}.inventory-toggle{top:156px!important}
+      #inventory-toggle{top:156px!important;right:76px!important}.skill-toggle{top:156px!important}
+      #skill-toggle{top:156px!important;right:10px!important}
+      #active-quest-tracker{left:10px;top:190px;width:195px}
+      #item-hotbar{bottom:12px!important}.item-hud-slot{width:42px!important;height:42px!important;flex-basis:42px!important}
+      #skill-bar{bottom:70px!important}
+    }
+  `;document.head.appendChild(css);
+
+  /* 기존 레벨업 래퍼가 튜토리얼 도중 전직창을 띄우는 것을 차단 */
+  const baseShowClassSelection=showClassSelection;
+  showClassSelection=function(){
+    if(tutorialActive()) return;
+    return baseShowClassSelection();
+  };
+
+  /* 전직하면 튜토리얼 영구 종료 */
+  const baseSelectJob=selectJob;
+  selectJob=function(job){
+    baseSelectJob(job);
+    const f=ensureFlow();f.finished=true;f.step=-1;f.dialogueOpen=false;closeTutorialOverlay();
+    const d=document.getElementById('dialogue-panel');if(d)d.style.display='none';
+    renderInventory();renderItemHotbar();updateUI();
+  };
+
+  /* 메뉴 복귀 */
+  const baseMenu=goToMenu;
+  goToMenu=function(){
+    baseMenu();gameStarted=false;gameOver=false;ensureFlow().finished=true;closeTutorialOverlay();
+    ['dialogue-panel','quest-panel','class-select-panel'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
+    ['item-hotbar','skill-bar'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
+  };
+
+  /* 튜토리얼 보상/레벨 진행에서 기존 튜토리얼 시스템이 끼어들지 못하게 차단 */
+  onTutorialProgress=function(){/* 통합 튜토리얼에서는 tutorialFlow가 단독 관리 */};
+
+  renderInventory();renderInventoryHotbar();renderItemHotbar();
+  setInterval(updateQuestTracker,250);
+  updateQuestTracker();
+
+  /* =========================================================
+     FINAL V2 FIXES
+     1) 메인 메뉴 핫바 깜박임 완전 차단
+     2) 진행 중 퀘스트 HUD 강제 표시/갱신
+     3) Q/E/R/T/F 쿨타임 중에는 튜토리얼 카운트 증가 금지
+     4) 스킬바에 실제 남은 쿨타임 숫자 표시
+     5) 구조물별 개성 있는 외형
+  ========================================================= */
+
+  /* 메인 메뉴가 보이는 동안 아이템/스킬 핫바를 절대 렌더링하지 않음 */
+  const finalHotbarCSS = document.createElement('style');
+  finalHotbarCSS.id = 'final-v2-hotbar-css';
+  finalHotbarCSS.textContent = `
+    #main-menu.active + #game-screen #item-hotbar,
+    #main-menu.active + #game-screen #skill-bar{
+      display:none!important;
+      visibility:hidden!important;
+      opacity:0!important;
+      pointer-events:none!important;
+    }
+    #game-screen.active #item-hotbar,
+    #game-screen.active #skill-bar{
+      visibility:visible!important;
+    }
+    .cooldown-text{
+      position:absolute;
+      left:50%;top:50%;
+      transform:translate(-50%,-50%);
+      min-width:22px;
+      text-align:center;
+      font-size:14px!important;
+      font-weight:900;
+      color:#fff!important;
+      text-shadow:0 1px 3px #000,0 0 5px #000;
+      pointer-events:none;
+      z-index:4;
+      line-height:1;
+    }
+    .skill-slot.on-cooldown{
+      filter:saturate(.72);
+    }
+    #active-quest-tracker{
+      visibility:visible!important;
+      opacity:1!important;
+      pointer-events:none!important;
+    }
+  `;
+  document.head.appendChild(finalHotbarCSS);
+
+  /* 현재 파일의 기존 hotbar 렌더 함수를 감싸서 메뉴에서는 즉시 숨김 */
+  const _v2RenderItemHotbar = renderItemHotbar;
+  renderItemHotbar = function(){
+    const menuOpen = document.getElementById('main-menu')?.classList.contains('active') || !gameStarted;
+    const bar = document.getElementById('item-hotbar');
+    if(menuOpen){
+      if(bar){
+        bar.style.setProperty('display','none','important');
+        bar.style.setProperty('visibility','hidden','important');
+        bar.style.setProperty('opacity','0','important');
+      }
+      return;
+    }
+    _v2RenderItemHotbar();
+    if(bar){
+      bar.style.setProperty('display','flex','important');
+      bar.style.setProperty('visibility','visible','important');
+      bar.style.setProperty('opacity','1','important');
+    }
+  };
+
+  const _v2RenderSkillBar = renderSkillBar;
+  renderSkillBar = function(){
+    const menuOpen = document.getElementById('main-menu')?.classList.contains('active') || !gameStarted;
+    const bar = document.getElementById('skill-bar');
+    if(menuOpen){
+      if(bar){
+        bar.style.setProperty('display','none','important');
+        bar.style.setProperty('visibility','hidden','important');
+        bar.style.setProperty('opacity','0','important');
+      }
+      return;
+    }
+    _v2RenderSkillBar();
+    if(bar){
+      bar.style.setProperty('display','flex','important');
+      bar.style.setProperty('visibility','visible','important');
+      bar.style.setProperty('opacity','1','important');
+    }
+    /* 각 슬롯에 쿨타임 텍스트 레이어 추가 */
+    bar.querySelectorAll('.skill-slot').forEach((slot,i)=>{
+      let t=slot.querySelector('.cooldown-text');
+      if(!t){
+        t=document.createElement('span');
+        t.className='cooldown-text';
+        slot.appendChild(t);
+      }
+    });
+    updateSkillCooldowns();
+  };
+
+  /* 실제 발동된 스킬만 튜토리얼의 '스킬 사용' 카운터를 올린다. */
+  const _v2UseSkillHotbar = useSkillHotbar;
+  useSkillHotbar = function(){
+    if(!gameStarted || gameOver || isPaused) return false;
+    const skillId = game.skillHotbar?.[game.selectedSkillHotbar];
+    if(!skillId || skillId==='heal' || !SKILLS[skillId]) return false;
+    const beforeLast = skillLastUsed[skillId] || 0;
+    _v2UseSkillHotbar();
+    const afterLast = skillLastUsed[skillId] || 0;
+    const actuallyUsed = afterLast !== beforeLast && afterLast > 0;
+    const f=ensureFlow();
+    if(actuallyUsed && tutorialActive() && f.step>=0 && tutSteps[f.step]?.kind==='skill'){
+      tutorialProgress('skill',1);
+    }
+    return actuallyUsed;
+  };
+
+  /* 기존 cooldown 계산에 숫자 표시를 추가한다. */
+  updateSkillCooldowns = function(){
+    const now=performance.now();
+    for(let i=0;i<5;i++){
+      const slot=document.querySelector(`#skill-bar .skill-slot:nth-child(${i+1})`);
+      const overlay=document.getElementById(`skill-cooldown-${i}`);
+      if(!slot) continue;
+      const skillId=game.skillHotbar?.[i];
+      let text=slot.querySelector('.cooldown-text');
+      if(!text){text=document.createElement('span');text.className='cooldown-text';slot.appendChild(text);}
+      if(!skillId || !SKILLS[skillId]){
+        if(overlay) overlay.style.height='0%';
+        text.textContent='';
+        slot.classList.remove('on-cooldown');
+        continue;
+      }
+      const skill=SKILLS[skillId];
+      const last=skillLastUsed[skillId]||0;
+      const remain=Math.max(0,skill.cooldown-(now-last));
+      const percent=skill.cooldown>0 ? remain/skill.cooldown*100 : 0;
+      if(overlay) overlay.style.height=`${percent}%`;
+      if(remain>0){
+        text.textContent=(remain/1000).toFixed(1);
+        slot.classList.add('on-cooldown');
+      }else{
+        text.textContent='';
+        slot.classList.remove('on-cooldown');
+      }
+    }
+  };
+
+  /* 쿨타임 숫자를 부드럽게 갱신 */
+  setInterval(()=>{
+    if(gameStarted && !gameOver) updateSkillCooldowns();
+  },50);
+
+  /* 진행 중 퀘스트 HUD를 항상 다시 만들고, 레이어 우선순위를 높인다. */
+  const _v2UpdateQuestTracker = updateQuestTracker;
+  updateQuestTracker = function(){
+    _v2UpdateQuestTracker();
+    const box=document.getElementById('active-quest-tracker');
+    if(!box) return;
+    if(!gameStarted || gameOver){
+      box.style.display='none';
+      return;
+    }
+    const f=ensureFlow();
+    const activeTutorial=tutorialActive() && !game.player.job && f.step>=0;
+    const activeNormal=!!game.quest?.active;
+    if(activeTutorial || activeNormal){
+      box.style.setProperty('display','block','important');
+      box.style.setProperty('visibility','visible','important');
+      box.style.setProperty('opacity','1','important');
+      box.style.setProperty('z-index','2147483000','important');
+    }else{
+      box.style.display='none';
+    }
+  };
+
+  /* 구조물별 외형을 완전히 분리 */
+  drawStructures = function(){
+    const zone=ZONES[game.currentZone];
+    if(zone && game.currentZone!=='town'){
+      ctx.save();
+      ctx.globalAlpha=.20;ctx.fillStyle='#00b894';
+      ctx.beginPath();ctx.arc(zone.x,zone.y,zone.safeRadius||360,0,Math.PI*2);ctx.fill();
+      ctx.globalAlpha=1;ctx.strokeStyle='#00b894';ctx.lineWidth=3;ctx.stroke();
+      ctx.fillStyle='#fff';ctx.font='bold 15px Arial';ctx.textAlign='center';
+      ctx.fillText('안전 구역 · NPC',zone.x,zone.y-(zone.safeRadius||360)-10);
+      ctx.restore();
+    }
+
+    for(const s of STRUCTURES){
+      if((s.zone||'town')!==game.currentZone) continue;
+      const selected=nearbyStructure===s;
+      const x=s.x,y=s.y,sz=s.size||58;
+      ctx.save();
+      ctx.translate(x,y);
+
+      if(selected){
+        ctx.shadowColor='#00f5ff';ctx.shadowBlur=18;
+        ctx.strokeStyle='#00f5ff';ctx.lineWidth=3;
+      }else{
+        ctx.shadowBlur=0;ctx.strokeStyle='rgba(255,255,255,.22)';ctx.lineWidth=2;
+      }
+
+      if(s.type==='shop'){
+        /* 상점: 지붕 + 차양 + 진열대 */
+        ctx.fillStyle='#5b347d';ctx.fillRect(-sz*.42,-sz*.05,sz*.84,sz*.58);
+        ctx.fillStyle='#9b59b6';ctx.beginPath();ctx.moveTo(-sz*.5,-sz*.08);ctx.lineTo(0,-sz*.55);ctx.lineTo(sz*.5,-sz*.08);ctx.closePath();ctx.fill();
+        ctx.fillStyle='#e8c7ff';ctx.fillRect(-sz*.34,-sz*.02,sz*.68,sz*.15);
+        ctx.fillStyle='#2b173d';ctx.fillRect(-sz*.11,sz*.08,sz*.22,sz*.45);
+        ctx.fillStyle='#fff';ctx.font='bold 21px Arial';ctx.textAlign='center';ctx.fillText('🛍️',0,-sz*.12);
+      }else if(s.type==='forge'){
+        /* 대장간: 화로 + 모루 + 불꽃 */
+        ctx.fillStyle='#5d1f18';ctx.fillRect(-sz*.38,-sz*.18,sz*.76,sz*.54);
+        ctx.fillStyle='#e74c3c';ctx.fillRect(-sz*.46,-sz*.27,sz*.92,sz*.12);
+        ctx.fillStyle='#2b2b2b';ctx.fillRect(-sz*.17,sz*.10,sz*.34,sz*.20);
+        ctx.fillStyle='#111';ctx.fillRect(-sz*.09,sz*.20,sz*.18,sz*.24);
+        ctx.fillStyle='#ffb000';ctx.beginPath();ctx.moveTo(0,-sz*.12);ctx.lineTo(-8,3);ctx.lineTo(0,-7);ctx.lineTo(8,3);ctx.closePath();ctx.fill();
+        ctx.fillStyle='#fff';ctx.font='bold 20px Arial';ctx.textAlign='center';ctx.fillText('⚒️',0,-sz*.34);
+      }else if(s.type==='craft'){
+        /* 제작소: 작업대 + 상자 + 도구 */
+        ctx.fillStyle='#7a4a18';ctx.fillRect(-sz*.44,-sz*.20,sz*.88,sz*.44);
+        ctx.fillStyle='#b8792d';ctx.fillRect(-sz*.36,-sz*.30,sz*.72,sz*.14);
+        ctx.fillStyle='#5c3a19';ctx.fillRect(-sz*.34,sz*.14,sz*.09,sz*.30);ctx.fillRect(sz*.25,sz*.14,sz*.09,sz*.30);
+        ctx.strokeStyle='#f7d48a';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-18,-6);ctx.lineTo(14,11);ctx.stroke();
+        ctx.fillStyle='#fff';ctx.font='bold 20px Arial';ctx.textAlign='center';ctx.fillText('🛠️',0,-sz*.39);
+      }else if(s.type==='job'){
+        /* 직업 NPC: 원형 신전 + 직업 아이콘 */
+        ctx.fillStyle=s.color||'#666';ctx.beginPath();ctx.arc(0,0,sz*.43,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.arc(0,sz*.05,sz*.24,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='#fff';ctx.font='bold 22px Arial';ctx.textAlign='center';ctx.fillText((s.name||'').split(' ')[0],0,7);
+      }else if(s.type==='quest'){
+        /* 퀘스트 NPC: 게시판/깃발 */
+        ctx.fillStyle=s.color||'#00b894';ctx.fillRect(-sz*.34,-sz*.02,sz*.68,sz*.48);
+        ctx.fillStyle='#6b4a2e';ctx.fillRect(-3,-sz*.48,6,sz*.48);
+        ctx.fillStyle='#ffd166';ctx.beginPath();ctx.moveTo(0,-sz*.48);ctx.lineTo(sz*.34,-sz*.34);ctx.lineTo(0,-sz*.20);ctx.closePath();ctx.fill();
+        ctx.fillStyle='#fff';ctx.font='bold 22px Arial';ctx.textAlign='center';ctx.fillText('📜',0,5);
+      }else{
+        /* 일반 NPC: 말풍선 + 인물 */
+        ctx.fillStyle=s.color||'#3498db';ctx.beginPath();ctx.arc(0,8,sz*.27,0,Math.PI*2);ctx.fill();
+        ctx.beginPath();ctx.arc(0,-sz*.12,sz*.18,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='#fff';ctx.font='bold 21px Arial';ctx.textAlign='center';ctx.fillText('💬',0,-sz*.40);
+      }
+
+      ctx.shadowBlur=0;
+      ctx.strokeStyle=selected?'#00f5ff':'rgba(255,255,255,.18)';
+      ctx.lineWidth=selected?3:1.5;
+      ctx.beginPath();ctx.roundRect(-sz*.5,-sz*.5,sz,sz,10);ctx.stroke();
+      ctx.restore();
+
+      ctx.fillStyle=selected?'#00f5ff':'#fff';ctx.font='bold 11px Arial';ctx.textAlign='center';
+      ctx.fillText((s.name||'').replace(/^[^ ]+\s*/,'').slice(0,12),x,y+sz*.72);
+    }
+  };
+
+  /* 촌장 상호작용: 튜토리얼 목표를 달성했다면 반드시 촌장에게 돌아와 보상 수령. */
+  const _v3InteractStructure = interactStructure;
+  interactStructure = function(){
+    const s=nearbyStructure;
+    if(s && s.type==='quest' && (s.zone||'town')==='town'){
+      const f=ensureFlow();
+      if(tutorialActive() && !game.player.job && f.step>=0 && f.readyToTurnIn){
+        if(turnInTutorialAtChief()) return;
+      }
+    }
+    return _v3InteractStructure();
+  };
+
+  /* 시작/메뉴 전환 직후 상태도 즉시 맞춘다. */
+  const _v2StartGame = startGame;
+  startGame = function(){
+    _v2StartGame();
+    const menu=document.getElementById('main-menu');
+    const bar=document.getElementById('item-hotbar');
+    if(menu?.classList.contains('active')){
+      if(bar){bar.style.setProperty('display','none','important');bar.style.setProperty('visibility','hidden','important');}
+    }
+    updateQuestTracker();
+  };
+
+  const _v2RestartGame = restartGame;
+  restartGame = function(){
+    _v2RestartGame();
+    updateQuestTracker();
+  };
+
+  const _v2GoToMenu = goToMenu;
+  goToMenu = function(){
+    _v2GoToMenu();
+    const bar=document.getElementById('item-hotbar');
+    const skill=document.getElementById('skill-bar');
+    const q=document.getElementById('active-quest-tracker');
+    [bar,skill].forEach(e=>{if(e){e.style.setProperty('display','none','important');e.style.setProperty('visibility','hidden','important');e.style.setProperty('opacity','0','important');}});
+    if(q)q.style.display='none';
+  };
+
+  renderSkillBar();
+  renderItemHotbar();
+  updateQuestTracker();
+
+})();
+
 </script>
