@@ -600,21 +600,24 @@ canvas {
 ========================= */
 
 #item-hotbar {
-    bottom: 14px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
+    position: fixed !important;
+    bottom: 14px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
     gap: 4px;
     background: rgba(0,0,0,0.88);
-    padding: 5px 6px;
+    padding: 4px 5px;
     border-radius: 8px;
     border: 2px solid #555;
-    z-index: 30;
+    z-index: 9999 !important;
 }
 
 .item-hud-slot {
-    width: 55px;
-    height: 55px;
+    width: 48px;
+    height: 48px;
     background: #222;
     border: 2px solid #666;
     border-radius: 7px;
@@ -622,7 +625,7 @@ canvas {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 23px;
+    font-size: 22px;
     cursor: pointer;
 }
 
@@ -1010,6 +1013,12 @@ canvas {
 
 .hp-status { top: 20px; border-color: #ff4757; }
 .exp-status { top: 58px; border-color: #2ed573; }
+.mana-status { top: 96px; border-color: #4dabf7; }
+.mana-status .status-label { color: #4dabf7; }
+#mana-status #mana-bar { background: #339af0; }
+.return-button { top: 190px; right: 20px; min-width: 105px; }
+.return-button.cooldown { opacity: .55; cursor: not-allowed; }
+.return-channel { top: 230px; right: 20px; color: #4dabf7; font-size: 12px; text-align: center; }
 
 .status-label {
     font-size: 11px;
@@ -1032,7 +1041,7 @@ canvas {
 #exp-status #exp-bar { background: #2ed573; }
 
 .status-box {
-    top: 96px;
+    top: 134px;
     left: 20px;
     width: 220px;
     background: rgba(0,0,0,0.78);
@@ -1157,6 +1166,44 @@ canvas {
     transform: translateX(-50%) scale(1.08);
 }
 
+
+/* RPG 확장 UI */
+#stats-toggle{top:142px;left:20px;background:#00b894;color:#000;padding:8px 12px;border-radius:5px;font-weight:bold;border:none;cursor:pointer;z-index:25;}
+#stats-panel{top:180px;left:20px;width:280px;background:rgba(0,0,0,.96);border:2px solid #00b894;border-radius:8px;padding:12px;display:none;z-index:100;}
+#quest-panel{top:70px;left:50%;transform:translateX(-50%);width:360px;background:rgba(0,0,0,.96);border:2px solid #ffd166;border-radius:8px;padding:15px;display:none;z-index:120;}
+.stat-point-line{color:#ffd166;text-align:center;margin:8px 0 12px;}
+.stat-row{display:grid;grid-template-columns:1fr 45px 34px;align-items:center;gap:6px;background:#191919;border:1px solid #444;border-radius:5px;padding:7px;margin:6px 0;color:#ddd;}
+.stat-row b{color:#00f5ff;text-align:center;}
+.stat-row button{background:#00b894;border:0;border-radius:4px;font-weight:bold;font-size:16px;cursor:pointer;}
+.quest-card{background:#191919;border:1px solid #555;border-radius:6px;padding:12px;margin-top:8px;}
+.quest-name{color:#ffd166;font-weight:bold;font-size:15px;margin-bottom:7px;}
+.quest-desc{color:#bbb;font-size:12px;line-height:1.5;}
+.quest-progress{color:#00f5ff;font-weight:bold;margin:8px 0;}
+.quest-btn{width:100%;background:#ffa502;border:0;border-radius:5px;padding:9px;font-weight:bold;cursor:pointer;margin-top:5px;}
+.safe-zone-label{font: bold 14px Arial;fill:#fff;}
+
+
+/* ===== V6 UI 정리 ===== */
+#minimap-container{top:18px!important;right:18px!important;padding:4px!important;}
+#minimap{width:150px;height:150px;}
+#map-toggle{top:178px!important;right:190px!important;}
+#inventory-toggle{top:178px!important;right:98px!important;}
+#skill-toggle{top:178px!important;right:18px!important;}
+#stats-toggle{top:178px!important;left:18px!important;}
+#return-town-button{top:220px!important;right:18px!important;}
+#return-channel{top:255px!important;right:18px!important;}
+#item-hotbar{bottom:12px!important;gap:3px!important;padding:4px 5px!important;}
+.item-hud-slot{width:46px!important;height:46px!important;font-size:21px!important;border-radius:6px!important;}
+#skill-bar{bottom:66px!important;gap:4px!important;padding:5px 6px!important;border-radius:8px!important;}
+.skill-slot{width:46px!important;height:46px!important;font-size:10px!important;border-radius:6px!important;}
+.skill-slot .skill-icon{font-size:18px!important}.skill-slot .skill-name{font-size:8px!important}.skill-slot .key-bind{font-size:8px!important}
+.structure-interact{bottom:126px!important;z-index:250!important;padding:9px 12px!important;}
+.structure-interact button{padding:8px 18px!important;font-size:13px!important;}
+#quest-panel,#stats-panel,#inventory,#skill-window,#shop,#forge-panel,#craft-panel{max-width:calc(100vw - 30px);max-height:calc(100vh - 90px);}
+#tutorial-overlay,#class-select-panel,#dialogue-panel{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(520px,92vw);background:rgba(0,0,0,.97);border:2px solid #00f5ff;border-radius:12px;padding:18px;z-index:5000;display:none;box-shadow:0 0 30px rgba(0,0,0,.7)}
+.tut-title,.dialogue-title,.class-title{color:#00f5ff;font-size:22px;font-weight:bold;text-align:center;margin-bottom:10px}.tut-body,.dialogue-body,.class-body{color:#ddd;font-size:13px;line-height:1.65}.tut-quest{margin-top:12px;background:#191919;border:1px solid #555;border-radius:7px;padding:12px}.tut-btn,.class-btn{width:100%;margin-top:10px;background:#00f5ff;color:#000;border:0;border-radius:6px;padding:10px;font-weight:bold;cursor:pointer}.class-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.class-card{background:#191919;border:1px solid #555;border-radius:7px;padding:10px;text-align:center;cursor:pointer}.class-card:hover{border-color:#00f5ff;background:#242424}.job-note{font-size:10px;color:#aaa;margin-top:5px}.dialogue-choice{width:100%;margin-top:8px;background:#222;color:#fff;border:1px solid #555;border-radius:6px;padding:9px;cursor:pointer}.dialogue-choice:hover{border-color:#00f5ff}
+.zone-btn.locked{opacity:.45}.zone-btn:disabled{opacity:.45;cursor:default}
+
 </style>
 </head>
 
@@ -1209,6 +1256,26 @@ canvas {
     <div class="compact-bar"><div id="exp-bar" class="bar"></div></div>
 </div>
 
+<div id="mana-status" class="ui-panel compact-status mana-status">
+    <div class="status-label">MP <span id="mana-text">100 / 100</span></div>
+    <div class="compact-bar"><div id="mana-bar" class="bar"></div></div>
+</div>
+
+<button id="stats-toggle" class="ui-panel interactive" onclick="toggleStats()">[P] 스텟</button>
+
+<div id="stats-panel" class="ui-panel interactive">
+    <div class="panel-header">
+        <div class="inv-title">📊 스텟</div>
+        <button class="close-btn" onclick="closeAllPanels()">✕</button>
+    </div>
+    <div id="stats-info"></div>
+    <div class="stat-point-line">남은 스텟 포인트: <b id="stat-points">0</b></div>
+    <div class="stat-row"><span>💪 힘 STR</span><b id="stat-str">0</b><button onclick="addStat('str')">+</button></div>
+    <div class="stat-row"><span>❤️ 체력 VIT</span><b id="stat-vit">0</b><button onclick="addStat('vit')">+</button></div>
+    <div class="stat-row"><span>💧 지능 INT</span><b id="stat-int">0</b><button onclick="addStat('int')">+</button></div>
+    <div class="stat-row"><span>💨 민첩 DEX</span><b id="stat-dex">0</b><button onclick="addStat('dex')">+</button></div>
+</div>
+
 
 <div id="minimap-container"
      class="ui-panel">
@@ -1250,6 +1317,9 @@ canvas {
     [K] 스킬
 
 </button>
+
+<button id="return-town-button" class="ui-panel interactive return-button" onclick="startReturnToTown()" style="display:none">🏠 귀환</button>
+<div id="return-channel" class="ui-panel return-channel" style="display:none;"></div>
 
 
 <!-- =========================
@@ -1395,6 +1465,17 @@ canvas {
 
 </div>
 
+
+<!-- =========================
+     퀘스트
+========================= -->
+<div id="quest-panel" class="ui-panel interactive">
+    <div class="panel-header">
+        <div class="inv-title">📜 퀘스트</div>
+        <button class="close-btn" onclick="closeAllPanels()">✕</button>
+    </div>
+    <div id="quest-content"></div>
+</div>
 
 <!-- =========================
      상점
@@ -2029,6 +2110,37 @@ iron_armor:{
     value:180
 },
 
+steel_armor:{
+    name:"강철 갑옷",
+    emoji:"🛡️",
+    rarity:"epic",
+    type:"armor",
+    defense:12,
+    value:900
+},
+
+long_sword:{
+    name:"장검",
+    emoji:"🗡️",
+    rarity:"epic",
+    type:"weapon",
+    damage:28,
+    attackType:"melee",
+    range:88,
+    cooldown:500,
+    arc:1.5,
+    value:750
+},
+
+mage_robe:{
+    name:"마법 로브",
+    emoji:"🥋",
+    rarity:"epic",
+    type:"armor",
+    defense:7,
+    value:1200
+},
+
 magic_staff:{
     name:"마법봉",
     emoji:"✨",
@@ -2090,6 +2202,7 @@ blessed_sword:{
 const SKILLS = {
 
 multi:{
+    manaCost:8,
     name:"멀티샷",
     emoji:"🏹",
     cooldown:2200,
@@ -2097,6 +2210,7 @@ multi:{
 },
 
 ultimate:{
+    manaCost:30,
     name:"궁극기",
     emoji:"☄️",
     cooldown:9000,
@@ -2104,6 +2218,7 @@ ultimate:{
 },
 
 explosion:{
+    manaCost:20,
     name:"폭발",
     emoji:"🔥",
     cooldown:6000,
@@ -2111,6 +2226,7 @@ explosion:{
 },
 
 lightning:{
+    manaCost:18,
     name:"번개",
     emoji:"⚡",
     cooldown:7000,
@@ -2118,6 +2234,7 @@ lightning:{
 },
 
 dash:{
+    manaCost:12,
     name:"대쉬",
     emoji:"💨",
     cooldown:1800,
@@ -2125,6 +2242,7 @@ dash:{
 },
 
 roll:{
+    manaCost:8,
     name:"구르기",
     emoji:"🌀",
     cooldown:3000,
@@ -2152,6 +2270,12 @@ let lastRegenTime = 0;
 let structurePromptDismissed = false;
 let huntCombo = 0;
 let lastKillTime = 0;
+let lastReturnTime = -Infinity;
+let returnChannelStart = 0;
+let returnChannelX = 0;
+let returnChannelY = 0;
+const RETURN_COOLDOWN = 30000;
+const RETURN_CHANNEL = 2000;
 
 
 /* =========================================================
@@ -2175,11 +2299,18 @@ player:{
     hp:100,
     maxHp:100,
 
+    mana:100,
+    maxMana:100,
+
     level:1,
     exp:0,
     maxExp:100,
 
     damage:15,
+
+    statPoints:0,
+    stats:{str:0,vit:0,int:0,dex:0},
+
     kills:0,
     gold:200,
 
@@ -2231,7 +2362,8 @@ equipment:{
 weaponUpgrade:{
     sword:0,
     magic_staff:0,
-    blessed_sword:0
+    blessed_sword:0,
+    long_sword:0
 },
 
 skillsUnlocked:[
@@ -2266,7 +2398,13 @@ itemHotbar:[
 ],
 
 selectedItemHotbar:0,
-selectedSkillHotbar:0
+selectedSkillHotbar:0,
+
+quest:{
+    active:null,
+    progress:0,
+    completed:false
+}
 
 };
 
@@ -2427,6 +2565,11 @@ function autoAssignLootToHotbar(inventoryIndex) {
     if(!item || item.id === "gold")
         return;
 
+    // 소모품/장비만 자동으로 핫바에 등록한다.
+    const data = ITEMS[item.id];
+    if(!data || !["consumable","weapon","armor"].includes(data.type))
+        return;
+
     if(game.itemHotbar.includes(inventoryIndex))
         return;
 
@@ -2434,11 +2577,10 @@ function autoAssignLootToHotbar(inventoryIndex) {
 
     if(empty !== -1) {
         game.itemHotbar[empty] = inventoryIndex;
-        return;
+        renderItemHotbar();
     }
-
-    // 5칸이 모두 차 있으면 자동으로 덮어쓰지 않는다.
 }
+
 
 
 function syncGoldInventory() {
@@ -2571,6 +2713,8 @@ function getTotalAttackDamage() {
 
     }
 
+    damage += (game.player.stats?.str || 0) * 3;
+
     return Math.round(damage);
 
 }
@@ -2581,9 +2725,8 @@ function getDefense() {
     const armor =
         getEquippedArmor();
 
-    return armor
-        ? armor.defense || 0
-        : 0;
+    const armorDefense = armor ? (armor.defense || 0) : 0;
+    return armorDefense + Math.floor((game.player.stats?.vit || 0) / 5);
 
 }
 
@@ -2754,6 +2897,9 @@ function startGame() {
 
     resetGameState();
 
+    // 활성화된 게임 화면에서 핫바 표시를 다시 보장
+    requestAnimationFrame(() => renderItemHotbar());
+
 }
 
 
@@ -2769,12 +2915,16 @@ function resetGameState() {
 
     game.player.hp = 100;
     game.player.maxHp = 100;
+    game.player.mana = 100;
+    game.player.maxMana = 100;
 
     game.player.level = 1;
     game.player.exp = 0;
     game.player.maxExp = 100;
 
     game.player.damage = 15;
+    game.player.statPoints = 0;
+    game.player.stats = {str:0,vit:0,int:0,dex:0};
     game.player.kills = 0;
     game.player.gold = 200;
 
@@ -2785,6 +2935,8 @@ function resetGameState() {
     lastRegenTime = performance.now();
     huntCombo = 0;
     lastKillTime = 0;
+    lastReturnTime = -Infinity;
+    returnChannelStart = 0;
     structurePromptDismissed = false;
 
     game.player.attackAnimation.type = null;
@@ -2851,19 +3003,19 @@ function resetGameState() {
     /*
      * 아이템 핫바.
      * 0번 = 포션
-     * 1번 = 금화
-     * 2번 = 검
+     * 1번 = 검
      */
     game.itemHotbar = [
         0,
-        1,
         2,
+        null,
         null,
         null
     ];
 
     game.selectedItemHotbar = 0;
     game.selectedSkillHotbar = 0;
+    game.quest = {active:null, progress:0, completed:false};
 
     nearbyStructure = null;
 
@@ -2975,6 +3127,9 @@ function closeAllPanels() {
     document.getElementById(
         "map-window"
     ).style.display = "none";
+
+    document.getElementById("stats-panel").style.display = "none";
+    document.getElementById("quest-panel").style.display = "none";
 
     closeStructureInteract();
 
@@ -3464,13 +3619,34 @@ function renderInventoryHotbar() {
 
 function renderItemHotbar() {
 
-    const container =
+    let container =
         document.getElementById(
             "item-hotbar"
         );
 
     if(!container)
         return;
+
+    /*
+     * 중요: HUD 핫바를 game-screen 내부에 두면 다른 패널/레이어의
+     * 스타일이나 캔버스 영역에 가려질 수 있다.
+     * 게임 HUD이므로 body의 최상위 레이어로 옮겨 고정한다.
+     * 인벤토리를 한 번 열어야 나타나던 문제를 이 방식으로 차단한다.
+     */
+    if(container.parentElement !== document.body) {
+        document.body.appendChild(container);
+    }
+
+    container.style.setProperty("position", "fixed", "important");
+    container.style.setProperty("left", "50vw", "important");
+    container.style.setProperty("bottom", "14px", "important");
+    container.style.setProperty("top", "auto", "important");
+    container.style.setProperty("transform", "translateX(-50%)", "important");
+    container.style.setProperty("display", "flex", "important");
+    container.style.setProperty("visibility", "visible", "important");
+    container.style.setProperty("opacity", "1", "important");
+    container.style.setProperty("z-index", "2147483647", "important");
+    container.style.setProperty("pointer-events", "auto", "important");
 
     container.innerHTML = "";
 
@@ -3862,13 +4038,28 @@ let selectedSkillForEquip = null;
 
 function renderSkillBar() {
 
-    const bar =
+    let bar =
         document.getElementById(
             "skill-bar"
         );
 
     if(!bar)
         return;
+
+    /* 스킬바도 HUD 레이어에 고정 */
+    if(bar.parentElement !== document.body) {
+        document.body.appendChild(bar);
+    }
+
+    bar.style.setProperty("position", "fixed", "important");
+    bar.style.setProperty("left", "50vw", "important");
+    bar.style.setProperty("bottom", "95px", "important");
+    bar.style.setProperty("top", "auto", "important");
+    bar.style.setProperty("transform", "translateX(-50%)", "important");
+    bar.style.setProperty("display", "flex", "important");
+    bar.style.setProperty("visibility", "visible", "important");
+    bar.style.setProperty("opacity", "1", "important");
+    bar.style.setProperty("z-index", "2147483646", "important");
 
     bar.innerHTML = "";
 
@@ -4010,6 +4201,12 @@ function useSkill(skillId) {
     if(!skillReady(skillId))
         return;
 
+    const manaCost = SKILLS[skillId].manaCost || 0;
+    if(game.player.mana < manaCost) {
+        showDropNotification(`💧 마나가 부족합니다. (${manaCost} MP 필요)`);
+        return;
+    }
+
     let used = true;
 
     switch(skillId) {
@@ -4040,8 +4237,11 @@ function useSkill(skillId) {
 
     }
 
-    if(used !== false)
+    if(used !== false) {
+        game.player.mana = Math.max(0, game.player.mana - manaCost);
         skillLastUsed[skillId] = performance.now();
+        updateUI();
+    }
 
 }
 
@@ -4389,15 +4589,17 @@ document.addEventListener(
         const map = {
             KeyW:"w", KeyA:"a", KeyS:"s", KeyD:"d",
             KeyQ:"q", KeyE:"e", KeyR:"r", KeyT:"t", KeyF:"f",
-            KeyM:"m", KeyK:"k", KeyI:"i",
+            KeyM:"m", KeyK:"k", KeyI:"i", KeyP:"p", KeyJ:"j",
             Digit1:"1", Digit2:"2", Digit3:"3", Digit4:"4", Digit5:"5",
             Escape:"escape", Space:" "
         };
         const gameKey = map[code] || key;
-        if(["w","a","s","d","q","e","r","t","f","m","k","i","1","2","3","4","5","escape"," "].includes(gameKey) || ["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(code)) e.preventDefault();
+        if(["w","a","s","d","q","e","r","t","f","m","k","i","p","j","1","2","3","4","5","escape"," "].includes(gameKey) || ["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(code)) e.preventDefault();
         game.keys[gameKey] = true;
         if(!gameStarted || e.repeat) return;
         if(gameKey === "i") return toggleInventory();
+        if(gameKey === "p") return toggleStats();
+        if(gameKey === "j") return openQuestPanel();
         if(gameKey === "k") return openSkillWindow();
         if(gameKey === "m") return toggleZoneSelect();
         if(gameKey >= "1" && gameKey <= "5") {
@@ -4409,7 +4611,7 @@ document.addEventListener(
             game.selectedSkillHotbar=skillKeyMap[gameKey]; useSkillHotbar(); renderSkillBar(); return;
         }
         if(gameKey === "escape") {
-            const ids=["inventory","skill-window","shop","forge-panel","craft-panel","zone-select","map-window"];
+            const ids=["inventory","skill-window","shop","forge-panel","craft-panel","zone-select","map-window","stats-panel","quest-panel"];
             const open=ids.some(id=>document.getElementById(id)?.style.display === "block") || document.getElementById("structure-interact")?.style.display === "block";
             if(open) closeAllPanels(); else togglePause();
         }
@@ -4419,7 +4621,7 @@ document.addEventListener(
 document.addEventListener(
     "keyup",
     function(e) {
-        const map={KeyW:"w",KeyA:"a",KeyS:"s",KeyD:"d",KeyQ:"q",KeyE:"e",KeyR:"r",KeyT:"t",KeyF:"f",KeyM:"m",KeyK:"k",KeyI:"i",Digit1:"1",Digit2:"2",Digit3:"3",Digit4:"4",Digit5:"5",Escape:"escape",Space:" "};
+        const map={KeyW:"w",KeyA:"a",KeyS:"s",KeyD:"d",KeyQ:"q",KeyE:"e",KeyR:"r",KeyT:"t",KeyF:"f",KeyM:"m",KeyK:"k",KeyI:"i",KeyP:"p",KeyJ:"j",Digit1:"1",Digit2:"2",Digit3:"3",Digit4:"4",Digit5:"5",Escape:"escape",Space:" "};
         game.keys[map[e.code] || e.key.toLowerCase()] = false;
     }
 );
@@ -4709,6 +4911,8 @@ function updatePlayer() {
         dx !== 0 ||
         dy !== 0
     ) {
+
+        if(returnChannelStart) cancelReturnChannel();
 
         const len =
             Math.hypot(dx,dy);
@@ -5298,6 +5502,7 @@ function gainExp(amount) {
             game.player.maxExp;
 
         game.player.level++;
+        game.player.statPoints += 3;
 
         game.player.maxExp =
             Math.round(
@@ -5474,6 +5679,9 @@ function renderShop() {
         {id:"sword", price:200},
         {id:"iron_armor", price:180},
         {id:"magic_staff", price:500},
+        {id:"steel_armor", price:900},
+        {id:"long_sword", price:750},
+        {id:"mage_robe", price:1200},
         {id:"arcane_core", price:1200},
         {id:"dragon_amulet", price:3500},
         {id:"blessed_sword", price:5000},
@@ -5941,6 +6149,88 @@ function upgradeWeapon() {
 
 
 /* =========================================================
+   RETURN TO TOWN
+========================================================= */
+
+function updateReturnButton() {
+    const button = document.getElementById("return-town-button");
+    if(!button) return;
+    if(game.currentZone === "town") {
+        button.disabled = true;
+        button.classList.add("cooldown");
+        button.textContent = "🏠 마을";
+        return;
+    }
+    const remaining = Math.max(0, RETURN_COOLDOWN - (performance.now() - lastReturnTime));
+    if(remaining > 0) {
+        button.disabled = true;
+        button.classList.add("cooldown");
+        button.textContent = `🏠 귀환 ${Math.ceil(remaining/1000)}s`;
+    } else if(returnChannelStart) {
+        button.disabled = true;
+        button.classList.add("cooldown");
+        button.textContent = "🏠 귀환 중...";
+    } else {
+        button.disabled = false;
+        button.classList.remove("cooldown");
+        button.textContent = "🏠 귀환";
+    }
+}
+
+function startReturnToTown() {
+    if(!gameStarted || gameOver || isPaused || game.currentZone === "town") return;
+    const now = performance.now();
+    if(now - lastReturnTime < RETURN_COOLDOWN) {
+        showDropNotification(`🏠 귀환 쿨타임 ${Math.ceil((RETURN_COOLDOWN-(now-lastReturnTime))/1000)}초`);
+        return;
+    }
+    if(returnChannelStart) return;
+    returnChannelStart = now;
+    returnChannelX = game.player.x;
+    returnChannelY = game.player.y;
+    const el = document.getElementById("return-channel");
+    if(el) el.style.display = "block";
+    updateReturnButton();
+}
+
+function cancelReturnChannel() {
+    if(!returnChannelStart) return;
+    returnChannelStart = 0;
+    const el = document.getElementById("return-channel");
+    if(el) el.style.display = "none";
+    showDropNotification("🏠 귀환 취소: 움직였습니다.");
+    updateReturnButton();
+}
+
+function updateReturnChannel() {
+    if(!returnChannelStart) return;
+    const moved = Math.hypot(game.player.x-returnChannelX, game.player.y-returnChannelY) > 1;
+    if(moved) { cancelReturnChannel(); return; }
+    const elapsed = performance.now() - returnChannelStart;
+    const remain = Math.max(0, RETURN_CHANNEL - elapsed);
+    const el = document.getElementById("return-channel");
+    if(el) el.textContent = `🏠 귀환 준비 중... ${Math.ceil(remain/100)/10}초`;
+    if(elapsed >= RETURN_CHANNEL) {
+        returnChannelStart = 0;
+        if(el) el.style.display = "none";
+        lastReturnTime = performance.now();
+        game.currentZone = "town";
+        currentWorldSize = WORLD_SIZE_TOWN;
+        game.player.x = ZONES.town.x;
+        game.player.y = ZONES.town.y;
+        game.monsters = [];
+        game.bullets = [];
+        game.groundItems = [];
+        game.effects = [];
+        nearbyStructure = null;
+        updateCamera();
+        initZoneSelect();
+        updateUI();
+        showDropNotification("🏠 마을로 귀환했습니다!");
+    }
+}
+
+/* =========================================================
    ZONE
 ========================================================= */
 
@@ -6395,6 +6685,8 @@ function updateLogic() {
 
     updatePlayer();
 
+    updateReturnChannel();
+
     updateCamera();
 
     checkNearbyStructure();
@@ -6409,6 +6701,13 @@ function updateLogic() {
 
     const now =
         performance.now();
+
+    // 마나 자동 회복: 초당 4 MP.
+    if(now - lastRegenTime >= 1000) {
+        if(game.player.mana < game.player.maxMana) {
+            game.player.mana = Math.min(game.player.maxMana, game.player.mana + 4);
+        }
+    }
 
     // 자동 회복: 전투 중에도 1초마다 HP 2 회복.
     // 최대 HP를 넘지 않으며, 이미 풀피라면 아무 일도 하지 않는다.
@@ -6467,6 +6766,13 @@ function updateUI() {
             100
         )}%`;
 
+    const manaBar = document.getElementById("mana-bar");
+    const manaText = document.getElementById("mana-text");
+    if(manaBar) manaBar.style.width = `${clamp(p.mana/p.maxMana*100,0,100)}%`;
+    if(manaText) manaText.textContent = `${Math.floor(p.mana)} / ${p.maxMana}`;
+
+    updateReturnButton();
+
     document.getElementById(
         "level-text"
     ).textContent =
@@ -6486,6 +6792,15 @@ function updateUI() {
         "gold-display"
     ).textContent =
         p.gold;
+
+    const st = p.stats || {str:0,vit:0,int:0,dex:0};
+    const setText = (id,val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
+    setText("stat-points", p.statPoints || 0);
+    setText("stat-str", st.str);
+    setText("stat-vit", st.vit);
+    setText("stat-int", st.int);
+    setText("stat-dex", st.dex);
+    setText("stats-info", `공격력 ${getTotalAttackDamage()} · 방어력 ${getDefense()} · 최대 HP ${p.maxHp} · 최대 MP ${p.maxMana}`);
 
     updateEquipmentUI();
     updateSkillCooldowns();
@@ -7404,6 +7719,86 @@ function drawCrosshair() {
 
 
 /* =========================================================
+   MAP DECORATIONS
+   실제 월드의 길/나무를 미니맵과 세계지도에도 표시
+========================================================= */
+function drawMapDecorations(mapCtx, scale, zone, worldSize) {
+    if(!mapCtx) return;
+
+    mapCtx.save();
+    mapCtx.globalAlpha = 0.75;
+
+    if(zone === "town") {
+        mapCtx.strokeStyle = "#8b7355";
+        mapCtx.lineWidth = Math.max(4, 90 * scale);
+        mapCtx.beginPath();
+        mapCtx.moveTo(0, 750 * scale);
+        mapCtx.lineTo(worldSize * scale, 750 * scale);
+        mapCtx.stroke();
+        mapCtx.beginPath();
+        mapCtx.moveTo(750 * scale, 0);
+        mapCtx.lineTo(750 * scale, worldSize * scale);
+        mapCtx.stroke();
+
+        for(let i=0;i<18;i++) {
+            const x = 90 + ((i*271)%1320);
+            const y = 90 + ((i*173)%1320);
+            if(Math.hypot(x-750,y-750)<260) continue;
+            mapCtx.fillStyle = "#183b25";
+            mapCtx.beginPath();
+            mapCtx.arc(x*scale,y*scale,Math.max(2,22*scale),0,Math.PI*2);
+            mapCtx.fill();
+        }
+    } else if(zone === "forest") {
+        for(let i=0;i<45;i++) {
+            const x=50+((i*317)%3900), y=50+((i*191)%3900);
+            mapCtx.fillStyle = "#123b1b";
+            mapCtx.beginPath();
+            mapCtx.arc(x*scale,y*scale,Math.max(2,24*scale),0,Math.PI*2);
+            mapCtx.fill();
+        }
+        mapCtx.strokeStyle = "#7a5a38";
+        mapCtx.lineWidth = Math.max(3,45*scale);
+        mapCtx.beginPath();
+        mapCtx.moveTo(0,300*scale);
+        mapCtx.lineTo(4000*scale,3600*scale);
+        mapCtx.stroke();
+    } else if(zone === "mountain") {
+        mapCtx.fillStyle = "#66584a";
+        for(let i=0;i<28;i++) {
+            const x=100+((i*521)%3800), y=100+((i*277)%3800);
+            mapCtx.beginPath();
+            mapCtx.moveTo(x*scale,(y-45)*scale);
+            mapCtx.lineTo((x-55)*scale,(y+40)*scale);
+            mapCtx.lineTo((x+55)*scale,(y+40)*scale);
+            mapCtx.closePath();
+            mapCtx.fill();
+        }
+    } else if(zone === "dungeon") {
+        mapCtx.strokeStyle = "#45456d";
+        mapCtx.lineWidth = Math.max(2,30*scale);
+        mapCtx.strokeRect(180*scale,180*scale,3640*scale,3640*scale);
+    } else if(zone === "desert") {
+        mapCtx.fillStyle = "#806b2e";
+        for(let i=0;i<35;i++) {
+            const x=80+((i*283)%3840), y=80+((i*419)%3840);
+            mapCtx.beginPath();
+            mapCtx.arc(x*scale,y*scale,Math.max(2,18*scale),0,Math.PI*2);
+            mapCtx.fill();
+        }
+        mapCtx.strokeStyle = "#c09a45";
+        mapCtx.lineWidth = Math.max(3,55*scale);
+        mapCtx.beginPath();
+        mapCtx.moveTo(0,3400*scale);
+        mapCtx.bezierCurveTo(1200*scale,2800*scale,2600*scale,3800*scale,4000*scale,3000*scale);
+        mapCtx.stroke();
+    }
+
+    mapCtx.restore();
+}
+
+
+/* =========================================================
    MINIMAP
 ========================================================= */
 
@@ -7430,6 +7825,12 @@ function drawMinimap() {
         mCanvas.height
     );
 
+    drawMapDecorations(
+        mCtx,
+        scale,
+        game.currentZone,
+        currentWorldSize
+    );
 
     if(
         game.currentZone === "town"
@@ -7439,15 +7840,16 @@ function drawMinimap() {
             const structure of STRUCTURES
         ) {
 
-            mCtx.fillStyle =
-                structure.color;
-
+            mCtx.fillStyle = structure.color;
             mCtx.fillRect(
-                structure.x*scale-3,
-                structure.y*scale-3,
-                6,
-                6
+                structure.x*scale-5,
+                structure.y*scale-5,
+                10,
+                10
             );
+            mCtx.strokeStyle = "#fff";
+            mCtx.lineWidth = 1;
+            mCtx.strokeRect(structure.x*scale-5, structure.y*scale-5, 10, 10);
 
         }
 
@@ -7560,6 +7962,15 @@ function drawBigMap() {
         h
     );
 
+    // 현재 지역의 길/나무/지형 장식 표시
+    const mapScale = w / WORLD_SIZE_NORMAL;
+    drawMapDecorations(
+        bigMapCtx,
+        mapScale,
+        game.currentZone,
+        WORLD_SIZE_NORMAL
+    );
+
     for(const key in ZONES) {
 
         const zone =
@@ -7623,6 +8034,19 @@ function drawBigMap() {
             y
         );
 
+    }
+
+    // 마을 구조물도 세계 지도에 표시
+    const townZone = ZONES.town;
+    for(const structure of STRUCTURES) {
+        const sx = structure.x / WORLD_SIZE_NORMAL * w;
+        const sy = structure.y / WORLD_SIZE_NORMAL * h;
+        bigMapCtx.fillStyle = structure.color;
+        bigMapCtx.beginPath();
+        bigMapCtx.arc(sx, sy, 7, 0, Math.PI*2);
+        bigMapCtx.fill();
+        bigMapCtx.strokeStyle = "#fff";
+        bigMapCtx.stroke();
     }
 
     /*
@@ -7707,6 +8131,10 @@ function drawGame() {
 
     updateUI();
 
+    // HUD 바는 패널을 열지 않아도 항상 즉시 표시한다.
+    renderSkillBar();
+    renderItemHotbar();
+
 }
 
 
@@ -7730,7 +8158,452 @@ function gameLoop() {
 
 }
 
+
+
+/* =========================================================
+   RPG 확장 기능
+========================================================= */
+
+// 지역별 권장 레벨과 안전 구역.
+ZONES.town.minLevel = 1;
+ZONES.town.safeRadius = 420;
+ZONES.forest.minLevel = 1; ZONES.forest.safeRadius = 360;
+ZONES.mountain.minLevel = 5; ZONES.mountain.safeRadius = 360;
+ZONES.dungeon.minLevel = 10; ZONES.dungeon.safeRadius = 360;
+ZONES.desert.minLevel = 15; ZONES.desert.safeRadius = 360;
+
+// 지역별 퀘스트 NPC. 중앙은 몬스터가 나오지 않는 안전 구역이다.
+STRUCTURES.push(
+    {type:"quest", name:"📜 숲의 안내자", x:1500, y:320, size:58, color:"#2ecc71", zone:"forest", npc:true},
+    {type:"quest", name:"📜 산악 정찰병", x:2500, y:1320, size:58, color:"#8e7dff", zone:"mountain", npc:true},
+    {type:"quest", name:"📜 던전 사제", x:1500, y:2320, size:58, color:"#9b59b6", zone:"dungeon", npc:true},
+    {type:"quest", name:"📜 사막 탐험가", x:3000, y:2820, size:58, color:"#e0a458", zone:"desert", npc:true},
+    {type:"quest", name:"📜 마을 촌장", x:750, y:520, size:58, color:"#00b894", zone:"town", npc:true}
+);
+
+const RPG_QUESTS = {
+    town:{id:"town_intro", name:"첫 사냥 준비", desc:"아무 지역의 몬스터 3마리를 처치하세요.", target:3, rewardExp:60, rewardGold:80, monster:"any"},
+    forest:{id:"forest_hunt", name:"숲의 위협", desc:"숲의 고블린/늑대/사슴 중 5마리를 처치하세요.", target:5, rewardExp:120, rewardGold:120, monster:"forest"},
+    mountain:{id:"mountain_hunt", name:"산악 정찰", desc:"산의 몬스터 5마리를 처치하세요.", target:5, rewardExp:220, rewardGold:220, monster:"mountain"},
+    dungeon:{id:"dungeon_hunt", name:"어둠의 정화", desc:"던전의 몬스터 6마리를 처치하세요.", target:6, rewardExp:350, rewardGold:350, monster:"dungeon"},
+    desert:{id:"desert_hunt", name:"사막의 괴물", desc:"사막의 몬스터 6마리를 처치하세요.", target:6, rewardExp:500, rewardGold:500, monster:"desert"}
+};
+
+function getQuestNpc(zone){
+    return STRUCTURES.find(s => s.type === "quest" && s.zone === zone) || null;
+}
+
+function openQuestPanel(zone = game.currentZone){
+    const q = RPG_QUESTS[zone] || RPG_QUESTS.town;
+    const panel = document.getElementById("quest-panel");
+    const content = document.getElementById("quest-content");
+    if(!panel || !content) return;
+    closeAllPanels();
+    panel.style.display = "block";
+    const active = game.quest.active;
+    if(active && active.id === q.id){
+        const done = game.quest.progress >= q.target;
+        content.innerHTML = `<div class="quest-card"><div class="quest-name">${q.name}</div><div class="quest-desc">${q.desc}</div><div class="quest-progress">진행도: ${Math.min(game.quest.progress,q.target)} / ${q.target}</div><div class="quest-desc">보상: EXP ${q.rewardExp} · 💰 ${q.rewardGold}</div>${done ? '<button class="quest-btn" onclick="claimQuest()">보상 받기</button>' : '<div class="quest-desc">사냥을 계속하세요.</div>'}</div>`;
+    } else if(active){
+        content.innerHTML = `<div class="quest-card"><div class="quest-name">진행 중인 퀘스트</div><div class="quest-desc">현재 퀘스트를 완료한 뒤 다른 지역 퀘스트를 받을 수 있습니다.</div><div class="quest-progress">${active.name}: ${game.quest.progress} / ${active.target}</div></div>`;
+    } else {
+        content.innerHTML = `<div class="quest-card"><div class="quest-name">${q.name}</div><div class="quest-desc">${q.desc}</div><div class="quest-desc" style="margin-top:8px">보상: EXP ${q.rewardExp} · 💰 ${q.rewardGold}</div><button class="quest-btn" onclick="acceptQuest('${zone}')">퀘스트 받기</button></div>`;
+    }
+}
+
+function acceptQuest(zone){
+    const q = RPG_QUESTS[zone];
+    if(!q) return;
+    if(game.quest.active){ showDropNotification("📜 이미 진행 중인 퀘스트가 있습니다."); return; }
+    game.quest = {active:{...q}, progress:0, completed:false};
+    showDropNotification(`📜 ${q.name} 퀘스트를 받았습니다!`);
+    openQuestPanel(zone);
+}
+
+function claimQuest(){
+    const q = game.quest.active;
+    if(!q || game.quest.progress < q.target) return;
+    game.player.gold += q.rewardGold;
+    gainExp(q.rewardExp);
+    game.quest = {active:null, progress:0, completed:true};
+    syncGoldInventory();
+    renderInventory();
+    updateUI();
+    showDropNotification(`🎉 퀘스트 완료! EXP +${q.rewardExp} · 💰 +${q.rewardGold}`);
+    closeAllPanels();
+}
+
+function updateQuestProgress(monster){
+    const q = game.quest.active;
+    if(!q) return;
+    let valid = false;
+    if(q.monster === "any") valid = true;
+    else valid = game.currentZone === q.monster;
+    if(valid){
+        game.quest.progress = Math.min(q.target, game.quest.progress + 1);
+        if(game.quest.progress >= q.target) showDropNotification(`📜 퀘스트 완료! NPC에게 돌아가 보상을 받으세요.`);
+    }
+}
+
+function addStat(type){
+    if(!game.player.statPoints || game.player.statPoints <= 0) return;
+    const st = game.player.stats;
+    if(!Object.prototype.hasOwnProperty.call(st,type)) return;
+    game.player.statPoints--;
+    st[type]++;
+    if(type === "vit"){
+        game.player.maxHp += 10;
+        game.player.hp += 10;
+    } else if(type === "int"){
+        game.player.maxMana += 10;
+        game.player.mana += 10;
+    } else if(type === "dex"){
+        game.player.speed += 0.15;
+    }
+    updateUI();
+    renderItemHotbar();
+}
+
+function toggleStats(){
+    if(!gameStarted || gameOver) return;
+    const panel = document.getElementById("stats-panel");
+    if(panel.style.display === "block") panel.style.display="none";
+    else { closeAllPanels(); panel.style.display="block"; updateUI(); }
+}
+
+// 지역 선택: 레벨 잠금 + 마을 귀환을 한 곳에서 처리.
+initZoneSelect = function(){
+    const container = document.getElementById("zone-buttons");
+    if(!container) return;
+    container.innerHTML = "";
+    for(const key in ZONES){
+        const zone = ZONES[key];
+        const button = document.createElement("button");
+        button.className = "zone-btn";
+        const locked = game.player.level < (zone.minLevel || 1);
+        if(key === game.currentZone) button.classList.add("active");
+        if(locked) button.classList.add("locked");
+        button.textContent = locked ? `${zone.name} 🔒 Lv.${zone.minLevel}` : `${zone.name}${key!=="town" ? ` · Lv.${zone.minLevel}+` : ""}`;
+        button.onclick = e => { e.stopPropagation(); if(locked){showDropNotification(`🔒 ${zone.name}은(는) Lv.${zone.minLevel}부터 입장할 수 있습니다.`); return;} changeZone(key); };
+        container.appendChild(button);
+    }
+    const ret = document.createElement("button");
+    ret.className = "zone-btn";
+    ret.textContent = game.currentZone === "town" ? "🏠 현재 마을" : "🏠 마을로 귀환";
+    ret.disabled = game.currentZone === "town";
+    ret.onclick = e => { e.stopPropagation(); if(game.currentZone === "town") return; startReturnToTown(); };
+    container.appendChild(ret);
+};
+
+changeZone = function(key){
+    if(!ZONES[key] || !gameStarted || gameOver) return;
+    const zone = ZONES[key];
+    if(game.player.level < (zone.minLevel || 1)){
+        showDropNotification(`🔒 ${zone.name}은(는) Lv.${zone.minLevel}부터 입장할 수 있습니다.`);
+        return;
+    }
+    if(key === "town"){
+        startReturnToTown();
+        return;
+    }
+    game.currentZone = key;
+    currentWorldSize = zone.worldSize;
+    game.player.x = clamp(zone.x, game.player.radius, currentWorldSize-game.player.radius);
+    game.player.y = clamp(zone.y, game.player.radius, currentWorldSize-game.player.radius);
+    game.monsters=[]; game.bullets=[]; game.groundItems=[]; game.effects=[]; nearbyStructure=null;
+    updateCamera(); lastSpawnTime=performance.now();
+    document.getElementById("zone-select").style.display="none";
+    initZoneSelect(); updateUI();
+};
+
+// 안전 구역 안에서는 몬스터가 생성되지 않는다. 각 지역의 중앙/NPC 구역과 사냥터를 분리.
+spawnMonster = function(){
+    if(game.currentZone === "town") return;
+    if(game.monsters.length >= 25) return;
+    const zone=ZONES[game.currentZone]; if(!zone || !zone.spawns.length) return;
+    const safeRadius=zone.safeRadius || 300;
+    if(Math.hypot(game.player.x-zone.x, game.player.y-zone.y) < safeRadius) return;
+    const type=zone.spawns[Math.floor(Math.random()*zone.spawns.length)];
+    const data=MONSTERS[type];
+    for(let tries=0;tries<12;tries++){
+        const angle=Math.random()*Math.PI*2;
+        const spawnDistance=600+Math.random()*300;
+        const x=clamp(game.player.x+Math.cos(angle)*spawnDistance,50,currentWorldSize-50);
+        const y=clamp(game.player.y+Math.sin(angle)*spawnDistance,50,currentWorldSize-50);
+        if(Math.hypot(x-zone.x,y-zone.y) < safeRadius) continue;
+        const level=game.player.level;
+        const hpMultiplier=1+Math.min(0.8,level*0.08);
+        const damageMultiplier=Math.min(0.70,0.45+level*0.01);
+        game.monsters.push({type,x,y,radius:data.isElite?30:22,hp:data.hp*hpMultiplier,maxHp:data.hp*hpMultiplier,damage:data.damage*damageMultiplier,speed:data.speed,exp:data.exp,color:data.color,emoji:data.emoji,vision:data.vision,attackRange:data.attackRange,lastAttack:0,attackCooldown:1400,isElite:!!data.isElite,loot:data.loot});
+        return;
+    }
+};
+
+// NPC/구조물: 마을뿐 아니라 각 지역의 안전 구역에도 표시.
+checkNearbyStructure = function(){
+    nearbyStructure=null;
+    let closest=Infinity;
+    for(const structure of STRUCTURES){
+        if((structure.zone||"town") !== game.currentZone) continue;
+        const d=Math.hypot(game.player.x-structure.x,game.player.y-structure.y);
+        if(d<125 && d<closest){closest=d; nearbyStructure=structure;}
+    }
+    const box=document.getElementById("structure-interact"), button=document.getElementById("interact-button");
+    if(nearbyStructure){
+        if(!structurePromptDismissed){ box.style.display="block"; button.textContent=`${nearbyStructure.name} ${nearbyStructure.type==="quest"?"퀘스트": "열기"}`; }
+    } else { structurePromptDismissed=false; box.style.display="none"; }
+};
+
+interactStructure = function(){
+    if(!nearbyStructure) return;
+    document.getElementById("structure-interact").style.display="none"; structurePromptDismissed=true;
+    if(nearbyStructure.type === "shop") openShop();
+    else if(nearbyStructure.type === "forge") openForge();
+    else if(nearbyStructure.type === "craft") openCraft();
+    else if(nearbyStructure.type === "quest") openQuestPanel(nearbyStructure.zone || game.currentZone);
+};
+
+// 구조물/NPC와 안전 구역을 실제 월드에 그림.
+drawStructures = function(){
+    const zone=ZONES[game.currentZone];
+    if(zone && game.currentZone !== "town"){
+        ctx.save(); ctx.globalAlpha=.20; ctx.fillStyle="#00b894"; ctx.beginPath(); ctx.arc(zone.x,zone.y,zone.safeRadius||360,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1;
+        ctx.strokeStyle="#00b894"; ctx.lineWidth=3; ctx.stroke(); ctx.fillStyle="#fff"; ctx.font="bold 15px Arial"; ctx.textAlign="center"; ctx.fillText("안전 구역 · NPC",zone.x,zone.y-(zone.safeRadius||360)-10); ctx.restore();
+    }
+    for(const structure of STRUCTURES){
+        if((structure.zone||"town") !== game.currentZone) continue;
+        ctx.fillStyle=structure.color; ctx.fillRect(structure.x-structure.size/2,structure.y-structure.size/2,structure.size,structure.size);
+        ctx.strokeStyle=nearbyStructure===structure?"#00f5ff":"#222"; ctx.lineWidth=nearbyStructure===structure?4:2; ctx.strokeRect(structure.x-structure.size/2,structure.y-structure.size/2,structure.size,structure.size);
+        ctx.textAlign="center"; ctx.font="20px Arial"; ctx.fillStyle="#fff"; ctx.fillText(structure.name.split(" ")[0],structure.x,structure.y+7);
+    }
+};
+
+// 퀘스트 진행은 처치한 몬스터 기준.
+const _originalKillMonster = killMonster;
+killMonster = function(monster){ updateQuestProgress(monster); _originalKillMonster(monster); };
+
+// 안전 구역은 미니맵/세계지도에도 표시.
+const _originalDrawMapDecorations = drawMapDecorations;
+drawMapDecorations = function(mapCtx,scale,zone,worldSize){
+    _originalDrawMapDecorations(mapCtx,scale,zone,worldSize);
+    const z=ZONES[zone]; if(!z) return;
+    const zx=z.x*scale, zy=z.y*scale, zr=(z.safeRadius||360)*scale;
+    mapCtx.save(); mapCtx.globalAlpha=.22; mapCtx.fillStyle="#00b894"; mapCtx.beginPath(); mapCtx.arc(zx,zy,Math.max(3,zr),0,Math.PI*2); mapCtx.fill(); mapCtx.globalAlpha=1; mapCtx.strokeStyle="#00b894"; mapCtx.lineWidth=Math.max(1,2*scale); mapCtx.stroke();
+    for(const st of STRUCTURES){ if((st.zone||"town")!==zone) continue; mapCtx.fillStyle=st.color; mapCtx.fillRect(st.x*scale-4,st.y*scale-4,8,8); }
+    mapCtx.restore();
+};
+
+// 초기 UI 재생성.
+initZoneSelect(); updateUI(); renderItemHotbar();
+
+
 gameLoop();
+
+
+/* =========================================================
+   V6 PATCH: tutorial / NPC dialogue / quests / jobs / UI
+========================================================= */
+
+// 기본 무기/추가 장비
+ITEMS.wood_club={name:"나무몽둥이",emoji:"🪵",rarity:"common",type:"weapon",damage:4,attackType:"melee",range:70,cooldown:520,arc:1.25,value:20,classes:["all"]};
+ITEMS.long_sword={name:"장검",emoji:"🗡️",rarity:"epic",type:"weapon",damage:22,attackType:"melee",range:90,cooldown:500,arc:1.6,value:650,classes:["warrior"]};
+ITEMS.fire_staff={name:"화염 지팡이",emoji:"🔥",rarity:"epic",type:"weapon",damage:32,attackType:"magic",range:580,cooldown:720,projectileSpeed:10,value:900,classes:["mage"]};
+ITEMS.hunter_bow={name:"사냥꾼의 활",emoji:"🏹",rarity:"epic",type:"weapon",damage:26,attackType:"ranged",range:620,cooldown:560,projectileSpeed:12,value:850,classes:["archer"]};
+ITEMS.plate_armor={name:"강철 갑옷",emoji:"🥋",rarity:"epic",type:"armor",defense:11,value:700,classes:["warrior"]};
+ITEMS.mage_robe={name:"마법 로브",emoji:"🥼",rarity:"epic",type:"armor",defense:7,value:650,classes:["mage"]};
+ITEMS.hunter_armor={name:"사냥꾼 가죽갑옷",emoji:"🧥",rarity:"epic",type:"armor",defense:8,value:650,classes:["archer"]};
+
+SKILLS.slash={manaCost:5,name:"강타",emoji:"⚔️",cooldown:1700,desc:"강력한 근접 공격",job:"warrior"};
+SKILLS.fireball={manaCost:12,name:"화염구",emoji:"🔥",cooldown:2600,desc:"전방으로 화염구를 발사",job:"mage"};
+SKILLS.quickshot={manaCost:7,name:"속사",emoji:"🏹",cooldown:1900,desc:"빠른 연속 사격",job:"archer"};
+
+const JOBS={
+ warrior:{name:"전사",emoji:"⚔️",desc:"높은 근접 공격력과 방어력",skill:"slash",weapon:"long_sword",armor:"plate_armor"},
+ mage:{name:"마법사",emoji:"🧙",desc:"강력한 마법 공격과 높은 마나",skill:"fireball",weapon:"fire_staff",armor:"mage_robe"},
+ archer:{name:"궁수",emoji:"🏹",desc:"긴 사거리와 빠른 공격",skill:"quickshot",weapon:"hunter_bow",armor:"hunter_armor"}
+};
+
+// 직업 NPC
+STRUCTURES.push(
+ {type:"job",job:"warrior",name:"⚔️ 전사 교관",x:520,y:560,size:52,color:"#c0392b",zone:"town",npc:true},
+ {type:"job",job:"mage",name:"🧙 마법사 길드",x:750,y:420,size:52,color:"#8e44ad",zone:"town",npc:true},
+ {type:"job",job:"archer",name:"🏹 궁수 길드",x:980,y:560,size:52,color:"#27ae60",zone:"town",npc:true},
+ {type:"npc",name:"💬 마을 안내자",x:980,y:750,size:50,color:"#3498db",zone:"town",npc:true}
+);
+
+// 튜토리얼/퀘스트 데이터
+const QUEST_POOL=[
+ {id:"forest_2",giver:"forest",name:"숲의 첫걸음",desc:"숲의 몬스터 2마리를 처치하세요.",target:2,rewardExp:100,rewardGold:80,monster:"forest"},
+ {id:"forest_5",giver:"forest",name:"숲의 정찰",desc:"숲의 몬스터 5마리를 처치하세요.",target:5,rewardExp:150,rewardGold:120,monster:"forest"},
+ {id:"mountain_3",giver:"mountain",name:"산길 확보",desc:"산의 몬스터 3마리를 처치하세요.",target:3,rewardExp:180,rewardGold:180,monster:"mountain"},
+ {id:"mountain_7",giver:"mountain",name:"산악 소탕",desc:"산의 몬스터 7마리를 처치하세요.",target:7,rewardExp:280,rewardGold:260,monster:"mountain"},
+ {id:"dungeon_4",giver:"dungeon",name:"어둠의 문",desc:"던전의 몬스터 4마리를 처치하세요.",target:4,rewardExp:300,rewardGold:300,monster:"dungeon"},
+ {id:"dungeon_8",giver:"dungeon",name:"심연 정화",desc:"던전의 몬스터 8마리를 처치하세요.",target:8,rewardExp:450,rewardGold:420,monster:"dungeon"},
+ {id:"desert_5",giver:"desert",name:"사막 경계",desc:"사막의 몬스터 5마리를 처치하세요.",target:5,rewardExp:400,rewardGold:450,monster:"desert"},
+ {id:"desert_10",giver:"desert",name:"사막의 수호자",desc:"사막의 몬스터 10마리를 처치하세요.",target:10,rewardExp:700,rewardGold:800,monster:"desert"}
+];
+const TUTORIALS=[
+ {id:"tut1",name:"튜토리얼 1 · 시작",desc:"마을 주변을 둘러보고 나무몽둥이를 확인하세요.",target:1,rewardExp:120,rewardGold:50,kind:"start"},
+ {id:"tut2",name:"튜토리얼 2 · 첫 전투",desc:"몬스터 2마리를 처치하세요.",target:2,rewardExp:120,rewardGold:70,kind:"kill",monster:"any"},
+ {id:"tut3",name:"튜토리얼 3 · 장비",desc:"인벤토리를 열어 장비를 확인하세요.",target:1,rewardExp:120,rewardGold:70,kind:"inventory"},
+ {id:"tut4",name:"튜토리얼 4 · 스킬",desc:"기본 스킬을 한 번 사용하세요.",target:1,rewardExp:120,rewardGold:70,kind:"skill"},
+ {id:"tut5",name:"튜토리얼 5 · 사냥꾼",desc:"몬스터 3마리를 더 처치하세요.",target:3,rewardExp:150,rewardGold:100,kind:"kill",monster:"any"},
+ {id:"tut6",name:"튜토리얼 6 · 마을",desc:"마을의 안내자 NPC와 대화하세요.",target:1,rewardExp:150,rewardGold:100,kind:"talk"},
+ {id:"tut7",name:"튜토리얼 7 · Lv.5",desc:"5레벨을 달성하면 튜토리얼이 끝납니다.",target:5,rewardExp:180,rewardGold:150,kind:"level"}
+];
+
+function ensureQuestState(){
+ game.quest ||= {active:null,progress:0,completedIds:[],giver:null};
+ game.quest.completedIds ||= [];
+}
+function currentQuestDefinition(){
+ ensureQuestState();
+ if(game.quest.active?.source==="tutorial") return TUTORIALS.find(q=>q.id===game.quest.active.id)||null;
+ if(game.quest.active?.source==="normal") return QUEST_POOL.find(q=>q.id===game.quest.active.id)||null;
+ return null;
+}
+function questAlreadyDone(id){ensureQuestState();return game.quest.completedIds.includes(id);}
+function setQuest(q,source,giver){game.quest={active:{...q,source,giver},progress:0,completedIds:game.quest.completedIds||[],giver};}
+function nextTutorial(){
+ ensureQuestState();
+ const done=new Set(game.quest.completedIds||[]);
+ return TUTORIALS.find(q=>!done.has(q.id))||null;
+}
+function startNextTutorial(){
+ const q=nextTutorial();
+ if(!q){ if(game.player.level>=5) showClassSelection(); return; }
+ setQuest(q,"tutorial","town");
+ showTutorialOverlay();
+}
+function showTutorialOverlay(){
+ let p=document.getElementById('tutorial-overlay');
+ if(!p){p=document.createElement('div');p.id='tutorial-overlay';document.body.appendChild(p);}
+ const q=currentQuestDefinition(); if(!q)return;
+ p.innerHTML=`<div class="tut-title">📘 ${q.name}</div><div class="tut-body">튜토리얼을 시작합니다. 기본 조작과 RPG 시스템을 하나씩 배웁니다.</div><div class="tut-quest"><b>${q.desc}</b><div style="margin-top:8px;color:#00f5ff">진행도: ${Math.min(game.quest.progress,q.target)} / ${q.target}</div><div style="margin-top:6px;color:#aaa">보상: EXP ${q.rewardExp} · 💰 ${q.rewardGold}</div></div><button class="tut-btn" onclick="document.getElementById('tutorial-overlay').style.display='none'">게임 시작</button>`;
+ p.style.display='block';
+}
+function onTutorialProgress(kind,amount=1){
+ ensureQuestState(); const q=currentQuestDefinition(); if(!q || q.kind!==kind)return;
+ if(q.kind==='level') game.quest.progress=Math.max(game.quest.progress,game.player.level); else game.quest.progress=Math.min(q.target,game.quest.progress+amount);
+ if(game.quest.progress>=q.target){claimQuest(true);}
+}
+
+// 기존 renderQuest 계열을 새 퀘스트 다중 구조로 대체
+openQuestPanel=function(zone=game.currentZone){
+ ensureQuestState();
+ const panel=document.getElementById('quest-panel'),content=document.getElementById('quest-content');
+ if(!panel||!content)return;
+ closeAllPanels(); panel.style.display='block';
+ const active=currentQuestDefinition();
+ if(active){
+   const done=game.quest.progress>=active.target;
+   content.innerHTML=`<div class="quest-card"><div class="quest-name">${active.name}</div><div class="quest-desc">${active.desc}</div><div class="quest-progress">${Math.min(game.quest.progress,active.target)} / ${active.target}</div><div class="quest-desc">보상: EXP ${active.rewardExp} · 💰 ${active.rewardGold}</div>${done?`<button class="quest-btn" onclick="claimQuest()">${active.source==='tutorial'?'다음 진행':'보상 받기'}</button>`:'<div class="quest-desc">진행 중...</div>'}</div>`;
+   return;
+ }
+ const npc=getQuestNpc(zone); const available=QUEST_POOL.filter(q=>q.giver===zone&&!questAlreadyDone(q.id));
+ if(!available.length){content.innerHTML=`<div class="quest-card"><div class="quest-name">📜 완료한 퀘스트</div><div class="quest-desc">이 NPC의 퀘스트를 모두 완료했습니다.</div></div>`;return;}
+ content.innerHTML=available.slice(0,4).map(q=>`<div class="quest-card"><div class="quest-name">${q.name}</div><div class="quest-desc">${q.desc}</div><div class="quest-desc" style="margin-top:6px">보상: EXP ${q.rewardExp} · 💰 ${q.rewardGold}</div><button class="quest-btn" onclick="acceptQuest('${q.id}')">퀘스트 받기</button></div>`).join('');
+};
+acceptQuest=function(id){
+ ensureQuestState(); if(game.quest.active){showDropNotification('📜 진행 중인 퀘스트를 먼저 완료하세요.');return;}
+ const q=QUEST_POOL.find(x=>x.id===id); if(!q||questAlreadyDone(id))return; setQuest(q,'normal',q.giver); showDropNotification(`📜 ${q.name} 수락!`); openQuestPanel(q.giver);
+};
+claimQuest=function(fromTutorial=false){
+ ensureQuestState(); const q=currentQuestDefinition(); if(!q||game.quest.progress<q.target)return;
+ if(q.source==='normal'){
+   const giver=getQuestNpc(q.giver); if(!giver||game.currentZone!==q.giver||Math.hypot(game.player.x-giver.x,game.player.y-giver.y)>140){showDropNotification('📜 퀘스트를 준 NPC에게 돌아가세요.');return;}
+ }
+ game.player.gold+=q.rewardGold; syncGoldInventory(); gainExp(q.rewardExp); game.quest.completedIds.push(q.id); game.quest.active=null; game.quest.progress=0;
+ showDropNotification(`🎉 ${q.name} 완료! EXP +${q.rewardExp} · 💰 +${q.rewardGold}`); renderInventory(); updateUI(); closeAllPanels();
+ if(q.source==='tutorial') { if(game.player.level>=5){showClassSelection();} else setTimeout(startNextTutorial,250); }
+};
+updateQuestProgress=function(monster){
+ ensureQuestState(); const q=currentQuestDefinition(); if(!q||q.kind!=='kill')return;
+ const valid=q.monster==='any'||(q.monster&&game.currentZone===q.monster); if(valid){game.quest.progress=Math.min(q.target,game.quest.progress+1); if(game.quest.progress>=q.target) showDropNotification('📜 목표 달성! 퀘스트 창을 확인하세요.');}
+};
+const __killV5=killMonster; killMonster=function(monster){ updateQuestProgress(monster); __killV5(monster); onTutorialProgress('level',0); };
+
+// NPC 상호작용 상태 개선
+let lastNearbyStructureV6=null;
+checkNearbyStructure=function(){
+ nearbyStructure=null; let closest=Infinity;
+ for(const structure of STRUCTURES){ if((structure.zone||'town')!==game.currentZone)continue; const d=Math.hypot(game.player.x-structure.x,game.player.y-structure.y); if(d<125&&d<closest){closest=d;nearbyStructure=structure;} }
+ const box=document.getElementById('structure-interact'),button=document.getElementById('interact-button');
+ if(nearbyStructure!==lastNearbyStructureV6){structurePromptDismissed=false;lastNearbyStructureV6=nearbyStructure;}
+ if(nearbyStructure&&!structurePromptDismissed){box.style.display='block';button.textContent=`${nearbyStructure.name} ${nearbyStructure.type==='quest'?'퀘스트':nearbyStructure.type==='npc'?'대화':nearbyStructure.type==='job'?'상점':'열기'}`;}
+ else if(!nearbyStructure){structurePromptDismissed=false;box.style.display='none';}
+};
+const __interactV5=interactStructure; interactStructure=function(){
+ if(!nearbyStructure)return;
+ const s=nearbyStructure; structurePromptDismissed=true; document.getElementById('structure-interact').style.display='none';
+ if(s.type==='quest') openQuestPanel(s.zone||game.currentZone);
+ else if(s.type==='job') openJobShop(s.job);
+ else if(s.type==='npc') openDialogue(s);
+ else __interactV5();
+};
+
+function openDialogue(npc){
+ let p=document.getElementById('dialogue-panel');if(!p){p=document.createElement('div');p.id='dialogue-panel';document.body.appendChild(p);}
+ const lines={"💬 마을 안내자":["어서 와! 여기는 안전한 마을이야.","1~5레벨 동안 튜토리얼 퀘스트를 따라가면 돼.","레벨 5가 되면 전직할 수 있어." ]};
+ const arr=lines[npc.name]||["좋은 하루야!" ];
+ p.innerHTML=`<div class="dialogue-title">${npc.name}</div><div class="dialogue-body">${arr.map(x=>`<div style="margin-bottom:6px">${x}</div>`).join('')}</div><button class="tut-btn" onclick="document.getElementById('dialogue-panel').style.display='none';onTutorialProgress('talk')">확인</button>`;p.style.display='block';
+}
+
+function showClassSelection(){
+ let p=document.getElementById('class-select-panel');if(!p){p=document.createElement('div');p.id='class-select-panel';document.body.appendChild(p);}
+ p.innerHTML=`<div class="class-title">🏆 전직 선택</div><div class="class-body">Lv.5를 달성했습니다. 하나의 직업을 선택하세요.</div><div class="class-grid">${Object.entries(JOBS).map(([id,j])=>`<div class="class-card" onclick="selectJob('${id}')"><div style="font-size:26px">${j.emoji}</div><b>${j.name}</b><div class="job-note">${j.desc}</div></div>`).join('')}</div>`;p.style.display='block';
+}
+function selectJob(job){
+ if(!JOBS[job])return; game.player.job=job; const j=JOBS[job];
+ game.skillsUnlocked=[j.skill]; game.skillHotbar=[j.skill,null,null,null,null];
+ game.player.damage+=5; showDropNotification(`${j.emoji} ${j.name}으로 전직했습니다!`);
+ document.getElementById('class-select-panel').style.display='none'; renderSkillWindow(); renderSkillBar(); updateUI();
+}
+
+function openJobShop(job){
+ const j=JOBS[job]; if(!j)return;
+ let p=document.getElementById('dialogue-panel');if(!p){p=document.createElement('div');p.id='dialogue-panel';document.body.appendChild(p);}
+ const price={slash:600,fireball:750,quickshot:700}[j.skill];
+ p.innerHTML=`<div class="dialogue-title">${j.emoji} ${j.name} 훈련소</div><div class="dialogue-body">직업이 <b>${j.name}</b>일 때만 아래 스킬과 전용 장비를 사용할 수 있습니다.<br><br>스킬: ${SKILLS[j.skill].emoji} ${SKILLS[j.skill].name} · 💰 ${price}</div><button class="class-btn" onclick="buyJobSkill('${job}',${price})">직업 스킬 구매</button><button class="dialogue-choice" onclick="buyJobGear('${job}')">전용 무기/방어구 구매</button><button class="dialogue-choice" onclick="document.getElementById('dialogue-panel').style.display='none'">닫기</button>`;p.style.display='block';
+}
+function buyJobSkill(job,price){ if(game.player.job!==job){showDropNotification('🔒 현재 직업과 맞지 않습니다.');return;} const skill=JOBS[job].skill;if(game.skillsUnlocked.includes(skill)){showDropNotification('이미 보유한 스킬입니다.');return;} if(game.player.gold<price){showDropNotification('💰 금화가 부족합니다.');return;} game.player.gold-=price;syncGoldInventory();game.skillsUnlocked.push(skill);let e=game.skillHotbar.indexOf(null);if(e!==-1)game.skillHotbar[e]=skill;showDropNotification(`${SKILLS[skill].emoji} ${SKILLS[skill].name} 획득!`);renderSkillWindow();renderSkillBar();updateUI();openJobShop(job);}
+function buyJobGear(job){ if(game.player.job!==job){showDropNotification('🔒 현재 직업과 맞지 않습니다.');return;} const ids=[JOBS[job].weapon,JOBS[job].armor]; for(const id of ids){if(getEmptyInventorySlot()===-1){showDropNotification('🎒 인벤토리 공간이 부족합니다.');break;} addToInventory(id,1);} renderInventory();showDropNotification(`${JOBS[job].emoji} 직업 장비를 지급했습니다.`); }
+
+// 장비 착용 직업 제한 + 기존 함수 래핑
+const __equipV5=equipItem; equipItem=function(id){ const item=ITEMS[id]; if(item?.classes&&item.classes[0]!=='all'&&!item.classes.includes(game.player.job)){showDropNotification(`🔒 ${item.name}은 ${item.classes.map(c=>JOBS[c]?.name).join('/')} 전용입니다.`);return;} __equipV5(id); };
+
+// 상점: 직업 스킬은 제거하고 일반 아이템만 판매
+renderShop=function(){
+ const grid=document.getElementById('shop-grid');if(!grid)return;grid.innerHTML='';
+ const items=[['potion',50],['sword',200],['iron_armor',180],['long_sword',650],['fire_staff',900],['hunter_bow',850],['plate_armor',700],['mage_robe',650],['hunter_armor',650],['ruby',180],['emerald',250]];
+ for(const [id,price] of items){const data=ITEMS[id];if(!data)continue;const div=document.createElement('div');div.className='shop-item';div.innerHTML=`<div class="shop-item-name">${data.emoji} ${data.name}</div><div style="font-size:12px;color:#aaa;margin:4px 0">${getItemDescription(id)}${data.classes&&data.classes[0]!=='all'?`<br>직업: ${data.classes.map(c=>JOBS[c]?.name).join('/')}`:''}</div><div class="shop-item-price">💰 ${price}</div>`;div.onclick=()=>{if(data.classes&&data.classes[0]!=='all'&&!data.classes.includes(game.player.job)){showDropNotification(`🔒 ${data.name}은 직업이 맞아야 장착할 수 있습니다.`);return;}buyItem(id,price);};grid.appendChild(div);}
+};
+
+// 시작 상태: 나무몽둥이 + 기본 스킬은 멀티샷이 아닌 강타
+const __resetV5=resetGameState; resetGameState=function(){ __resetV5(); ensureQuestState(); game.player.job=null; game.inventory[2]={id:'wood_club',count:1}; game.equipment.weapon='wood_club'; game.skillsUnlocked=['slash']; game.skillHotbar=['slash',null,null,null,null]; game.itemHotbar=[0,2,null,null,null]; game.quest={active:null,progress:0,completedIds:[],giver:null}; setTimeout(()=>{if(gameStarted){startNextTutorial();}},80); renderInventory();renderSkillBar();renderItemHotbar();updateUI(); };
+
+// 경험치/레벨: 5레벨 튜토리얼을 안정적으로 끝낼 수 있게 레벨 이벤트 연결
+const __gainV5=gainExp; gainExp=function(amount){__gainV5(amount); const q=currentQuestDefinition(); if(q&&q.kind==='level'){game.quest.progress=Math.max(game.quest.progress,game.player.level);if(game.quest.progress>=q.target)claimQuest(true);} if(game.player.level>=5&&!game.player.job&&(!game.quest.active||game.quest.active.id==='tut7')){setTimeout(showClassSelection,100);} initZoneSelect();};
+
+// 안전구역: 파란색 + 몬스터는 들어오지 못하고 플레이어를 감지하지 못함
+spawnMonster=function(){
+ if(game.currentZone==='town')return; if(game.monsters.length>=25)return; const zone=ZONES[game.currentZone];if(!zone||!zone.spawns?.length)return; const safe=zone.safeRadius||360;if(Math.hypot(game.player.x-zone.x,game.player.y-zone.y)<safe)return;
+ const type=zone.spawns[Math.floor(Math.random()*zone.spawns.length)],data=MONSTERS[type]; for(let i=0;i<20;i++){const a=Math.random()*Math.PI*2,dist=700+Math.random()*450;const x=clamp(game.player.x+Math.cos(a)*dist,50,currentWorldSize-50),y=clamp(game.player.y+Math.sin(a)*dist,50,currentWorldSize-50);if(Math.hypot(x-zone.x,y-zone.y)<safe+80)continue;game.monsters.push({type,x,y,radius:data.isElite?30:22,hp:data.hp,maxHp:data.hp,damage:data.damage,speed:data.speed,exp:data.exp,color:data.color,emoji:data.emoji,vision:data.vision,attackRange:data.attackRange,lastAttack:0,attackCooldown:1000,isElite:!!data.isElite,loot:data.loot});return;}
+};
+const __updateMonstersV5=updateMonsters; updateMonsters=function(){const zone=ZONES[game.currentZone];const safe=zone?.safeRadius||0;const inside=zone&&Math.hypot(game.player.x-zone.x,game.player.y-zone.y)<safe;const old=[];for(const m of game.monsters){old.push([m,m.vision]);if(zone){const d=Math.hypot(m.x-zone.x,m.y-zone.y);if(d<safe){const a=Math.atan2(m.y-zone.y,m.x-zone.x)||0;m.x=zone.x+Math.cos(a)*(safe+80);m.y=zone.y+Math.sin(a)*(safe+80);}if(inside)m.vision=0;}}__updateMonstersV5();for(const [m,v] of old)m.vision=v;};
+
+// 파란 안전 구역 표시를 덮어씀
+const __drawStructV5=drawStructures; drawStructures=function(){__drawStructV5();const zone=ZONES[game.currentZone];if(!zone||!zone.safeRadius)return;ctx.save();ctx.globalAlpha=.16;ctx.fillStyle='#2388ff';ctx.beginPath();ctx.arc(zone.x,zone.y,zone.safeRadius,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;ctx.strokeStyle='#2388ff';ctx.lineWidth=4;ctx.stroke();ctx.restore();};
+
+// 인벤토리/스킬 클릭으로 튜토리얼 진행
+const __toggleInv=toggleInventory; toggleInventory=function(){const r=__toggleInv();onTutorialProgress('inventory');return r;};
+const __useSkill=useSkillHotbar; useSkillHotbar=function(){const r=__useSkill();onTutorialProgress('skill');return r;};
+
+// NPC/구조물 전환 후 상호작용 버튼 항상 다시 표시
+setInterval(()=>{if(gameStarted&&!gameOver)checkNearbyStructure();},150);
+
+// 시작 즉시 작은 기본 UI 갱신
+renderItemHotbar();renderSkillBar();updateUI();
 
 </script>
 
