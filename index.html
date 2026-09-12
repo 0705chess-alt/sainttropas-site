@@ -6424,6 +6424,21 @@ function drawEffects() {
     const now =
         performance.now();
 
+    /* 지역 이동/몬스터 생성 연출 */
+    for(const effect of game.effects) {
+        const progress = clamp((now - effect.start) / effect.duration, 0, 1);
+        if(effect.type === "spawn" || effect.type === "zoneSpawn") {
+            ctx.save();
+            ctx.globalAlpha = 1 - progress;
+            ctx.strokeStyle = effect.type === "zoneSpawn" ? "#00f5ff" : "#ffd166";
+            ctx.lineWidth = effect.type === "zoneSpawn" ? 8 : 5;
+            ctx.beginPath();
+            ctx.arc(effect.x, effect.y, 18 + progress * 55, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+        }
+    }
+
     for(
         const effect of game.effects
     ) {
@@ -8906,23 +8921,10 @@ __setHudVisibilityV7();
         game.player.y=clamp(game.player.y,game.player.radius,currentWorldSize-game.player.radius);
     };
 
-    /* 플레이어 머리 위 레벨 */
+    /* 레벨/닉네임 표시는 최종 이름표에서 한 번만 그립니다. */
     const oldDrawPlayerV8=drawPlayer;
     drawPlayer=function(){
         oldDrawPlayerV8();
-        if(!gameStarted || gameOver) return;
-        const p=game.player;
-        ctx.save();
-        ctx.font='bold 13px Arial';
-        ctx.textAlign='center'; ctx.textBaseline='middle';
-        const text='Lv. '+p.level;
-        const y=p.y-p.radius-16;
-        const w=ctx.measureText(text).width+12;
-        ctx.fillStyle='rgba(0,0,0,.72)';
-        ctx.fillRect(p.x-w/2,y-9,w,18);
-        ctx.fillStyle='#ffd166';
-        ctx.fillText(text,p.x,y);
-        ctx.restore();
     };
 
     /* 기존 레벨/처치/지역 박스 완전 제거 */
@@ -9589,10 +9591,8 @@ __setHudVisibilityV7();
             if(now>=(m.nextAbility||0) && d<Math.max(650,m.vision||500)){
                 m.nextAbility=now+ (m.isElite?2600:4200)+Math.random()*1600;
                 if(m.type==="bat"||m.type==="wolf"||m.type==="wraith") {m.x+= (game.player.x-m.x)/(d||1)*45;m.y+=(game.player.y-m.y)/(d||1)*45;}
-                if(m.type==="dragon_wyvern"||m.type==="demon"||m.type==="pharaoh"||m.type==="ruin_guardian"){
-                    game.effects.push({type:"playerHit",x:game.player.x,y:game.player.y,start:now,duration:260});
-                    if(now>=game.player.invincibleUntil)game.player.hp=Math.max(0,game.player.hp-Math.max(3,m.damage*.45));
-                }
+                /* 드래곤 등 엘리트의 주기적인 근접 특수 피해는 제거합니다.
+                   실제 피해는 일반 공격/접촉 판정에서만 적용됩니다. */
                 if(m.type==="ghoul")m.hp=Math.min(m.maxHp,m.hp+m.maxHp*.12);
             }
         }
@@ -9774,8 +9774,91 @@ __setHudVisibilityV7();
 })();
 </script>
 
-</body>
-</html>
+<style id="requested-features-fix">
+/* 기능 보정용 최소 스타일: 기존 테마는 유지합니다. */
+#world-transition-overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.68);color:#00f5ff;font-size:24px;font-weight:bold;z-index:2147483640;pointer-events:none}
+#world-transition-overlay.active{display:flex}
+#audio-toggle{position:fixed;left:20px;bottom:20px;z-index:2147483647;background:#333;color:#fff;border:1px solid #666;border-radius:5px;padding:7px 10px;cursor:pointer}
+@media(max-width:700px){#audio-toggle{left:10px;bottom:58px;font-size:11px}.structure-interact{bottom:155px!important}}
+</style>
+<script>
+/* 요청 기능 통합 보정 */
+(function(){
+  const audio={ctx:null,music:null,enabled:false,started:false};
+  function startAudio(){
+    if(audio.started)return;
+    const C=window.AudioContext||window.webkitAudioContext;
+    if(!C)return;
+    audio.ctx=new C(); audio.started=true;
+    const gain=audio.ctx.createGain(); gain.gain.value=.035; gain.connect(audio.ctx.destination);
+    audio.music=setInterval(()=>{
+      if(!audio.enabled||!audio.ctx)return;
+      const osc=audio.ctx.createOscillator(); const g=audio.ctx.createGain();
+      osc.type='sine'; osc.frequency.value=[196,247,294,247][Math.floor(Date.now()/900)%4];
+      g.gain.setValueAtTime(.0001,audio.ctx.currentTime); g.gain.exponentialRampToValueAtTime(.06,audio.ctx.currentTime+.12); g.gain.exponentialRampToValueAtTime(.0001,audio.ctx.currentTime+.75);
+      osc.connect(g);g.connect(gain);osc.start();osc.stop(audio.ctx.currentTime+.8);
+    },900);
+  }
+  function sound(freq=440,duration=.09,type='square'){
+    if(!audio.enabled){return} startAudio(); if(!audio.ctx)return;
+    const o=audio.ctx.createOscillator(),g=audio.ctx.createGain();o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(.05,audio.ctx.currentTime);g.gain.exponentialRampToValueAtTime(.0001,audio.ctx.currentTime+duration);o.connect(g);g.connect(audio.ctx.destination);o.start();o.stop(audio.ctx.currentTime+duration);
+  }
+  const button=document.createElement('button');button.id='audio-toggle';button.textContent='🔊 소리 켜짐';button.onclick=()=>{audio.enabled=!audio.enabled;button.textContent=audio.enabled?'🔊 소리 켜짐':'🔇 소리 꺼짐';if(audio.enabled)startAudio()};document.body.appendChild(button);
+  document.addEventListener('pointerdown',startAudio,{once:true});
+  const overlay=document.createElement('div');overlay.id='world-transition-overlay';document.body.appendChild(overlay);
+  function transition(text){overlay.textContent=text;overlay.classList.add('active');setTimeout(()=>overlay.classList.remove('active'),700);sound(220,.18,'sawtooth')}
+
+  /* 숲·산·던전·사막·폐허에도 이용 가능한 지역 구조물을 추가합니다. */
+  const regional=[
+    {type:'quest',name:'📜 숲의 안내자',x:1500,y:320,size:58,color:'#2ecc71',zone:'forest',npc:true},
+    {type:'quest',name:'📜 산악 정찰병',x:2500,y:1320,size:58,color:'#8e7dff',zone:'mountain',npc:true},
+    {type:'quest',name:'📜 던전 사제',x:1500,y:2320,size:58,color:'#9b59b6',zone:'dungeon',npc:true},
+    {type:'quest',name:'📜 사막 탐험가',x:3000,y:2820,size:58,color:'#e0a458',zone:'desert',npc:true},
+    {type:'quest',name:'📜 폐허 연구자',x:3200,y:620,size:58,color:'#b58b62',zone:'ruins',npc:true}
+  ];
+  for(const s of regional)if(!STRUCTURES.some(x=>x.name===s.name&&x.zone===s.zone))STRUCTURES.push(s);
+
+  const oldChange=changeZone;
+  changeZone=function(key){const before=game.currentZone;oldChange(key);if(before!==game.currentZone){transition(`${ZONES[game.currentZone]?.name||key} 이동 중...`);game.effects.push({type:'zoneSpawn',x:game.player.x,y:game.player.y,start:performance.now(),duration:700});sound(330,.2,'triangle');}};
+
+  const oldSpawn=spawnMonster;
+  spawnMonster=function(){const before=game.monsters.length;oldSpawn();if(game.monsters.length>before){const m=game.monsters[game.monsters.length-1];m.spawnStart=performance.now();game.effects.push({type:'spawn',x:m.x,y:m.y,start:performance.now(),duration:500});sound(110,.06,'sine');}};
+
+  const oldKill=killMonster;
+  killMonster=function(m){oldKill(m);sound(m?.isElite?90:150,.08,'square')};
+  const oldAttack=playerAttack;
+  playerAttack=function(){oldAttack();sound(520,.035,'triangle')};
+
+  /* 직업 시설은 직업에 맞는 첫 방문에 전용 장비와 스킬을 무료로 지급합니다. */
+  const given={};
+  const oldInteract=interactStructure;
+  interactStructure=function(){
+    const s=nearbyStructure;
+    /* 촌장을 제외한 지역 NPC의 완료 퀘스트는 NPC 상호작용으로 바로 보상 수령 */
+    const active=game.quest?.active;
+    if(s?.type==='quest' && s.zone !== 'town' && active && game.currentZone === s.zone && game.quest.progress >= active.target){
+      claimQuest();
+      return;
+    }
+    if(s?.type==='job'&&game.player.job===s.job&&!given[s.job]){
+      const j=JOBS[s.job]; given[s.job]=true;
+      if(j&&!game.skillsUnlocked.includes(j.skill))game.skillsUnlocked.push(j.skill);
+      if(j&&!game.skillHotbar.includes(j.skill)){const i=game.skillHotbar.indexOf(null);if(i>=0)game.skillHotbar[i]=j.skill}
+      for(const id of [j.weapon,j.armor])if(id&&getInventoryIndex(id)<0)addToInventory(id,1);
+      showDropNotification(`${j.emoji} ${j.name} 전용 스킬과 장비를 무료로 받았습니다!`);renderSkillBar();renderInventory();sound(660,.25,'triangle');return;
+    }
+    oldInteract();
+  };
+
+  /* 직업 스킬/기존 스킬은 이미 등록된 구현을 그대로 사용하되 UI에 표시를 보장합니다. */
+  const oldUseSkill=useSkill;
+  useSkill=function(id){oldUseSkill(id);renderSkillBar();sound(700,.06,'triangle')};
+
+  /* 구조물 안내창이 두 핫바 사이에 겹치지 않도록 위치만 조정합니다. */
+  const fix=()=>{const e=document.getElementById('structure-interact');if(e)e.style.bottom=window.innerWidth<700?'155px':'155px'};fix();window.addEventListener('resize',fix);
+})();
+</script>
+
 
 
 
@@ -10178,7 +10261,6 @@ __setHudVisibilityV7();
     const ex=Math.cos(p.facingAngle)*7,ey=Math.sin(p.facingAngle)*7;ctx.fillStyle='#07343a';ctx.beginPath();ctx.arc(ex-2,ey-2,2.3,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(ex+4,ey+2,2.3,0,Math.PI*2);ctx.fill();
     ctx.restore();
     drawWeapon();drawAttackAnimation();
-    ctx.save();ctx.font='bold 12px Arial';ctx.textAlign='center';ctx.textBaseline='middle';const text='Lv. '+p.level;const y=p.y-p.radius-18;const w=ctx.measureText(text).width+10;ctx.fillStyle='rgba(0,0,0,.78)';ctx.fillRect(p.x-w/2,y-8,w,16);ctx.fillStyle='#ffd166';ctx.fillText(text,p.x,y);ctx.restore();
   };
 
   /* Keep HUD visible only during gameplay. */
@@ -11332,3 +11414,1185 @@ __setHudVisibilityV7();
   }
 }
 </style>
+
+<script>
+/* FINAL FEATURE PATCH: audio, desert hazard, job shop and event feedback */
+(function(){
+  const audio = { ctx:null, enabled:true, musicTimer:null };
+  function audioContext(){
+    if(!audio.ctx){
+      const C=window.AudioContext||window.webkitAudioContext;
+      if(!C)return null;
+      audio.ctx=new C();
+    }
+    if(audio.ctx.state==='suspended') audio.ctx.resume();
+    return audio.ctx;
+  }
+  function tone(freq=440,duration=.12,type='sine',volume=.045){
+    if(!audio.enabled)return;
+    const c=audioContext(); if(!c)return;
+    const o=c.createOscillator(),g=c.createGain();
+    o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(volume,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+duration);
+    o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+duration);
+  }
+  function startMusic(){
+    audio.enabled=true;
+    audioContext();
+    if(audio.musicTimer) return;
+    const tracks={
+      town:[196,220,247,262,294,330,294,262,247,220,196,220,247,294,330,392,330,294,262,247,220,196,220,247,262,294,330,294,247,220],
+      forest:[147,165,196,220,247,220,196,165,147,165,196,220,262,294,262,220,196,220,247,262,294,330,294,262,247,220,196,165,147,165],
+      mountain:[110,123,147,165,196,220,196,165,147,123,110,123,147,165,220,247,220,196,165,147,123,110,123,147,165,196,220,196,165,147],
+      dungeon:[82,98,110,123,98,82,73,82,98,110,123,147,123,110,98,82,73,82,98,110,98,82,73,65,73,82,98,110,98,82],
+      desert:[165,185,208,233,208,185,165,147,165,185,220,247,220,185,165,147,139,165,185,208,233,262,233,208,185,165,147,139,147,165],
+      ruins:[130,146,164,196,220,196,164,146,130,116,130,146,174,196,233,196,174,146,130,146,164,196,220,247,220,196,164,146,130,116]
+    };
+    let i=0;
+    audio.musicTimer=setInterval(()=>{
+      if(!audio.enabled)return;
+      const track=tracks[game.currentZone]||tracks.town;
+      tone(track[i++%track.length],.55,'triangle',.016);
+    },620);
+  }
+  document.addEventListener('pointerdown',startMusic,{once:true});
+  window.playGameTone=tone;
+  window.playGameMusic=startMusic;
+
+  const oldStart=startGame;
+  startGame=function(){ oldStart(); startMusic(); tone(523,.2,'triangle',.07); };
+
+  /* 사막: 경고 범위 표시 후 실제 피해 */
+  let desertHazardUntil=0, desertHazardNext=0;
+  const oldUpdateLogic=updateLogic;
+  updateLogic=function(){
+    oldUpdateLogic();
+    if(!gameStarted||gameOver||isPaused||game.currentZone!=='desert')return;
+    const now=performance.now();
+    if(now>=desertHazardNext){
+      desertHazardNext=now+4200; desertHazardUntil=now+900;
+      game.effects.push({type:'desertHazard',x:game.player.x,y:game.player.y,start:now,duration:900});
+      tone(105,.16,'sawtooth',.06);
+    }
+    if(desertHazardUntil && now>=desertHazardUntil){
+      desertHazardUntil=0;
+      if(Math.random()<.85 && performance.now()>=game.player.invincibleUntil){
+        damagePlayer(12);
+        game.effects.push({type:'playerHit',x:game.player.x,y:game.player.y,start:now,duration:300});
+        tone(75,.16,'square',.07); updateUI();
+        if(game.player.hp<=0)triggerGameOver();
+      }
+    }
+  };
+
+  const oldDrawEffects=drawEffects;
+  drawEffects=function(){
+    oldDrawEffects();
+    for(const e of game.effects){
+      if(e.type!=='desertHazard')continue;
+      const p=Math.min(1,(performance.now()-e.start)/e.duration);
+      ctx.save();ctx.globalAlpha=.25+.45*(1-p);ctx.strokeStyle='#ff3344';ctx.lineWidth=5;
+      ctx.setLineDash([8,6]);ctx.beginPath();ctx.arc(e.x,e.y,28+p*24,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle='#ff3344';ctx.font='bold 14px Arial';ctx.textAlign='center';ctx.fillText('위험!',e.x,e.y-40);ctx.restore();
+    }
+  };
+
+  /* 이동/스폰/콤보/레벨업/전직 효과음 */
+  const oldChange=changeZone;
+  changeZone=function(key){const before=game.currentZone;oldChange(key);if(before!==game.currentZone){startMusic();tone(330,.3,'triangle',.08);game.effects.push({type:'zoneSpawn',x:game.player.x,y:game.player.y,start:performance.now(),duration:850});}};
+  const oldSpawn=spawnMonster;
+  spawnMonster=function(){const n=game.monsters.length;oldSpawn();if(game.monsters.length>n){const m=game.monsters[game.monsters.length-1];game.effects.push({type:'spawn',x:m.x,y:m.y,start:performance.now(),duration:650});tone(120,.08,'sine',.04);}};
+  const oldGain=gainExp;
+  gainExp=function(amount){const level=game.player.level;oldGain(amount);if(game.player.level>level){tone(784,.16,'triangle',.09);setTimeout(()=>tone(1047,.22,'triangle',.08),120);showDropNotification('✨ 레벨업!');}};
+  const oldCombo=showHuntCombo;
+  showHuntCombo=function(combo){oldCombo(combo);if(combo>=3){tone(660,.12,'square',.06);setTimeout(()=>tone(880,.18,'square',.06),90);}};
+  const oldSelect=selectJob;
+  selectJob=function(job){oldSelect(job);tone(523,.15,'triangle',.08);setTimeout(()=>tone(784,.28,'triangle',.09),130);};
+
+  /* 직업 시설: 구매/이미 보유 안내 대신 전용 상점만 표시 */
+  openJobShop=function(job){
+    const j=JOBS[job]; if(!j)return;
+    if(game.player.job!==job){showDropNotification('🔒 현재 직업 전용 시설입니다.');return;}
+    let panel=document.getElementById('dialogue-panel');
+    if(!panel){panel=document.createElement('div');panel.id='dialogue-panel';document.body.appendChild(panel);}
+    const items=[j.weapon,j.armor].filter(Boolean);
+    panel.innerHTML=`<div class="dialogue-title">${j.emoji} ${j.name} 전용 상점</div><div class="dialogue-body">전직한 직업만 이용할 수 있습니다.</div><div id="job-shop-items"></div><button class="dialogue-choice" id="job-shop-close">닫기</button>`;
+    const list=panel.querySelector('#job-shop-items');
+    for(const id of items){const d=ITEMS[id];if(!d)continue;const price=id===j.weapon?450:400;const row=document.createElement('div');row.className='shop-item';row.innerHTML=`<div class="shop-item-name">${d.emoji} ${d.name}</div><div style="font-size:11px;color:#aaa">${getItemDescription(id)}</div><div class="shop-item-price">💰 ${price}</div>`;row.onclick=()=>{if(game.player.gold<price){showDropNotification('💰 금화가 부족합니다.');return;}game.player.gold-=price;syncGoldInventory();addToInventory(id,1);renderInventory();updateUI();tone(660,.12,'triangle',.06);showDropNotification(`${d.emoji} ${d.name} 구매 완료`);};list.appendChild(row);}
+    panel.querySelector('#job-shop-close').onclick=()=>panel.style.display='none';panel.style.display='block';
+  };
+
+  /* 시작 시 배경음악을 사용할 수 있도록 작은 토글 */
+  const btn=document.createElement('button');btn.id='audio-toggle';btn.textContent='🔊 음악';
+  btn.style.cssText='position:fixed;left:20px;bottom:20px;z-index:2147483647;background:#333;color:#fff;border:1px solid #666;border-radius:5px;padding:7px 10px;cursor:pointer;';
+  btn.onclick=()=>{audio.enabled=!audio.enabled;btn.textContent=audio.enabled?'🔊 음악':'🔇 음악';if(audio.enabled)startMusic();};document.body.appendChild(btn);
+})();
+</script>
+<script>
+/* FINAL COMBAT / SHOP PATCH */
+(function(){
+    /* 추가 무기 */
+    ITEMS.shadow_blade = {
+        name:"그림자 쌍검", emoji:"🗡️", rarity:"legendary", type:"weapon",
+        damage:42, attackType:"melee", range:105, cooldown:420, arc:1.75, value:2600,
+        classes:["warrior","archer"]
+    };
+    ITEMS.frost_staff = {
+        name:"빙결 지팡이", emoji:"❄️", rarity:"legendary", type:"weapon",
+        damage:45, attackType:"magic", range:650, cooldown:600, projectileSpeed:11, value:2800,
+        classes:["mage"]
+    };
+    ITEMS.thunder_bow = {
+        name:"번개의 활", emoji:"🏹", rarity:"legendary", type:"weapon",
+        damage:40, attackType:"ranged", range:760, cooldown:470, projectileSpeed:15, value:2700,
+        classes:["archer"]
+    };
+
+    /* 모든 스킬은 일반 상점에서 구매할 수 있게 한다. */
+    const originalRenderShop = renderShop;
+    renderShop = function(){
+        originalRenderShop();
+        const grid = document.getElementById("shop-grid");
+        if(!grid) return;
+        const prices = {
+            multi:700, ultimate:3000, explosion:1200, lightning:900,
+            dash:1500, roll:1800, slash:600, fireball:750, quickshot:700
+        };
+        for(const [skillId, skill] of Object.entries(SKILLS)){
+            if(!skill || game.skillsUnlocked.includes(skillId)) continue;
+            const price = prices[skillId] || 1000;
+            const row = document.createElement("div");
+            row.className = "shop-item";
+            row.innerHTML = `
+                <div class="shop-item-name">${skill.emoji} ${skill.name} 스킬</div>
+                <div style="font-size:12px;color:#aaa;margin:4px 0">${skill.desc}</div>
+                <div class="shop-item-price">💰 ${price}</div>`;
+            row.onclick = () => buySkill(skillId, price);
+            grid.appendChild(row);
+        }
+
+        /* 추가 무기 */
+        const weapons = [["shadow_blade",2600],["frost_staff",2800],["thunder_bow",2700]];
+        for(const [id, price] of weapons){
+            const data = ITEMS[id];
+            if(!data || getInventoryIndex(id) !== -1) continue;
+            const row = document.createElement("div");
+            row.className = "shop-item";
+            row.innerHTML = `
+                <div class="shop-item-name">${data.emoji} ${data.name}</div>
+                <div style="font-size:12px;color:#aaa;margin:4px 0">공격력 +${data.damage} · ${data.attackType}</div>
+                <div class="shop-item-price">💰 ${price}</div>`;
+            row.onclick = () => buyItem(id, price);
+            grid.appendChild(row);
+        }
+    };
+
+    /* 직업 전용 상점에도 현재 직업 스킬을 구매할 수 있게 한다. */
+    const originalOpenJobShop = openJobShop;
+    openJobShop = function(job){
+        originalOpenJobShop(job);
+        const panel = document.getElementById("dialogue-panel");
+        if(!panel || game.player.job !== job) return;
+        const skillId = JOBS[job]?.skill;
+        const skill = skillId ? SKILLS[skillId] : null;
+        if(!skill || game.skillsUnlocked.includes(skillId)) return;
+        const button = document.createElement("button");
+        button.className = "class-btn";
+        button.textContent = `${skill.emoji} ${skill.name} 구매 · 💰 600`;
+        button.onclick = () => buySkill(skillId, 600);
+        panel.insertBefore(button, panel.lastElementChild);
+    };
+
+    /* 피해를 한 곳에서 처리하여 HP 0이면 즉시 게임오버 */
+    function damagePlayer(amount){
+        if(!gameStarted || gameOver || isPaused) return false;
+        if(performance.now() < game.player.invincibleUntil) return false;
+        const damage = Math.max(1, Math.round(amount));
+        game.player.hp = Math.max(0, game.player.hp - damage);
+        if(game.player.hp <= 0){
+            game.player.hp = 0;
+            updateUI();
+            triggerGameOver();
+        }
+        return true;
+    }
+    window.damagePlayer = damagePlayer;
+
+    /* 기존 함수가 HP를 직접 깎더라도 0 상태를 매 프레임 즉시 종료 */
+    const originalUpdateLogic = updateLogic;
+    updateLogic = function(){
+        originalUpdateLogic();
+        if(gameStarted && !gameOver && game.player.hp <= 0){
+            game.player.hp = 0;
+            triggerGameOver();
+        }
+    };
+
+    /* 몬스터 공격은 겹침 상태를 포함해 플레이어와 접촉하면 반드시 판정 */
+    const originalUpdateMonsters = updateMonsters;
+    updateMonsters = function(){
+        if(!gameStarted || gameOver || isPaused) return;
+        originalUpdateMonsters();
+        if(gameOver) return;
+        const now = performance.now();
+        for(const monster of game.monsters){
+            const d = distance(game.player, monster);
+            const touching = d <= game.player.radius + monster.radius;
+            if(touching && now - monster.lastAttack >= (monster.attackCooldown || 1000)){
+                monster.lastAttack = now;
+                if(damagePlayer(monster.damage || 1)){
+                    game.effects.push({type:"playerHit",x:game.player.x,y:game.player.y,start:now,duration:200});
+                }
+                if(gameOver) break;
+            }
+        }
+    };
+
+    /* 사막 위험 피해도 중앙 피해 함수로 처리 */
+    const originalDesertLogic = updateLogic;
+    updateLogic = function(){
+        originalDesertLogic();
+        if(!gameStarted || gameOver || isPaused || game.currentZone !== "desert") return;
+        /* HP가 0인 채 남는 상황 방지 */
+        if(game.player.hp <= 0){
+            game.player.hp = 0;
+            triggerGameOver();
+        }
+    };
+
+    /* 스폰 시각 효과를 항상 표시 */
+    const originalSpawn = spawnMonster;
+    spawnMonster = function(){
+        const before = game.monsters.length;
+        originalSpawn();
+        if(game.monsters.length > before){
+            const monster = game.monsters[game.monsters.length - 1];
+            const now = performance.now();
+            monster.spawnStart = now;
+            game.effects.push({type:"spawn",x:monster.x,y:monster.y,start:now,duration:700});
+        }
+    };
+})();
+</script>
+<script>
+/* FINAL MUSIC FIX: 하단 버튼 제거 + 지역별 긴 배경음악 */
+(function(){
+  document.querySelectorAll('#audio-toggle').forEach(el=>el.remove());
+
+  const music = { context:null, timer:null, enabled:true, index:0, zone:null };
+  const tracks = {
+    town:[196,220,247,262,294,330,294,262,247,220,196,220,247,294,330,392,330,294,262,247,220,196,220,247,262,294,330,294,247,220,196,174,196,220,247,262,294,330,392,330,294,262,247,220,196,220,247,262],
+    forest:[147,165,196,220,247,220,196,165,147,165,196,220,262,294,262,220,196,220,247,262,294,330,294,262,247,220,196,165,147,165,196,220,247,262,294,330,349,330,294,262,247,220,196,165,147,139,147,165],
+    mountain:[110,123,147,165,196,220,196,165,147,123,110,123,147,165,220,247,220,196,165,147,123,110,123,147,165,196,220,196,165,147,123,110,98,110,123,147,165,196,220,196,165,147,123,110,123,147,165,196],
+    dungeon:[82,98,110,123,98,82,73,82,98,110,123,147,123,110,98,82,73,82,98,110,98,82,73,65,73,82,98,110,98,82,73,65,73,82,98,110,123,110,98,82,73,65,73,82,98,110,98,82],
+    desert:[165,185,208,233,208,185,165,147,165,185,220,247,220,185,165,147,139,165,185,208,233,262,233,208,185,165,147,139,147,165,185,208,233,247,262,247,233,208,185,165,147,139,147,165,185,208,220,233],
+    ruins:[130,146,164,196,220,196,164,146,130,116,130,146,174,196,233,196,174,146,130,146,164,196,220,247,220,196,164,146,130,116,130,146,164,196,220,233,247,233,220,196,164,146,130,116,130,146,164,196]
+  };
+
+  function startLongMusic(){
+    if(music.timer) return;
+    const C=window.AudioContext||window.webkitAudioContext;
+    if(!C) return;
+    music.context ||= new C();
+    if(music.context.state==='suspended') music.context.resume();
+    music.timer=setInterval(()=>{
+      if(!music.enabled || !gameStarted || gameOver) return;
+      const zone=game.currentZone||'town';
+      if(zone!==music.zone){music.zone=zone;music.index=0;}
+      const notes=tracks[zone]||tracks.town;
+      const osc=music.context.createOscillator();
+      const gain=music.context.createGain();
+      osc.type='triangle';
+      osc.frequency.value=notes[music.index++%notes.length];
+      gain.gain.setValueAtTime(0.0001,music.context.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.035,music.context.currentTime+0.08);
+      gain.gain.exponentialRampToValueAtTime(0.0001,music.context.currentTime+0.58);
+      osc.connect(gain);gain.connect(music.context.destination);
+      osc.start();osc.stop(music.context.currentTime+0.62);
+    },620);
+  }
+
+  const previousStartGame=startGame;
+  startGame=function(){ previousStartGame(); startLongMusic(); };
+  const previousRestartGame=restartGame;
+  restartGame=function(){ previousRestartGame(); startLongMusic(); };
+  document.addEventListener('pointerdown',startLongMusic,{once:false});
+  setInterval(()=>{
+    document.querySelectorAll('#audio-toggle').forEach(el=>el.remove());
+    if(gameStarted) startLongMusic();
+  },500);
+})();
+</script>
+<script>
+/* EXCLUSIVE MUSIC FIX: 지역 음악 중복 재생 방지 */
+(function(){
+    const NativeAudioContext = window.AudioContext || window.webkitAudioContext;
+    const trackedContexts = new Set();
+
+    // 기존 음악 패치들이 만든 AudioContext를 추적해 새 음악과 겹치지 않게 합니다.
+    if(NativeAudioContext){
+        const TrackedAudioContext = function(){
+            const context = new NativeAudioContext();
+            trackedContexts.add(context);
+            return context;
+        };
+        TrackedAudioContext.prototype = NativeAudioContext.prototype;
+        window.AudioContext = TrackedAudioContext;
+        if(window.webkitAudioContext) window.webkitAudioContext = TrackedAudioContext;
+    }
+
+    const music = {
+        context: null,
+        timer: null,
+        zone: null,
+        index: 0,
+        active: new Set(),
+        started: false
+    };
+
+    const tracks = {
+        town: [196,220,247,262,294,330,392,330,294,262,247,220,196,220,247,294,330,392,440,392,330,294,262,247,220,247,294,330,294,262,247,220,196,174,196,220,247,294,330,392,330,294,262,247,220,196],
+        forest: [147,165,196,220,247,262,294,330,294,262,247,220,196,165,147,165,196,220,262,294,330,392,349,330,294,262,247,220,196,165,147,139,147,165,196,220,247,294,330,294,262,247,220,196,165,147],
+        mountain: [110,123,147,165,196,220,247,220,196,165,147,123,110,123,147,165,220,247,294,262,247,220,196,165,147,123,110,98,110,123,147,165,196,220,247,294,262,247,220,196,165,147,123,110],
+        dungeon: [82,98,110,123,147,123,110,98,82,73,82,98,110,123,110,98,82,73,65,73,82,98,110,123,147,123,110,98,82,73,65,73,82,98,110,98,82,73,65,73,82,98,110,123],
+        desert: [165,185,208,233,262,233,208,185,165,147,165,185,220,247,294,247,220,185,165,147,139,147,165,185,208,233,262,233,208,185,165,147,139,147,165,185,220,247,262,247,233,208,185,165],
+        ruins: [130,146,164,196,220,247,220,196,164,146,130,116,130,146,174,196,233,196,174,146,130,116,130,146,164,196,220,233,247,233,220,196,164,146,130,116,130,146,164,196,220,196,164,146]
+    };
+
+    function silenceOtherContexts(){
+        for(const context of trackedContexts){
+            if(context !== music.context && context.state === 'running'){
+                context.suspend().catch(()=>{});
+            }
+        }
+    }
+
+    function stopCurrentNotes(){
+        for(const oscillator of music.active){
+            try{ oscillator.stop(); }catch(e){}
+        }
+        music.active.clear();
+    }
+
+    function playNextNote(){
+        if(!music.context || !gameStarted || gameOver) return;
+        const notes = tracks[game.currentZone] || tracks.town;
+        const oscillator = music.context.createOscillator();
+        const gain = music.context.createGain();
+        const now = music.context.currentTime;
+        oscillator.type = 'triangle';
+        oscillator.frequency.value = notes[music.index++ % notes.length];
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(0.028, now + 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.82);
+        oscillator.connect(gain);
+        gain.connect(music.context.destination);
+        music.active.add(oscillator);
+        oscillator.onended = () => music.active.delete(oscillator);
+        oscillator.start(now);
+        oscillator.stop(now + 0.86);
+    }
+
+    function startExclusiveMusic(){
+        if(!NativeAudioContext || !gameStarted || gameOver) return;
+        if(!music.context){
+            music.context = new NativeAudioContext();
+            trackedContexts.add(music.context);
+        }
+        silenceOtherContexts();
+        if(music.context.state === 'suspended') music.context.resume().catch(()=>{});
+        if(music.started) return;
+        music.started = true;
+        music.timer = setInterval(playNextNote, 900);
+        playNextNote();
+    }
+
+    function changeExclusiveTrack(){
+        if(!music.context) return;
+        stopCurrentNotes();
+        music.zone = game.currentZone;
+        music.index = 0;
+        silenceOtherContexts();
+        if(music.context.state === 'suspended') music.context.resume().catch(()=>{});
+    }
+
+    const originalStartGameExclusive = startGame;
+    startGame = function(){
+        originalStartGameExclusive();
+        setTimeout(startExclusiveMusic, 0);
+    };
+
+    const originalRestartGameExclusive = restartGame;
+    restartGame = function(){
+        originalRestartGameExclusive();
+        setTimeout(startExclusiveMusic, 0);
+    };
+
+    const originalChangeZoneExclusive = changeZone;
+    changeZone = function(key){
+        const previousZone = game.currentZone;
+        originalChangeZoneExclusive(key);
+        if(previousZone !== game.currentZone){
+            changeExclusiveTrack();
+            setTimeout(startExclusiveMusic, 0);
+        }
+    };
+
+    const originalGoToMenuExclusive = goToMenu;
+    goToMenu = function(){
+        originalGoToMenuExclusive();
+        stopCurrentNotes();
+        if(music.context && music.context.state === 'running') music.context.suspend().catch(()=>{});
+    };
+})();
+</script>
+<script>
+/* SINGLE MUSIC ENGINE: 기존 여러 음악 패치를 무음 처리하고 한 트랙만 재생 */
+(function(){
+    const NativeContext = window.AudioContext || window.webkitAudioContext;
+    if(!NativeContext) return;
+
+    const music = {
+        context: null,
+        timer: null,
+        notes: [],
+        index: 0,
+        zone: null,
+        active: new Set()
+    };
+
+    const tracks = {
+        town: [196,220,247,294,330,392,440,392,330,294,247,220,196,247,294,330,392,494,440,392,330,294,247,220,196,220,262,330,392,440,392,330,294,262,220,196,174,196,220,262,294,330,392,330,294,247,220,196],
+        forest: [147,165,196,220,262,294,330,392,330,294,262,220,196,165,147,196,220,247,294,330,392,440,392,330,294,247,220,196,165,147,139,147,165,196,220,262,294,330,294,262,247,220,196,165,147,139],
+        mountain: [110,123,147,165,196,220,247,294,247,220,196,165,147,123,110,147,165,196,220,262,294,330,294,262,220,196,165,147,123,110,98,110,123,147,165,196,220,247,220,196,165,147,123,110],
+        dungeon: [82,98,110,123,147,123,110,98,82,73,82,98,110,123,110,98,82,73,65,73,82,98,110,123,110,98,82,73,65,73,82,98,110,123,147,123,110,98,82,73,65,73],
+        desert: [165,185,208,233,262,294,262,233,208,185,165,147,165,185,220,247,294,330,294,247,220,185,165,147,139,147,165,185,208,233,247,262,247,233,208,185,165,147,139,147,165,185,208,233],
+        ruins: [130,146,164,196,220,247,294,247,220,196,164,146,130,116,130,146,174,196,233,262,233,196,174,146,130,116,130,146,164,196,220,233,247,233,220,196,164,146,130,116,130,146,164,196]
+    };
+
+    /* 이전 음악 엔진의 AudioContext가 새 음을 내지 못하게 차단 */
+    const OriginalContext = NativeContext;
+    const PatchedContext = function(...args){
+        const context = new OriginalContext(...args);
+        const originalCreateGain = context.createGain.bind(context);
+        context.createGain = function(){
+            const gain = originalCreateGain();
+            const originalConnect = gain.connect.bind(gain);
+            gain.connect = function(...connectArgs){
+                if(context !== music.context) gain.gain.value = 0;
+                return originalConnect(...connectArgs);
+            };
+            return gain;
+        };
+        return context;
+    };
+    PatchedContext.prototype = OriginalContext.prototype;
+    window.AudioContext = PatchedContext;
+    if(window.webkitAudioContext) window.webkitAudioContext = PatchedContext;
+
+    function stopNotes(){
+        for(const oscillator of music.active){
+            try{ oscillator.stop(); }catch(e){}
+        }
+        music.active.clear();
+    }
+
+    function startMusic(){
+        if(!gameStarted || gameOver) return;
+        if(!music.context){
+            music.context = new OriginalContext();
+            if(music.context.state === 'suspended') music.context.resume().catch(()=>{});
+        }
+        const zone = game.currentZone || 'town';
+        if(music.zone !== zone){
+            stopNotes();
+            music.zone = zone;
+            music.index = 0;
+            music.notes = tracks[zone] || tracks.town;
+        }
+        if(music.timer) return;
+        music.timer = setInterval(()=>{
+            if(!gameStarted || gameOver || isPaused) return;
+            const now = music.context.currentTime;
+            const oscillator = music.context.createOscillator();
+            const gain = music.context.createGain();
+            oscillator.type = 'triangle';
+            oscillator.frequency.value = music.notes[music.index++ % music.notes.length];
+            gain.gain.setValueAtTime(.0001, now);
+            gain.gain.exponentialRampToValueAtTime(.022, now + .12);
+            gain.gain.exponentialRampToValueAtTime(.0001, now + .82);
+            oscillator.connect(gain);
+            gain.connect(music.context.destination);
+            music.active.add(oscillator);
+            oscillator.onended = () => music.active.delete(oscillator);
+            oscillator.start(now);
+            oscillator.stop(now + .86);
+        }, 900);
+    }
+
+    function changeMusic(){
+        if(!music.context) return;
+        stopNotes();
+        music.zone = null;
+        music.index = 0;
+        startMusic();
+    }
+
+    const previousStart = startGame;
+    startGame = function(){ previousStart(); setTimeout(startMusic, 0); };
+    const previousRestart = restartGame;
+    restartGame = function(){ previousRestart(); setTimeout(startMusic, 0); };
+    const previousChange = changeZone;
+    changeZone = function(key){
+        const before = game.currentZone;
+        previousChange(key);
+        if(before !== game.currentZone) changeMusic();
+    };
+    const previousReturn = updateReturnChannel;
+    updateReturnChannel = function(){
+        const before = game.currentZone;
+        previousReturn();
+        if(before !== game.currentZone) changeMusic();
+    };
+    const previousMenu = goToMenu;
+    goToMenu = function(){
+        previousMenu();
+        stopNotes();
+        if(music.timer){ clearInterval(music.timer); music.timer=null; }
+        if(music.context && music.context.state === 'running') music.context.suspend().catch(()=>{});
+    };
+
+    document.addEventListener('pointerdown', startMusic, {once:false});
+})();
+</script>
+<script>
+/* FINAL DESERT HAZARD FIX
+   사막의 주기적 빨간 경고/자동 피해를 제거하고,
+   몬스터 접촉 피해는 유지합니다. */
+(function(){
+    let hazardUntil = 0;
+
+    function wrapEffects(list){
+        if(!Array.isArray(list) || list.__desertWrapped) return list;
+        const originalPush = list.push.bind(list);
+        list.push = function(...items){
+            const allowed = [];
+            for(const item of items){
+                if(item && item.type === 'desertHazard'){
+                    hazardUntil = performance.now() + (item.duration || 1000) + 150;
+                    continue;
+                }
+                allowed.push(item);
+            }
+            return allowed.length ? originalPush(...allowed) : list.length;
+        };
+        Object.defineProperty(list, '__desertWrapped', {value:true, enumerable:false});
+        return list;
+    }
+
+    const initialEffects = wrapEffects(game.effects);
+    let effectsValue = initialEffects;
+    Object.defineProperty(game, 'effects', {
+        configurable: true,
+        get(){ return effectsValue; },
+        set(value){ effectsValue = wrapEffects(value); }
+    });
+
+    const originalDamagePlayer = window.damagePlayer;
+    if(typeof originalDamagePlayer === 'function'){
+        window.damagePlayer = function(amount){
+            /* 위험 이벤트가 예약한 피해만 막고, 몬스터 피해는 통과시킵니다. */
+            if(performance.now() < hazardUntil) return false;
+            return originalDamagePlayer(amount);
+        };
+    }
+
+    /* 이미 남아 있던 경고 효과도 즉시 제거합니다. */
+    const removeHazards = () => {
+        if(Array.isArray(game.effects)){
+            game.effects = game.effects.filter(effect => effect?.type !== 'desertHazard');
+        }
+    };
+    removeHazards();
+    setInterval(removeHazards, 100);
+})();
+</script>
+<script>
+/* FINAL DESERT DAMAGE KILL-SWITCH
+   중복 패치로 남아 있는 사막 자동 피해/경고를 최종 차단합니다. */
+(function(){
+    let desertHazardBlockUntil = 0;
+
+    function removeDesertHazards(){
+        if(!Array.isArray(game.effects)) return;
+        game.effects = game.effects.filter(effect => effect?.type !== "desertHazard");
+    }
+
+    /* 위험 효과가 어디서 추가되더라도 화면에 남기지 않습니다. */
+    const effectLists = new WeakSet();
+    function guardEffects(list){
+        if(!Array.isArray(list) || effectLists.has(list)) return list;
+        effectLists.add(list);
+        const originalPush = list.push.bind(list);
+        list.push = function(...items){
+            const safeItems = items.filter(item => {
+                if(item?.type === "desertHazard"){
+                    desertHazardBlockUntil = performance.now() + 1400;
+                    return false;
+                }
+                return true;
+            });
+            return safeItems.length ? originalPush(...safeItems) : list.length;
+        };
+        return list;
+    }
+
+    let effects = guardEffects(game.effects);
+    Object.defineProperty(game, "effects", {
+        configurable: true,
+        get(){ return effects; },
+        set(value){ effects = guardEffects(value); }
+    });
+
+    /* 자동 피해 호출은 차단하되, 일반 몬스터 접촉 피해는 통과시킵니다. */
+    if(typeof window.damagePlayer === "function"){
+        const originalDamagePlayer = window.damagePlayer;
+        window.damagePlayer = function(amount){
+            if(performance.now() < desertHazardBlockUntil) return false;
+            return originalDamagePlayer(amount);
+        };
+    }
+
+    /* 이미 남아 있을 수 있는 경고와 예약 상태를 반복 정리합니다. */
+    setInterval(removeDesertHazards, 50);
+
+    const originalDrawEffects = drawEffects;
+    drawEffects = function(){
+        removeDesertHazards();
+        originalDrawEffects();
+    };
+})();
+</script>
+<script>
+/* DRAGON RANGED ATTACK FIX
+   드래곤의 특수 공격을 근접 효과가 아닌 원거리 투사체로 처리합니다. */
+(function(){
+    let lastZone = game.currentZone;
+
+    function resetEnemyProjectiles(){
+        game.enemyBullets = [];
+        lastZone = game.currentZone;
+    }
+
+    function fireDragonProjectile(monster){
+        const dx = game.player.x - monster.x;
+        const dy = game.player.y - monster.y;
+        const distanceToPlayer = Math.hypot(dx, dy) || 1;
+        const speed = 5.5;
+
+        game.enemyBullets.push({
+            x: monster.x,
+            y: monster.y,
+            vx: dx / distanceToPlayer * speed,
+            vy: dy / distanceToPlayer * speed,
+            radius: 11,
+            damage: Math.max(8, Math.round(monster.damage * 0.8)),
+            travelled: 0,
+            maxDistance: 900,
+            color: '#ff3b81',
+            source: 'dragon'
+        });
+
+        game.effects.push({
+            type: 'dragonShot',
+            x: monster.x,
+            y: monster.y,
+            start: performance.now(),
+            duration: 220
+        });
+    }
+
+    function updateEnemyProjectiles(){
+        if(!game.enemyBullets) game.enemyBullets = [];
+        if(lastZone !== game.currentZone){
+            resetEnemyProjectiles();
+            return;
+        }
+
+        for(let i = game.enemyBullets.length - 1; i >= 0; i--){
+            const bullet = game.enemyBullets[i];
+            bullet.x += bullet.vx;
+            bullet.y += bullet.vy;
+            bullet.travelled += Math.hypot(bullet.vx, bullet.vy);
+
+            const hit = Math.hypot(
+                bullet.x - game.player.x,
+                bullet.y - game.player.y
+            ) <= bullet.radius + game.player.radius;
+
+            if(hit){
+                if(performance.now() >= game.player.invincibleUntil){
+                    game.player.hp = Math.max(0, game.player.hp - bullet.damage);
+                    game.effects.push({
+                        type: 'playerHit',
+                        x: game.player.x,
+                        y: game.player.y,
+                        start: performance.now(),
+                        duration: 180
+                    });
+                    if(game.player.hp <= 0) triggerGameOver();
+                }
+                game.enemyBullets.splice(i, 1);
+                continue;
+            }
+
+            if(bullet.travelled >= bullet.maxDistance){
+                game.enemyBullets.splice(i, 1);
+            }
+        }
+    }
+
+    function drawEnemyProjectiles(){
+        if(!game.enemyBullets) return;
+        for(const bullet of game.enemyBullets){
+            ctx.save();
+            ctx.fillStyle = bullet.color;
+            ctx.shadowColor = bullet.color;
+            ctx.shadowBlur = 18;
+            ctx.beginPath();
+            ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#ffd1e3';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.restore();
+        }
+    }
+
+    const previousUpdateMonsters = updateMonsters;
+    updateMonsters = function(){
+        previousUpdateMonsters();
+        if(!gameStarted || gameOver || isPaused) return;
+
+        const now = performance.now();
+        for(const monster of game.monsters){
+            if(monster.type !== 'dragon_wyvern') continue;
+
+            const d = distance(game.player, monster);
+            /* 가까이 붙었을 때는 원거리 특수 공격을 발사하지 않습니다. */
+            if(d <= monster.attackRange + game.player.radius + 80) continue;
+
+            if(!monster.nextRangedAttack) {
+                monster.nextRangedAttack = now + 1800;
+            }
+
+            if(d <= 900 && now >= monster.nextRangedAttack){
+                fireDragonProjectile(monster);
+                monster.nextRangedAttack = now + 3200;
+            }
+        }
+    };
+
+    const previousUpdateLogic = updateLogic;
+    updateLogic = function(){
+        previousUpdateLogic();
+        if(gameStarted && !gameOver && !isPaused){
+            updateEnemyProjectiles();
+            updateUI();
+        }
+    };
+
+    const previousDrawGame = drawGame;
+    drawGame = function(){
+        previousDrawGame();
+        if(gameStarted && !gameOver){
+            ctx.save();
+            ctx.translate(-game.camera.x, -game.camera.y);
+            drawEnemyProjectiles();
+            ctx.restore();
+        }
+    };
+
+    const previousStartGame = startGame;
+    startGame = function(){
+        previousStartGame();
+        resetEnemyProjectiles();
+    };
+
+    const previousRestartGame = restartGame;
+    restartGame = function(){
+        previousRestartGame();
+        resetEnemyProjectiles();
+    };
+
+    resetEnemyProjectiles();
+})();
+</script>
+<script>
+/* FINAL ZONE SPAWN MOTION
+   지역 이동/귀환 직후 플레이어 위치에서 스폰 연출을 표시합니다. */
+(function(){
+    const ZONE_SPAWN_DURATION = 1800;
+
+    function playZoneSpawnMotion(){
+        if(!gameStarted || gameOver) return;
+
+        const now = performance.now();
+        game.effects = game.effects.filter(effect => effect.type !== 'zoneSpawn');
+        game.effects.push({
+            type: 'zoneSpawn',
+            x: game.player.x,
+            y: game.player.y,
+            start: now,
+            duration: ZONE_SPAWN_DURATION,
+            particles: Array.from({length: 28}, (_, index) => ({
+                angle: (Math.PI * 2 * index) / 28 + Math.random() * 0.18,
+                distance: 70 + Math.random() * 35,
+                size: 2 + Math.random() * 4,
+                speed: 0.75 + Math.random() * 0.45
+            }))
+        });
+    }
+
+    const previousChangeZone = changeZone;
+    changeZone = function(key){
+        const previousZone = game.currentZone;
+        previousChangeZone(key);
+        if(previousZone !== game.currentZone){
+            playZoneSpawnMotion();
+        }
+    };
+
+    const previousUpdateReturnChannel = updateReturnChannel;
+    updateReturnChannel = function(){
+        const previousZone = game.currentZone;
+        previousUpdateReturnChannel();
+        if(previousZone !== game.currentZone){
+            playZoneSpawnMotion();
+        }
+    };
+
+    const previousDrawEffects = drawEffects;
+    drawEffects = function(){
+        previousDrawEffects();
+
+        for(const effect of game.effects){
+            if(effect.type !== 'zoneSpawn') continue;
+
+            const progress = clamp(
+                (performance.now() - effect.start) / effect.duration,
+                0,
+                1
+            );
+
+            ctx.save();
+            ctx.translate(effect.x, effect.y);
+
+            /* 포탈이 열리고 플레이어가 튀어나오는 연출 */
+            const fadeIn = Math.min(1, progress * 5);
+            const fadeOut = Math.max(0, 1 - Math.max(0, progress - 0.55) / 0.45);
+            const alpha = fadeIn * fadeOut;
+            const portalRadius = 22 + Math.sin(progress * Math.PI) * 18;
+
+            ctx.globalAlpha = alpha;
+            ctx.rotate(progress * Math.PI * 2.5);
+            ctx.strokeStyle = '#00f5ff';
+            ctx.shadowColor = '#00f5ff';
+            ctx.shadowBlur = 24;
+            ctx.lineWidth = 6;
+            ctx.setLineDash([16, 8]);
+            ctx.beginPath();
+            ctx.ellipse(0, 0, portalRadius, portalRadius * 1.65, 0, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.globalAlpha = alpha * 0.55;
+            ctx.strokeStyle = '#b66cff';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(0, 0, portalRadius + 14, 0, Math.PI * 2);
+            ctx.stroke();
+
+            /* 포탈 안쪽의 빛 */
+            const glow = ctx.createRadialGradient(0, 0, 2, 0, 0, 54);
+            glow.addColorStop(0, 'rgba(255,255,255,.95)');
+            glow.addColorStop(.3, 'rgba(0,245,255,.5)');
+            glow.addColorStop(1, 'rgba(0,245,255,0)');
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = glow;
+            ctx.beginPath();
+            ctx.arc(0, 0, 58, 0, Math.PI * 2);
+            ctx.fill();
+
+            /* 바깥 입자가 중심으로 빨려 들어온 뒤 흩어짐 */
+            for(const particle of (effect.particles || [])){
+                const pull = 1 - progress;
+                const distance = particle.distance * (0.25 + pull * particle.speed);
+                const px = Math.cos(particle.angle + progress * 2) * distance;
+                const py = Math.sin(particle.angle + progress * 2) * distance;
+                ctx.globalAlpha = alpha * (0.35 + pull * 0.65);
+                ctx.fillStyle = particle.angle % 2 > 1 ? '#b66cff' : '#fff';
+                ctx.shadowColor = '#00f5ff';
+                ctx.shadowBlur = 12;
+                ctx.beginPath();
+                ctx.arc(px, py, particle.size * (0.7 + progress), 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            /* 도착 순간 플레이어 실루엣이 나타나는 빛 */
+            ctx.globalAlpha = alpha * Math.max(0, 1 - progress * 1.2);
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(0, -8, 7 + progress * 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillRect(-8, 0, 16, 20 + progress * 8);
+            ctx.restore();
+        }
+    };
+})();
+</script>
+<script>
+/* FINAL QUEST / ZONE WINDOW FIX */
+(function(){
+    /* 같은 Q 발동에서 여러 래퍼가 진행도를 중복 증가시키지 않도록 한다. */
+    let lastSkillQuestProgressAt = -Infinity;
+
+    /* 튜토리얼 진행 함수가 아직 전역에 없더라도 로딩을 중단하지 않는다. */
+    const previousTutorialProgress = typeof window.tutorialProgress === 'function'
+        ? window.tutorialProgress
+        : function() {};
+
+    window.tutorialProgress = function(kind, amount = 1, extra = {}) {
+        if(kind === 'skill') {
+            const now = performance.now();
+            /* 스킬 쿨타임보다 짧은 중복 호출은 같은 발동으로 처리한다. */
+            if(now - lastSkillQuestProgressAt < 300) return;
+            lastSkillQuestProgressAt = now;
+        }
+        return previousTutorialProgress(kind, amount, extra);
+    };
+
+    function closeZoneWindow(){
+        const panel = document.getElementById('zone-select');
+        if(panel) panel.style.display = 'none';
+    }
+
+    /* 지역 선택창에서 이동을 시작하는 즉시 닫는다. */
+    const previousChangeZone = changeZone;
+    changeZone = function(key){
+        const before = game.currentZone;
+        closeZoneWindow();
+        previousChangeZone(key);
+        if(before !== game.currentZone) closeZoneWindow();
+    };
+
+    /* 귀환 버튼/지역 선택창의 귀환을 누르는 순간 닫는다. */
+    const previousStartReturnToTown = startReturnToTown;
+    startReturnToTown = function(){
+        closeZoneWindow();
+        return previousStartReturnToTown();
+    };
+
+    /* 채널링이 끝나 실제 마을로 돌아온 뒤에도 확실히 닫는다. */
+    const previousUpdateReturnChannel = updateReturnChannel;
+    updateReturnChannel = function(){
+        const before = game.currentZone;
+        previousUpdateReturnChannel();
+        if(before !== game.currentZone) closeZoneWindow();
+    };
+})();
+</script>
+<script>
+/* FINAL RPG EXTENSION: 직업 스킬 상점, 등급, 가중 스폰, 플레이어 이름표 */
+(function(){
+    const gradeInfo = {
+        common:{name:'일반', color:'#d0d0d0', multiplier:1},
+        rare:{name:'희귀', color:'#4dabf7', multiplier:1.25},
+        epic:{name:'영웅', color:'#c66cff', multiplier:1.6},
+        legendary:{name:'전설', color:'#ffd166', multiplier:2.1}
+    };
+
+    function getItemGrade(item){
+        return gradeInfo[item?.rarity] || gradeInfo.common;
+    }
+
+    function getMonsterGrade(monster){
+        if(monster.isElite || (monster.maxHp || monster.hp || 0) >= 150)
+            return gradeInfo.legendary;
+        if((monster.maxHp || monster.hp || 0) >= 90)
+            return gradeInfo.epic;
+        if((monster.maxHp || monster.hp || 0) >= 45)
+            return gradeInfo.rare;
+        return gradeInfo.common;
+    }
+
+    /* 인벤토리와 상점에 아이템 등급을 함께 표시 */
+    const oldRenderInventoryGrade = renderInventory;
+    renderInventory = function(){
+        oldRenderInventoryGrade();
+        document.querySelectorAll('#inv-grid .inv-slot').forEach((slot, index)=>{
+            const item = game.inventory[index];
+            const grade = getItemGrade(ITEMS[item?.id]);
+            if(item && ITEMS[item.id]){
+                slot.style.borderColor = grade.color;
+                slot.title = `${ITEMS[item.id].name} · ${grade.name}\n클릭: 사용/장착`;
+            }
+        });
+    };
+
+    /* 몬스터는 기존 이름 표시를 유지하고, 등급은 이름 색상으로만 구분합니다. */
+    drawMonsters = function(){
+        for(const monster of game.monsters){
+            const data = MONSTERS[monster.type] || {};
+            const grade = getMonsterGrade(monster);
+            const name = data.name || monster.name || monster.type;
+            const barWidth = monster.isElite ? 65 : 45;
+            const hp = clamp(monster.hp / monster.maxHp, 0, 1);
+
+            ctx.textAlign = 'center';
+            ctx.font = monster.isElite ? '36px Arial' : '28px Arial';
+            ctx.fillText(monster.emoji, monster.x, monster.y + 10);
+
+            ctx.fillStyle = '#222';
+            ctx.fillRect(
+                monster.x - barWidth / 2,
+                monster.y - monster.radius - 14,
+                barWidth,
+                5
+            );
+            ctx.fillStyle = '#ff4757';
+            ctx.fillRect(
+                monster.x - barWidth / 2,
+                monster.y - monster.radius - 14,
+                barWidth * hp,
+                5
+            );
+
+            if(monster.attackFlash > performance.now()){
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(monster.x, monster.y, monster.radius + 5, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            /* 이름은 한 번만 표시하며, 등급은 이름 색상으로 표현합니다. */
+            ctx.save();
+            ctx.font = monster.isElite ? 'bold 13px Arial' : '12px Arial';
+            ctx.fillStyle = grade.color;
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 3;
+            const nameY = monster.y - monster.radius - 23;
+            ctx.strokeText(name, monster.x, nameY);
+            ctx.fillText(name, monster.x, nameY);
+            ctx.restore();
+        }
+    };
+
+    /* 강한 몬스터일수록 낮은 확률로 선택되도록 지역 스폰을 재정의 */
+    const weightedSpawn = spawnMonster;
+    spawnMonster = function(){
+        if(game.currentZone === 'town' || game.monsters.length >= 25) return;
+        const zone = ZONES[game.currentZone];
+        if(!zone?.spawns?.length) return;
+        const safe = zone.safeRadius || 0;
+        if(Math.hypot(game.player.x-zone.x, game.player.y-zone.y) < safe) return;
+
+        const candidates = zone.spawns.map(type=>({
+            type,
+            weight: 1 / Math.max(1, Math.sqrt((MONSTERS[type]?.hp || 1) / 20))
+        }));
+        const total = candidates.reduce((sum, entry)=>sum+entry.weight, 0);
+        let roll = Math.random() * total;
+        let selected = candidates[0].type;
+        for(const entry of candidates){
+            roll -= entry.weight;
+            if(roll <= 0){ selected = entry.type; break; }
+        }
+
+        /* 기존 스폰 함수의 랜덤 선택을 원하는 몬스터로 유도 */
+        const originalRandom = Math.random;
+        Math.random = () => zone.spawns.indexOf(selected) / zone.spawns.length + 0.000001;
+        try { weightedSpawn(); } finally { Math.random = originalRandom; }
+
+        const monster = game.monsters[game.monsters.length-1];
+        if(monster){
+            const grade = getMonsterGrade(monster);
+            monster.gradeName = grade.name;
+            monster.gradeColor = grade.color;
+        }
+    };
+
+    /* 전용 상점: 직업별 스킬 구매 버튼을 추가 */
+    const oldOpenJobShopGrade = openJobShop;
+    openJobShop = function(job){
+        oldOpenJobShopGrade(job);
+        const panel = document.getElementById('dialogue-panel');
+        const skillId = JOBS[job]?.skill;
+        const skill = skillId ? SKILLS[skillId] : null;
+        if(!panel || !skill || game.player.job !== job) return;
+        const price = 600;
+        const button = document.createElement('button');
+        button.className = 'class-btn';
+        button.textContent = game.skillsUnlocked.includes(skillId)
+            ? `${skill.emoji} ${skill.name} · 보유 중`
+            : `${skill.emoji} ${skill.name} 배우기 · 💰 ${price}`;
+        button.disabled = game.skillsUnlocked.includes(skillId);
+        button.onclick = () => {
+            if(game.player.gold < price){
+                showDropNotification('💰 금화가 부족합니다.');
+                return;
+            }
+            game.player.gold -= price;
+            syncGoldInventory();
+            game.skillsUnlocked.push(skillId);
+            const empty = game.skillHotbar.indexOf(null);
+            if(empty !== -1) game.skillHotbar[empty] = skillId;
+            renderSkillWindow();
+            renderSkillBar();
+            updateUI();
+            showDropNotification(`${skill.emoji} ${skill.name} 습득!`);
+            openJobShop(job);
+        };
+        panel.insertBefore(button, panel.firstElementChild?.nextElementSibling || panel.firstChild);
+    };
+
+    /* 모든 아이템 상점 카드에 등급을 표시 */
+    const oldRenderShopGrade = renderShop;
+    renderShop = function(){
+        oldRenderShopGrade();
+        document.querySelectorAll('#shop-grid .shop-item').forEach(card=>{
+            const name = card.querySelector('.shop-item-name');
+            if(!name) return;
+            const id = Object.keys(ITEMS).find(key => name.textContent.includes(ITEMS[key].name));
+            if(id){
+                const grade = getItemGrade(ITEMS[id]);
+                name.style.color = grade.color;
+                name.textContent += ` · ${grade.name}`;
+            }
+        });
+    };
+
+    /* 플레이어 이름표: LV. 레벨 (닉네임) */
+    const oldDrawPlayerGrade = drawPlayer;
+    drawPlayer = function(){
+        oldDrawPlayerGrade();
+        if(!gameStarted || gameOver) return;
+        const p = game.player;
+        const label = `LV. ${p.level} ${p.name || '플레이어'}`;
+        ctx.save();
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const y = p.y - p.radius - 34;
+        const width = ctx.measureText(label).width + 12;
+        ctx.fillStyle = 'rgba(0,0,0,.78)';
+        ctx.fillRect(p.x - width/2, y - 8, width, 16);
+        ctx.fillStyle = '#ffd166';
+        ctx.fillText(label, p.x, y);
+        ctx.restore();
+    };
+})();
+</script>
+</body>
+</html>
