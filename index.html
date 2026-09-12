@@ -1231,6 +1231,125 @@ canvas {
  #hp-status{top:10px!important}.exp-status{top:50px!important}.mana-status{top:90px!important}
  #stats-toggle{top:130px!important;left:10px!important;}
 }
+
+/* ===== 메인메뉴 설정 (배경음악 / 조작방식) ===== */
+.menu-settings {
+    display: flex;
+    flex-direction: row;
+    gap: 14px;
+    margin: 18px 0 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+.setting-card {
+    background: rgba(0,0,0,0.55);
+    border: 2px solid #00f5ff;
+    border-radius: 10px;
+    padding: 12px 16px;
+    min-width: 200px;
+    text-align: center;
+}
+.setting-card h3 {
+    color: #00f5ff;
+    font-size: 14px;
+    margin-bottom: 10px;
+    letter-spacing: 0.5px;
+}
+.setting-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+.setting-btn {
+    padding: 8px 14px !important;
+    font-size: 14px !important;
+    background: #333 !important;
+    color: #fff !important;
+    border: 2px solid #555 !important;
+    border-radius: 6px !important;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+.setting-btn:hover {
+    border-color: #00f5ff !important;
+    background: #222 !important;
+}
+.setting-btn.active {
+    background: #00f5ff !important;
+    color: #000 !important;
+    border-color: #00f5ff !important;
+    box-shadow: 0 0 12px rgba(0,245,255,0.4);
+}
+.setting-hint {
+    color: #888;
+    font-size: 11px;
+    margin-top: 8px;
+}
+
+/* 가상 조이스틱 */
+#virtual-joystick {
+    position: fixed;
+    left: 28px;
+    bottom: 120px;
+    width: 140px;
+    height: 140px;
+    z-index: 2147483000;
+    display: none;
+    pointer-events: none;
+    touch-action: none;
+}
+#virtual-joystick.visible {
+    display: block;
+    pointer-events: auto;
+}
+.joystick-base {
+    position: absolute;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.45);
+    border: 3px solid rgba(0,245,255,0.55);
+    box-shadow: 0 0 18px rgba(0,245,255,0.25);
+}
+.joystick-stick {
+    position: absolute;
+    width: 58px;
+    height: 58px;
+    left: 41px;
+    top: 41px;
+    border-radius: 50%;
+    background: rgba(0,245,255,0.75);
+    border: 2px solid #fff;
+    box-shadow: 0 0 12px #00f5ff;
+    transition: transform 0.05s linear;
+}
+#joystick-attack-btn {
+    position: fixed;
+    right: 28px;
+    bottom: 140px;
+    width: 78px;
+    height: 78px;
+    border-radius: 50%;
+    background: rgba(255,71,87,0.85);
+    border: 3px solid #fff;
+    color: #fff;
+    font-weight: bold;
+    font-size: 15px;
+    z-index: 2147483000;
+    display: none;
+    box-shadow: 0 0 16px rgba(255,71,87,0.5);
+    touch-action: none;
+}
+#joystick-attack-btn.visible { display: flex; align-items: center; justify-content: center; }
+@media (max-width: 700px) {
+    #virtual-joystick { left: 16px; bottom: 100px; width: 120px; height: 120px; }
+    .joystick-base { width: 120px; height: 120px; }
+    .joystick-stick { width: 50px; height: 50px; left: 35px; top: 35px; }
+    #joystick-attack-btn { right: 16px; bottom: 110px; width: 68px; height: 68px; font-size: 13px; }
+}
+
 </style>
 </head>
 
@@ -1245,6 +1364,25 @@ canvas {
     <div class="name-input-wrap">
         <label for="player-name-input">플레이어 이름</label>
         <input id="player-name-input" maxlength="12" placeholder="이름을 입력하세요" autocomplete="off">
+    </div>
+
+    <div class="menu-settings">
+        <div class="setting-card">
+            <h3>🎵 배경음악</h3>
+            <div class="setting-row">
+                <button type="button" id="setting-bgm-on" class="setting-btn active" onclick="setBgmEnabled(true)">ON</button>
+                <button type="button" id="setting-bgm-off" class="setting-btn" onclick="setBgmEnabled(false)">OFF</button>
+            </div>
+            <div class="setting-hint">게임 중 지역별 BGM</div>
+        </div>
+        <div class="setting-card">
+            <h3>🎮 조작 방식</h3>
+            <div class="setting-row">
+                <button type="button" id="setting-ctrl-keyboard" class="setting-btn active" onclick="setControlMode('keyboard')">키보드</button>
+                <button type="button" id="setting-ctrl-joystick" class="setting-btn" onclick="setControlMode('joystick')">조이스틱</button>
+            </div>
+            <div class="setting-hint">모바일은 조이스틱 추천</div>
+        </div>
     </div>
 
     <div class="menu-buttons">
@@ -13826,6 +13964,313 @@ __setHudVisibilityV7();
 })();
 
 </script>
+
+<!-- Virtual Joystick -->
+<div id="virtual-joystick" aria-hidden="true">
+  <div class="joystick-base"></div>
+  <div class="joystick-stick" id="joystick-stick"></div>
+</div>
+<button id="joystick-attack-btn" type="button" aria-label="공격">공격</button>
+
+
+<script>
+/* =========================================================
+   SETTINGS + VIRTUAL JOYSTICK
+   메뉴: 배경음악 ON/OFF, 키보드/조이스틱 나란히 설정
+========================================================= */
+(function(){
+  const SETTINGS_KEY = 'rpg_shooter_settings_v1';
+  const defaultSettings = { bgm: true, control: 'keyboard' };
+
+  function loadSettings(){
+    try{
+      const raw = localStorage.getItem(SETTINGS_KEY);
+      if(!raw) return {...defaultSettings};
+      const parsed = JSON.parse(raw);
+      return {
+        bgm: parsed.bgm !== false,
+        control: parsed.control === 'joystick' ? 'joystick' : 'keyboard'
+      };
+    }catch(e){
+      return {...defaultSettings};
+    }
+  }
+
+  function saveSettings(){
+    try{
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+        bgm: window.__gameSettings.bgm,
+        control: window.__gameSettings.control
+      }));
+    }catch(e){}
+  }
+
+  window.__gameSettings = loadSettings();
+  // 터치 기기 기본값: 조이스틱 (사용자가 저장한 값이 없을 때만)
+  try{
+    if(!localStorage.getItem(SETTINGS_KEY) && ('ontouchstart' in window || navigator.maxTouchPoints > 0)){
+      window.__gameSettings.control = 'joystick';
+    }
+  }catch(e){}
+
+
+  /* ---- BGM bridge: 모든 WebAudio 컨텍스트 + 기존 토글 동기화 ---- */
+  window.__bgmEnabled = !!window.__gameSettings.bgm;
+
+  // Oscillator 생성 가로채기: BGM OFF 시 무음
+  (function patchAudio(){
+    const Native = window.AudioContext || window.webkitAudioContext;
+    if(!Native || Native.__bgmPatched) return;
+    Native.__bgmPatched = true;
+    const origCreate = Native.prototype.createOscillator;
+    Native.prototype.createOscillator = function(){
+      const osc = origCreate.apply(this, arguments);
+      if(!window.__bgmEnabled){
+        try{
+          const g = this.createGain();
+          g.gain.value = 0;
+          const connect = osc.connect.bind(osc);
+          osc.connect = function(dest){
+            try{ connect(g); g.connect(dest); }catch(e){ return connect(dest); }
+            return g;
+          };
+        }catch(e){}
+      }
+      return osc;
+    };
+  })();
+
+  function applyBgmState(){
+    const on = !!window.__gameSettings.bgm;
+    window.__bgmEnabled = on;
+    document.querySelectorAll('#audio-toggle').forEach(btn=>{
+      btn.textContent = on ? '🔊 음악' : '🔇 음악';
+    });
+    // 알려진 전역 플래그
+    try{ if(window.audio) window.audio.enabled = on; }catch(e){}
+    // 실행 중인 모든 AudioContext 정지/재개
+    try{
+      const Native = window.AudioContext || window.webkitAudioContext;
+      // trackedContexts 가 있을 수 있음
+      if(window.trackedContexts && window.trackedContexts.forEach){
+        window.trackedContexts.forEach(ctx=>{
+          if(!ctx) return;
+          if(!on && ctx.state==='running') ctx.suspend().catch(()=>{});
+          if(on && ctx.state==='suspended') ctx.resume().catch(()=>{});
+        });
+      }
+    }catch(e){}
+  }
+
+  window.setBgmEnabled = function(on){
+    window.__gameSettings.bgm = !!on;
+    window.__bgmEnabled = !!on;
+    saveSettings();
+    updateSettingsUI();
+    applyBgmState();
+    try{ if(window.audio) window.audio.enabled = !!on; }catch(e){}
+  };
+
+  window.setControlMode = function(mode){
+    window.__gameSettings.control = mode === 'joystick' ? 'joystick' : 'keyboard';
+    saveSettings();
+    updateSettingsUI();
+    updateJoystickVisibility();
+  };
+
+  function updateSettingsUI(){
+    const bgmOn = document.getElementById('setting-bgm-on');
+    const bgmOff = document.getElementById('setting-bgm-off');
+    const kb = document.getElementById('setting-ctrl-keyboard');
+    const js = document.getElementById('setting-ctrl-joystick');
+    if(bgmOn && bgmOff){
+      bgmOn.classList.toggle('active', window.__gameSettings.bgm);
+      bgmOff.classList.toggle('active', !window.__gameSettings.bgm);
+    }
+    if(kb && js){
+      kb.classList.toggle('active', window.__gameSettings.control === 'keyboard');
+      js.classList.toggle('active', window.__gameSettings.control === 'joystick');
+    }
+  }
+
+  /* ---- Virtual Joystick ---- */
+  const joy = {
+    active: false,
+    pointerId: null,
+    originX: 0,
+    originY: 0,
+    dx: 0,
+    dy: 0,
+    maxR: 48
+  };
+
+  function joyEl(){ return document.getElementById('virtual-joystick'); }
+  function stickEl(){ return document.getElementById('joystick-stick'); }
+  function attackBtn(){ return document.getElementById('joystick-attack-btn'); }
+
+  function updateJoystickVisibility(){
+    const show = gameStarted && !gameOver && !isPaused && window.__gameSettings.control === 'joystick';
+    const j = joyEl();
+    const a = attackBtn();
+    if(j) j.classList.toggle('visible', !!show);
+    if(a) a.classList.toggle('visible', !!show);
+    if(!show){
+      joy.dx = 0; joy.dy = 0; joy.active = false;
+      if(stickEl()) stickEl().style.transform = 'translate(0px,0px)';
+      // clear movement keys injected by joystick
+      if(game && game.keys){
+        game.keys.w = game.keys.a = game.keys.s = game.keys.d = false;
+      }
+    }
+  }
+
+  function applyJoystickKeys(){
+    if(!game || !game.keys) return;
+    if(window.__gameSettings.control !== 'joystick' || !gameStarted || gameOver || isPaused){
+      return;
+    }
+    const dead = 0.22;
+    const nx = joy.dx / joy.maxR;
+    const ny = joy.dy / joy.maxR;
+    game.keys.w = ny < -dead;
+    game.keys.s = ny > dead;
+    game.keys.a = nx < -dead;
+    game.keys.d = nx > dead;
+    // face direction from stick if moving
+    if(Math.hypot(nx,ny) > dead){
+      game.player.facingAngle = Math.atan2(ny, nx);
+    }
+  }
+
+  function onJoyStart(e){
+    if(window.__gameSettings.control !== 'joystick') return;
+    const j = joyEl();
+    if(!j) return;
+    const t = e.changedTouches ? e.changedTouches[0] : e;
+    joy.active = true;
+    joy.pointerId = t.pointerId != null ? t.pointerId : (t.identifier != null ? t.identifier : 1);
+    const rect = j.getBoundingClientRect();
+    joy.originX = rect.left + rect.width/2;
+    joy.originY = rect.top + rect.height/2;
+    onJoyMove(e);
+    e.preventDefault();
+  }
+
+  function onJoyMove(e){
+    if(!joy.active) return;
+    const touches = e.changedTouches || [e];
+    let t = null;
+    for(const x of touches){
+      const id = x.pointerId != null ? x.pointerId : x.identifier;
+      if(id === joy.pointerId || joy.pointerId == null){ t = x; break; }
+    }
+    if(!t) t = touches[0];
+    if(!t) return;
+    let dx = t.clientX - joy.originX;
+    let dy = t.clientY - joy.originY;
+    const dist = Math.hypot(dx, dy);
+    if(dist > joy.maxR){
+      dx = dx / dist * joy.maxR;
+      dy = dy / dist * joy.maxR;
+    }
+    joy.dx = dx; joy.dy = dy;
+    const stick = stickEl();
+    if(stick) stick.style.transform = `translate(${dx}px,${dy}px)`;
+    applyJoystickKeys();
+    e.preventDefault();
+  }
+
+  function onJoyEnd(e){
+    if(!joy.active) return;
+    joy.active = false;
+    joy.dx = 0; joy.dy = 0;
+    const stick = stickEl();
+    if(stick) stick.style.transform = 'translate(0px,0px)';
+    if(game && game.keys){
+      game.keys.w = game.keys.a = game.keys.s = game.keys.d = false;
+    }
+  }
+
+  function bindJoystick(){
+    const j = joyEl();
+    const a = attackBtn();
+    if(!j) return;
+    // Prefer pointer events
+    j.addEventListener('pointerdown', onJoyStart, {passive:false});
+    window.addEventListener('pointermove', onJoyMove, {passive:false});
+    window.addEventListener('pointerup', onJoyEnd, {passive:false});
+    window.addEventListener('pointercancel', onJoyEnd, {passive:false});
+    // Touch fallback
+    j.addEventListener('touchstart', onJoyStart, {passive:false});
+    j.addEventListener('touchmove', onJoyMove, {passive:false});
+    j.addEventListener('touchend', onJoyEnd, {passive:false});
+    j.addEventListener('touchcancel', onJoyEnd, {passive:false});
+
+    if(a){
+      const fire = (ev)=>{
+        ev.preventDefault();
+        if(typeof playerAttack === 'function') playerAttack();
+      };
+      a.addEventListener('pointerdown', fire, {passive:false});
+      a.addEventListener('touchstart', fire, {passive:false});
+    }
+  }
+
+  /* Hook game lifecycle */
+  const prevStart = window.startGame;
+  window.startGame = function(){
+    if(typeof prevStart === 'function') prevStart.apply(this, arguments);
+    applyBgmState();
+    updateJoystickVisibility();
+  };
+  const prevRestart = window.restartGame;
+  window.restartGame = function(){
+    if(typeof prevRestart === 'function') prevRestart.apply(this, arguments);
+    applyBgmState();
+    updateJoystickVisibility();
+  };
+  const prevMenu = window.goToMenu;
+  window.goToMenu = function(){
+    if(typeof prevMenu === 'function') prevMenu.apply(this, arguments);
+    updateJoystickVisibility();
+  };
+  const prevPause = window.togglePause;
+  if(typeof prevPause === 'function'){
+    window.togglePause = function(){
+      prevPause.apply(this, arguments);
+      updateJoystickVisibility();
+    };
+  }
+
+  /* Override sound gate when BGM/SFX off */
+  const prevSound = window.sound;
+  if(typeof prevSound === 'function'){
+    window.sound = function(){
+      if(!window.__gameSettings.bgm) return;
+      return prevSound.apply(this, arguments);
+    };
+  }
+
+  /* Continuously sync joystick -> keys while in game */
+  setInterval(function(){
+    if(gameStarted && !gameOver && !isPaused && window.__gameSettings.control === 'joystick'){
+      applyJoystickKeys();
+    }
+    updateJoystickVisibility();
+  }, 50);
+
+  /* Init UI after DOM ready */
+  function init(){
+    updateSettingsUI();
+    applyBgmState();
+    bindJoystick();
+    updateJoystickVisibility();
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+
 </body>
 </html>
 <script>
