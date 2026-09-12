@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RPG Shooter - Final</title>
+<title>개쩌는 RPG</title>
 
 <style>
 * {
@@ -7106,6 +7106,25 @@ function drawWorldDecorations() {
         for(let i=0;i<35;i++){ const x=80+((i*283)%3840), y=80+((i*419)%3840); ctx.beginPath(); ctx.arc(x,y,18,0,Math.PI*2); ctx.fill(); }
         ctx.strokeStyle="#c09a45"; ctx.lineWidth=55; ctx.beginPath(); ctx.moveTo(0,3400); ctx.bezierCurveTo(1200,2800,2600,3800,4000,3000); ctx.stroke();
     }
+
+    // 맵 보강: 기존 지형 위에 지역별 랜드마크를 추가
+    if(zone === "town") {
+        ctx.strokeStyle="#a88b61"; ctx.lineWidth=12; ctx.setLineDash([22,16]);
+        ctx.beginPath(); ctx.arc(760,750,320,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+    } else if(zone === "forest") {
+        ctx.strokeStyle="#3b82a0"; ctx.lineWidth=22;
+        ctx.beginPath(); ctx.moveTo(3300,0); ctx.bezierCurveTo(3000,800,3550,1650,3150,2450); ctx.bezierCurveTo(2800,3050,3200,3500,2850,4000); ctx.stroke();
+    } else if(zone === "mountain") {
+        ctx.strokeStyle="#8a745d"; ctx.lineWidth=26;
+        ctx.beginPath(); ctx.moveTo(0,3250); ctx.bezierCurveTo(900,2850,1550,2050,2250,2250); ctx.bezierCurveTo(2900,2450,3350,1600,4000,950); ctx.stroke();
+    } else if(zone === "dungeon") {
+        ctx.strokeStyle="#5f5f92"; ctx.lineWidth=12;
+        ctx.beginPath(); ctx.moveTo(500,2000); ctx.lineTo(3500,2000); ctx.moveTo(2000,500); ctx.lineTo(2000,3500); ctx.stroke();
+    } else if(zone === "desert") {
+        ctx.strokeStyle="#b58c3f"; ctx.lineWidth=28;
+        ctx.beginPath(); ctx.moveTo(0,1250); ctx.bezierCurveTo(1100,700,2300,1650,4000,1050); ctx.stroke();
+        ctx.fillStyle="#2b8a78"; ctx.beginPath(); ctx.arc(3050,3100,70,0,Math.PI*2); ctx.fill();
+    }
     ctx.restore();
 }
 
@@ -7839,6 +7858,25 @@ function drawMapDecorations(mapCtx, scale, zone, worldSize) {
         mapCtx.stroke();
     }
 
+    // 세계지도에도 동일한 랜드마크를 표시
+    if(zone === "town") {
+        mapCtx.strokeStyle="#a88b61"; mapCtx.lineWidth=Math.max(1,12*scale); mapCtx.setLineDash([22*scale,16*scale]);
+        mapCtx.beginPath(); mapCtx.arc(760*scale,750*scale,320*scale,0,Math.PI*2); mapCtx.stroke(); mapCtx.setLineDash([]);
+    } else if(zone === "forest") {
+        mapCtx.strokeStyle="#3b82a0"; mapCtx.lineWidth=Math.max(1,22*scale);
+        mapCtx.beginPath(); mapCtx.moveTo(3300*scale,0); mapCtx.bezierCurveTo(3000*scale,800*scale,3550*scale,1650*scale,3150*scale,2450*scale); mapCtx.bezierCurveTo(2800*scale,3050*scale,3200*scale,3500*scale,2850*scale,4000*scale); mapCtx.stroke();
+    } else if(zone === "mountain") {
+        mapCtx.strokeStyle="#8a745d"; mapCtx.lineWidth=Math.max(1,26*scale);
+        mapCtx.beginPath(); mapCtx.moveTo(0,3250*scale); mapCtx.bezierCurveTo(900*scale,2850*scale,1550*scale,2050*scale,2250*scale,2250*scale); mapCtx.bezierCurveTo(2900*scale,2450*scale,3350*scale,1600*scale,4000*scale,950*scale); mapCtx.stroke();
+    } else if(zone === "dungeon") {
+        mapCtx.strokeStyle="#5f5f92"; mapCtx.lineWidth=Math.max(1,12*scale);
+        mapCtx.beginPath(); mapCtx.moveTo(500*scale,2000*scale); mapCtx.lineTo(3500*scale,2000*scale); mapCtx.moveTo(2000*scale,500*scale); mapCtx.lineTo(2000*scale,3500*scale); mapCtx.stroke();
+    } else if(zone === "desert") {
+        mapCtx.strokeStyle="#b58c3f"; mapCtx.lineWidth=Math.max(1,28*scale);
+        mapCtx.beginPath(); mapCtx.moveTo(0,1250*scale); mapCtx.bezierCurveTo(1100*scale,700*scale,2300*scale,1650*scale,4000*scale,1050*scale); mapCtx.stroke();
+        mapCtx.fillStyle="#2b8a78"; mapCtx.beginPath(); mapCtx.arc(3050*scale,3100*scale,Math.max(2,70*scale),0,Math.PI*2); mapCtx.fill();
+    }
+
     mapCtx.restore();
 }
 
@@ -8211,11 +8249,11 @@ function gameLoop() {
 
 // 지역별 권장 레벨과 안전 구역.
 ZONES.town.minLevel = 1;
-ZONES.town.safeRadius = 420;
-ZONES.forest.minLevel = 1; ZONES.forest.safeRadius = 360;
-ZONES.mountain.minLevel = 5; ZONES.mountain.safeRadius = 360;
-ZONES.dungeon.minLevel = 10; ZONES.dungeon.safeRadius = 360;
-ZONES.desert.minLevel = 15; ZONES.desert.safeRadius = 360;
+ZONES.town.safeRadius = 300;
+ZONES.forest.minLevel = 1; ZONES.forest.safeRadius = 220;
+ZONES.mountain.minLevel = 5; ZONES.mountain.safeRadius = 220;
+ZONES.dungeon.minLevel = 10; ZONES.dungeon.safeRadius = 220;
+ZONES.desert.minLevel = 15; ZONES.desert.safeRadius = 220;
 
 // 지역별 퀘스트 NPC. 중앙은 몬스터가 나오지 않는 안전 구역이다.
 STRUCTURES.push(
@@ -8412,8 +8450,8 @@ interactStructure = function(){
 drawStructures = function(){
     const zone=ZONES[game.currentZone];
     if(zone && game.currentZone !== "town"){
-        ctx.save(); ctx.globalAlpha=.20; ctx.fillStyle="#00b894"; ctx.beginPath(); ctx.arc(zone.x,zone.y,zone.safeRadius||360,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1;
-        ctx.strokeStyle="#00b894"; ctx.lineWidth=3; ctx.stroke(); ctx.fillStyle="#fff"; ctx.font="bold 15px Arial"; ctx.textAlign="center"; ctx.fillText("안전 구역 · NPC",zone.x,zone.y-(zone.safeRadius||360)-10); ctx.restore();
+        ctx.save(); ctx.globalAlpha=.20; ctx.fillStyle="#00b894"; ctx.beginPath(); ctx.arc(zone.x,zone.y,zone.safeRadius||220,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1;
+        ctx.strokeStyle="#00b894"; ctx.lineWidth=3; ctx.stroke(); ctx.fillStyle="#fff"; ctx.font="bold 15px Arial"; ctx.textAlign="center"; ctx.fillText("안전 구역 · NPC",zone.x,zone.y-(zone.safeRadius||220)-10); ctx.restore();
     }
     for(const structure of STRUCTURES){
         if((structure.zone||"town") !== game.currentZone) continue;
@@ -8432,7 +8470,7 @@ const _originalDrawMapDecorations = drawMapDecorations;
 drawMapDecorations = function(mapCtx,scale,zone,worldSize){
     _originalDrawMapDecorations(mapCtx,scale,zone,worldSize);
     const z=ZONES[zone]; if(!z) return;
-    const zx=z.x*scale, zy=z.y*scale, zr=(z.safeRadius||360)*scale;
+    const zx=z.x*scale, zy=z.y*scale, zr=(z.safeRadius||220)*scale;
     mapCtx.save(); mapCtx.globalAlpha=.22; mapCtx.fillStyle="#00b894"; mapCtx.beginPath(); mapCtx.arc(zx,zy,Math.max(3,zr),0,Math.PI*2); mapCtx.fill(); mapCtx.globalAlpha=1; mapCtx.strokeStyle="#00b894"; mapCtx.lineWidth=Math.max(1,2*scale); mapCtx.stroke();
     for(const st of STRUCTURES){ if((st.zone||"town")!==zone) continue; mapCtx.fillStyle=st.color; mapCtx.fillRect(st.x*scale-4,st.y*scale-4,8,8); }
     mapCtx.restore();
@@ -8632,7 +8670,7 @@ const __gainV5=gainExp; gainExp=function(amount){__gainV5(amount); const q=curre
 
 // 안전구역: 파란색 + 몬스터는 들어오지 못하고 플레이어를 감지하지 못함
 spawnMonster=function(){
- if(game.currentZone==='town')return; if(game.monsters.length>=25)return; const zone=ZONES[game.currentZone];if(!zone||!zone.spawns?.length)return; const safe=zone.safeRadius||360;if(Math.hypot(game.player.x-zone.x,game.player.y-zone.y)<safe)return;
+ if(game.currentZone==='town')return; if(game.monsters.length>=25)return; const zone=ZONES[game.currentZone];if(!zone||!zone.spawns?.length)return; const safe=zone.safeRadius||220;if(Math.hypot(game.player.x-zone.x,game.player.y-zone.y)<safe)return;
  const type=zone.spawns[Math.floor(Math.random()*zone.spawns.length)],data=MONSTERS[type]; for(let i=0;i<20;i++){const a=Math.random()*Math.PI*2,dist=700+Math.random()*450;const x=clamp(game.player.x+Math.cos(a)*dist,50,currentWorldSize-50),y=clamp(game.player.y+Math.sin(a)*dist,50,currentWorldSize-50);if(Math.hypot(x-zone.x,y-zone.y)<safe+80)continue;game.monsters.push({type,x,y,radius:data.isElite?30:22,hp:data.hp,maxHp:data.hp,damage:data.damage,speed:data.speed,exp:data.exp,color:data.color,emoji:data.emoji,vision:data.vision,attackRange:data.attackRange,lastAttack:0,attackCooldown:1000,isElite:!!data.isElite,loot:data.loot});return;}
 };
 const __updateMonstersV5=updateMonsters; updateMonsters=function(){const zone=ZONES[game.currentZone];const safe=zone?.safeRadius||0;const inside=zone&&Math.hypot(game.player.x-zone.x,game.player.y-zone.y)<safe;const old=[];for(const m of game.monsters){old.push([m,m.vision]);if(zone){const d=Math.hypot(m.x-zone.x,m.y-zone.y);if(d<safe){const a=Math.atan2(m.y-zone.y,m.x-zone.x)||0;m.x=zone.x+Math.cos(a)*(safe+80);m.y=zone.y+Math.sin(a)*(safe+80);}if(inside)m.vision=0;}}__updateMonstersV5();for(const [m,v] of old)m.vision=v;};
@@ -10296,7 +10334,7 @@ __setHudVisibilityV7();
   const tutSteps=[
     {kind:'kill',target:2,name:'첫 사냥',desc:'숲으로 나가 몬스터 2마리를 처치하세요.',rewardExp:80,rewardGold:50,monster:'any'},
     {kind:'move',target:1,name:'가방 정리',desc:'인벤토리를 열고 아이템 하나를 다른 칸으로 옮겨보세요.',rewardExp:100,rewardGold:60},
-    {kind:'skill',target:2,name:'스킬 훈련',desc:'단축키 Q를 사용해 스킬을 2번 사용하세요.',rewardExp:120,rewardGold:80},
+    {kind:'skill',target:1,name:'스킬 훈련',desc:'단축키 Q를 사용해 스킬을 1번 사용하세요.',rewardExp:120,rewardGold:80},
     {kind:'kill',target:5,name:'사냥 훈련',desc:'숲의 몬스터 5마리를 처치하세요.',rewardExp:140,rewardGold:100,monster:'forest'},
   ];
   const dialogues=[
@@ -11013,10 +11051,10 @@ __setHudVisibilityV7();
     if(zone && game.currentZone!=='town'){
       ctx.save();
       ctx.globalAlpha=.20;ctx.fillStyle='#00b894';
-      ctx.beginPath();ctx.arc(zone.x,zone.y,zone.safeRadius||360,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.arc(zone.x,zone.y,zone.safeRadius||220,0,Math.PI*2);ctx.fill();
       ctx.globalAlpha=1;ctx.strokeStyle='#00b894';ctx.lineWidth=3;ctx.stroke();
       ctx.fillStyle='#fff';ctx.font='bold 15px Arial';ctx.textAlign='center';
-      ctx.fillText('안전 구역 · NPC',zone.x,zone.y-(zone.safeRadius||360)-10);
+      ctx.fillText('안전 구역 · NPC',zone.x,zone.y-(zone.safeRadius||220)-10);
       ctx.restore();
     }
 
@@ -12593,6 +12631,1573 @@ __setHudVisibilityV7();
         ctx.restore();
     };
 })();
+
+/* =========================================================
+   FINAL QUEST UPDATE — 완료 퀘스트 숨김 + 비사냥 퀘스트 추가
+   기존 UI/게임 기능/스타일은 유지하고 퀘스트 로직만 보강합니다.
+   ========================================================= */
+(function(){
+  /* 현재 게임 세션의 완료 기록만 보존합니다. 게임을 새로 시작하면 초기화됩니다. */
+  function ensurePersistentQuestState(){
+    if(typeof ensureQuestState==='function') ensureQuestState();
+    game.quest ||= {active:null,progress:0,completedIds:[],giver:null};
+    if(!Array.isArray(game.quest.completedIds)) game.quest.completedIds=[];
+  }
+  function savePersistentQuestState(){ /* 현재 세션 상태이므로 별도 저장은 하지 않습니다. */ }
+
+  /* 기존 일반 퀘스트 목록에 비사냥형 퀘스트를 추가합니다. */
+  const extraQuests=[
+    {id:'town_guide',giver:'town',name:'마을 안내를 받다',desc:'마을 안내자 NPC와 대화하세요.',target:1,rewardExp:80,rewardGold:70,kind:'talk'},
+    {id:'forest_explore',giver:'forest',name:'숲의 지형 조사',desc:'숲 지역으로 이동해 주변을 조사하세요.',target:1,rewardExp:120,rewardGold:100,kind:'zone',zone:'forest'},
+    {id:'forest_purchase',giver:'forest',name:'숲 원정 보급',desc:'상점에서 아이템을 1개 구매하세요.',target:1,rewardExp:130,rewardGold:110,kind:'buy'},
+    {id:'mountain_explore',giver:'mountain',name:'산길 탐사',desc:'산 지역에 도착하세요.',target:1,rewardExp:180,rewardGold:160,kind:'zone',zone:'mountain'},
+    {id:'mountain_forge',giver:'mountain',name:'대장장이의 시험',desc:'장착한 무기를 한 번 강화하세요.',target:1,rewardExp:220,rewardGold:200,kind:'upgrade'},
+    {id:'dungeon_craft',giver:'dungeon',name:'던전 유물 제작',desc:'제작소에서 아이템을 1개 제작하세요.',target:1,rewardExp:280,rewardGold:260,kind:'craft'},
+    {id:'desert_explore',giver:'desert',name:'사막 탐사 기록',desc:'사막 지역에 도착하세요.',target:1,rewardExp:350,rewardGold:330,kind:'zone'}
+  ];
+  for(const q of extraQuests){
+    if(typeof QUEST_POOL!=='undefined' && !QUEST_POOL.some(x=>x.id===q.id)) QUEST_POOL.push(q);
+  }
+
+  ensurePersistentQuestState();
+
+  function currentNormalQuest(){
+    ensurePersistentQuestState();
+    const q=game.quest?.active;
+    if(!q || q.source!=='normal') return null;
+    return (typeof QUEST_POOL!=='undefined'?QUEST_POOL.find(x=>x.id===q.id):null) || q;
+  }
+
+  function advanceNormalQuest(kind,amount=1,extra={}){
+    ensurePersistentQuestState();
+    const q=currentNormalQuest();
+    if(!q || q.kind!==kind || game.quest.progress>=q.target) return false;
+    if(q.zone && extra.zone && q.zone!==extra.zone) return false;
+    game.quest.progress=Math.min(q.target,game.quest.progress+amount);
+    if(game.quest.progress>=q.target){
+      showDropNotification(`📜 ${q.name} 목표 달성! 퀘스트를 준 NPC에게 돌아가세요.`);
+    }
+    updateQuestTracker();
+    return true;
+  }
+
+  /* 완료 퀘스트를 받기 후보에서 영구적으로 제외합니다. */
+  openQuestPanel=function(zone=game.currentZone){
+    const panel=document.getElementById('quest-panel'),content=document.getElementById('quest-content');
+    if(!panel||!content)return;
+    closeAllPanels();panel.style.display='block';
+
+    const f=typeof ensureFlow==='function'?ensureFlow():null;
+    if(typeof tutorialActive==='function' && tutorialActive() && !game.player.job && f && f.step>=0){
+      const q=(typeof tutSteps!=='undefined'?tutSteps[f.step]:null);
+      if(q){
+        content.innerHTML=`<div class="quest-card"><div class="quest-name">📘 ${q.name}</div><div class="quest-desc">${q.desc}</div><div class="quest-progress">${Math.min(f.progress,q.target)} / ${q.target}</div><div class="quest-desc">${f.readyToTurnIn?'✅ 목표 달성. 촌장에게 돌아가 보상을 받으세요.':'진행 중...'}</div></div>`;
+        return;
+      }
+    }
+
+    const active=game.quest?.active;
+    if(active){
+      const done=game.quest.progress>=active.target;
+      const canTurn=done && game.currentZone===active.giver;
+      content.innerHTML=`<div class="quest-card"><div class="quest-name">${active.name}</div><div class="quest-desc">${active.desc}</div><div class="quest-progress">${Math.min(game.quest.progress,active.target)} / ${active.target}</div><div class="quest-desc">보상: EXP ${active.rewardExp||0} · 💰 ${active.rewardGold||0}</div>${canTurn?'<button class="quest-btn" onclick="claimQuest()">보상 받기</button>':done?'<div class="quest-desc">✅ 목표 달성 — 퀘스트를 준 NPC에게 돌아가세요.</div>':'<div class="quest-desc">진행 중...</div>'}</div>`;
+      return;
+    }
+
+    const available=(typeof QUEST_POOL!=='undefined'?QUEST_POOL.filter(q=>q.giver===zone&&!game.quest.completedIds.includes(q.id)):[]);
+    if(!available.length){
+      content.innerHTML=`<div class="quest-card"><div class="quest-name">📜 퀘스트 없음</div><div class="quest-desc">완료하지 않은 새로운 퀘스트가 없습니다.</div></div>`;
+      return;
+    }
+    content.innerHTML=available.slice(0,6).map(q=>`<div class="quest-card"><div class="quest-name">${q.name}</div><div class="quest-desc">${q.desc}</div><div class="quest-desc" style="margin-top:6px">보상: EXP ${q.rewardExp||0} · 💰 ${q.rewardGold||0}</div><button class="quest-btn" onclick="acceptQuest('${q.id}')">퀘스트 받기</button></div>`).join('');
+  };
+
+  /* 퀘스트 수락 시 기존 completedIds를 절대 초기화하지 않습니다. */
+  acceptQuest=function(id){
+    ensurePersistentQuestState();
+    if(game.quest.active){showDropNotification('📜 진행 중인 퀘스트를 먼저 완료하세요.');return;}
+    const q=(typeof QUEST_POOL!=='undefined'?QUEST_POOL.find(x=>x.id===id):null);
+    if(!q || game.quest.completedIds.includes(id)) return;
+    game.quest={active:{...q,source:'normal',giver:q.giver},progress:0,completedIds:[...(game.quest.completedIds||[])],giver:q.giver};
+    openQuestPanel(q.giver);
+    showDropNotification(`📜 ${q.name} 수락!`);
+    updateQuestTracker();
+  };
+
+  /* 보상 수령 후 완료 목록에 저장하고 현재 퀘스트를 숨깁니다. */
+  claimQuest=function(){
+    ensurePersistentQuestState();
+    const q=currentNormalQuest();
+    if(!q || game.quest.progress<q.target)return;
+    const giver=getQuestNpc(q.giver);
+    if(game.currentZone!==q.giver || !giver || Math.hypot(game.player.x-giver.x,game.player.y-giver.y)>150){
+      showDropNotification(`📜 ${q.name}을(를) 준 NPC에게 돌아가야 보상을 받을 수 있습니다.`);
+      updateQuestTracker();
+      return;
+    }
+    game.player.gold+=(q.rewardGold||0);
+    syncGoldInventory();
+    if(q.rewardExp)gainExp(q.rewardExp);
+    if(!game.quest.completedIds.includes(q.id)) game.quest.completedIds.push(q.id);
+    savePersistentQuestState();
+    game.quest.active=null;
+    game.quest.progress=0;
+    game.quest.giver=null;
+    renderInventory();
+    updateUI();
+    closeAllPanels();
+    showDropNotification(`🎉 ${q.name} 완료! 보상을 받았습니다.`);
+    updateQuestTracker();
+  };
+
+  /* 사냥 퀘스트 진행. */
+  updateQuestProgress=function(monster){
+    ensurePersistentQuestState();
+    const q=currentNormalQuest();
+    if(!q || q.kind!=='kill')return;
+    const valid=q.monster==='any' || (q.monster && game.currentZone===q.monster);
+    if(!valid || game.quest.progress>=q.target)return;
+    advanceNormalQuest('kill',1,{zone:game.currentZone});
+  };
+
+  /* 지역 이동형 퀘스트 */
+  const baseChangeZone=changeZone;
+  changeZone=function(key){
+    const before=game.currentZone;
+    baseChangeZone(key);
+    if(game.currentZone!==before) advanceNormalQuest('zone',1,{zone:game.currentZone});
+  };
+
+  /* 상점 구매형 퀘스트 */
+  const baseBuyItem=buyItem;
+  buyItem=function(id,price){
+    const beforeGold=game.player.gold;
+    const beforeCount=game.inventory.reduce((n,x)=>n+(x?.id===id?(x.count||0):0),0);
+    baseBuyItem(id,price);
+    const afterCount=game.inventory.reduce((n,x)=>n+(x?.id===id?(x.count||0):0),0);
+    if(afterCount>beforeCount || game.player.gold<beforeGold) advanceNormalQuest('buy');
+  };
+
+  /* 제작 성공형 퀘스트 */
+  const baseCraftItem=craftItem;
+  craftItem=function(recipe){
+    const before=recipe?((getInventoryItem(recipe.id)?.count)||0):0;
+    baseCraftItem(recipe);
+    const after=recipe?((getInventoryItem(recipe.id)?.count)||0):0;
+    if(after>before) advanceNormalQuest('craft');
+  };
+
+  /* 강화형 퀘스트: 실제 강화 단계가 변했을 때만 진행 */
+  const baseUpgradeWeapon=upgradeWeapon;
+  upgradeWeapon=function(){
+    const weapon=game.equipment?.weapon;
+    const before=weapon?(game.weaponUpgrade?.[weapon]||0):-1;
+    const beforeGold=game.player.gold;
+    baseUpgradeWeapon();
+    const after=weapon?(game.weaponUpgrade?.[weapon]||0):-1;
+    if(weapon && ((after!==before) || game.player.gold<beforeGold)) advanceNormalQuest('upgrade');
+  };
+
+  /* 대화형 퀘스트: 실제 NPC/구조물 상호작용 시 카운트 */
+  const baseInteractStructure=interactStructure;
+  interactStructure=function(){
+    const s=nearbyStructure;
+    baseInteractStructure();
+    if(s && (s.type==='npc' || s.type==='quest' || s.type==='job')) advanceNormalQuest('talk');
+  };
+
+  /* 인벤토리 열기형 퀘스트 */
+  if(typeof toggleInventory==='function'){
+    const baseToggleInventory=toggleInventory;
+    toggleInventory=function(){
+      baseToggleInventory();
+      advanceNormalQuest('inventory');
+    };
+  }
+
+  /* 스킬 사용형 퀘스트: 실제 스킬 발동만 카운트 */
+  if(typeof useSkillHotbar==='function'){
+    const baseUseSkillHotbar=useSkillHotbar;
+    useSkillHotbar=function(){
+      const skillBefore=performance.now();
+      const result=baseUseSkillHotbar();
+      if(result!==false && performance.now()>=skillBefore) advanceNormalQuest('skill');
+      return result;
+    };
+  }
+
+  /* 새 게임/다시 시작에서는 완료 기록과 진행 중 일반 퀘스트를 초기화합니다. */
+  const baseStartGame= startGame;
+  startGame=function(){
+    const result=baseStartGame.apply(this,arguments);
+    game.quest={active:null,progress:0,completedIds:[],giver:null};
+    return result;
+  };
+  const baseRestartGame= restartGame;
+  restartGame=function(){
+    const result=baseRestartGame.apply(this,arguments);
+    game.quest={active:null,progress:0,completedIds:[],giver:null};
+    return result;
+  };
+
+  /* HUD가 새 상태를 바로 반영하도록 주기적으로 갱신 */
+  setInterval(()=>{
+    if(typeof updateQuestTracker==='function' && gameStarted&&!gameOver) updateQuestTracker();
+  },250);
+  ensurePersistentQuestState();
+})();
+
+</script>
+
+<script>
+/* =========================================================
+   WORLD EXPANSION — 하나로 이어진 대형 세계 + 다수 지역/몬스터
+   기존 시스템은 유지하고, 월드/지역/몬스터/세계지도 기능만 확장.
+========================================================= */
+(function(){
+  const WORLD_W = 7200;
+  const CELL = 1800;
+  const HALF = CELL / 2;
+  const centers = {
+    town:[3600,3600],
+    meadow:[1800,3600],
+    forest:[2200,2200],
+    deepforest:[1000,1700],
+    mountain:[3600,1600],
+    snowfield:[5300,1500],
+    ruins:[5900,2700],
+    coast:[6000,4400],
+    desert:[5200,5400],
+    volcano:[3600,5700],
+    wasteland:[2000,5500],
+    swamp:[950,4550],
+    cave:[2100,3900],
+    dungeon:[3600,2500],
+    ancient:[4500,4450],
+    abyss:[3600,6900]
+  };
+  const oldCenters = {
+    town:[750,750], forest:[1500,500], mountain:[2500,1500], dungeon:[1500,2500], desert:[3000,3000], ruins:[3200,900]
+  };
+
+  const zoneSpec = {
+    town:{name:'🏘️ 마을',color:'#2a5a4a',minLevel:1,spawns:[]},
+    meadow:{name:'🌿 평원',color:'#49633a',minLevel:3,spawns:['wild_boar','horned_beast','grass_sprite']},
+    forest:{name:'🌲 숲',color:'#1a4d1a',minLevel:5,spawns:['goblin','wolf','deer','forest_spider']},
+    deepforest:{name:'🌳 깊은 숲',color:'#123d25',minLevel:8,spawns:['treant','poison_spider','mushroom_beast']},
+    mountain:{name:'⛰️ 산맥',color:'#4a3a2a',minLevel:12,spawns:['orc','dragon_wyvern','rock_golem','wolf']},
+    dungeon:{name:'🏰 던전',color:'#2a2a4a',minLevel:15,spawns:['skeleton','ghoul','demon','dark_knight']},
+    snowfield:{name:'🏔️ 설원',color:'#3b5366',minLevel:18,spawns:['ice_wolf','frost_golem','snow_sprite']},
+    cave:{name:'🕳️ 동굴',color:'#252935',minLevel:21,spawns:['bat','cave_spider','crystal_golem']},
+    ruins:{name:'🏛️ 폐허',color:'#40364f',minLevel:24,spawns:['ruin_guardian','wraith','skeleton','ancient_guardian']},
+    coast:{name:'🌊 해안',color:'#174a5a',minLevel:27,spawns:['crab','siren','reef_shark']},
+    swamp:{name:'🌫️ 늪지',color:'#263c2d',minLevel:30,spawns:['bog_slime','swamp_lizard','poison_frog']},
+    desert:{name:'🏜️ 사막',color:'#5a4a1a',minLevel:33,spawns:['scorpion','sand_golem','pharaoh','sand_worm']},
+    wasteland:{name:'☠️ 황무지',color:'#4b4036',minLevel:36,spawns:['bone_beast','cursed_knight','ash_wraith']},
+    ancient:{name:'👑 고대 신전',color:'#4a4058',minLevel:40,spawns:['temple_guardian','mummy_lord','stone_colossus']},
+    volcano:{name:'🌋 화산',color:'#4a211a',minLevel:45,spawns:['flame_sprite','magma_golem','fire_drake']},
+    abyss:{name:'👿 심연',color:'#21182b',minLevel:55,spawns:['abyss_hunter','void_beast','abyss_lord']}
+  };
+
+  /* 좌표를 하나의 연결된 대형 월드로 통일 */
+  Object.keys(zoneSpec).forEach(key=>{
+    const z = zoneSpec[key];
+    const [x,y] = centers[key];
+    if(!ZONES[key]) ZONES[key] = {};
+    Object.assign(ZONES[key],{name:z.name,color:z.color,minLevel:z.minLevel,worldSize:WORLD_W,x,y,spawns:z.spawns,safeRadius:key==='town'?300:220});
+  });
+  currentWorldSize = WORLD_W;
+
+  /* 기존 지역 구조물을 새 지역 중심으로 이동 */
+  for(const s of STRUCTURES){
+    const key=s.zone||'town';
+    if(!centers[key] || !oldCenters[key]) continue;
+    s.x = centers[key][0] + (s.x-oldCenters[key][0]);
+    s.y = centers[key][1] + (s.y-oldCenters[key][1]);
+  }
+
+  /* 기존 NPC/퀘스트 구조물 중 폐허 연구자 등 중복 좌표도 안전하게 보정 */
+  STRUCTURES.forEach(s=>{
+    if(s.zone && centers[s.zone] && (!Number.isFinite(s.x)||s.x<0||s.x>WORLD_W||s.y<0||s.y>WORLD_W)){
+      s.x=centers[s.zone][0]; s.y=centers[s.zone][1]-180;
+    }
+  });
+
+  /* ===== 신규 몬스터 다수 ===== */
+  const addMonster=(id,name,emoji,hp,damage,speed,exp)=>{
+    MONSTERS[id]={name,emoji,hp,damage,speed,exp,color:'#ffffff',vision:520,attackRange:52,
+      loot:[{item:'gold',rate:.72,amount:Math.max(8,Math.round(exp*.6))}]};
+  };
+  addMonster('forest_spider','숲 거미','🕷️',32,8,2.0,16);
+  addMonster('rock_golem','바위 골렘','🪨',120,24,1.15,55);
+  addMonster('ice_wolf','얼음 늑대','🐺',75,20,2.25,48);
+  addMonster('frost_golem','빙결 골렘','🧊',150,30,1.0,80);
+  addMonster('snow_sprite','눈의 정령','❄️',60,22,2.1,65);
+  addMonster('treant','트렌트','🌳',180,28,1.0,95);
+  addMonster('poison_spider','독거미','🕷️',65,26,2.2,60);
+  addMonster('mushroom_beast','버섯 괴물','🍄',110,22,1.25,58);
+  addMonster('dark_knight','암흑 기사','🛡️',190,38,1.2,120);
+  addMonster('ancient_guardian','고대 수호자','🗿',240,42,0.9,160);
+  addMonster('sand_worm','모래벌레','🪱',170,34,1.7,115);
+  addMonster('cave_spider','동굴 거미','🕷️',80,30,2.1,72);
+  addMonster('crystal_golem','수정 골렘','💎',220,40,0.95,150);
+  addMonster('bog_slime','늪 슬라임','🟢',95,20,1.35,65);
+  addMonster('swamp_lizard','늪 리자드','🦎',115,30,1.75,78);
+  addMonster('poison_frog','독개구리','🐸',72,28,2.0,70);
+  addMonster('crab','거대 게','🦀',90,24,1.5,62);
+  addMonster('siren','세이렌','🧜',130,36,1.6,100);
+  addMonster('reef_shark','암초 상어','🦈',160,42,2.0,125);
+  addMonster('flame_sprite','화염 정령','🔥',105,38,2.15,100);
+  addMonster('magma_golem','마그마 골렘','🌋',280,52,0.9,190);
+  addMonster('fire_drake','화염 드레이크','🐲',210,48,1.8,170);
+  addMonster('wild_boar','멧돼지','🐗',48,12,2.0,24);
+  addMonster('horned_beast','뿔짐승','🐃',85,18,1.65,42);
+  addMonster('grass_sprite','풀의 정령','🌱',55,15,2.1,34);
+  addMonster('bone_beast','해골 짐승','🦴',140,35,1.55,100);
+  addMonster('cursed_knight','저주받은 기사','⚔️',220,50,1.2,175);
+  addMonster('ash_wraith','재의 망령','👻',125,42,2.1,120);
+  addMonster('temple_guardian','신전 수호자','🏛️',320,58,0.85,240);
+  addMonster('mummy_lord','미라 왕','🧟',260,52,1.1,220);
+  addMonster('stone_colossus','석상 거인','🗿',420,70,0.7,340);
+  addMonster('abyss_hunter','심연 사냥꾼','👹',360,68,1.85,320);
+  addMonster('void_beast','공허의 야수','🕳️',500,82,1.25,420);
+  addMonster('abyss_lord','심연의 군주','👿',900,110,0.95,900);
+
+  /* 일부 기존 몬스터에도 지역 고유 색을 유지 */
+  if(MONSTERS.bat) MONSTERS.bat.color='#6b5b95';
+
+  /* ===== 새로운 월드 배치 ===== */
+  const zonePairs = Object.keys(centers).map(k=>({key:k,x:centers[k][0],y:centers[k][1]}));
+  const REGION_RADIUS = 760;
+  function regionAt(x,y){
+    let best=null,dist=Infinity;
+    for(const r of zonePairs){
+      const d=Math.hypot(x-r.x,y-r.y);
+      if(d<dist){dist=d;best=r.key;}
+    }
+    return best;
+  }
+  function seededRand(seed){ const n=Math.sin(seed*12.9898)*43758.5453; return n-Math.floor(n); }
+  function regionPolygon(cx,cy,radius,seed){
+    const pts=[];
+    const count=12;
+    for(let i=0;i<count;i++){
+      const a=(Math.PI*2*i/count)-Math.PI/2;
+      const wobble=.82+seededRand(seed+i*17)*.30;
+      pts.push([cx+Math.cos(a)*radius*wobble,cy+Math.sin(a)*radius*wobble]);
+    }
+    return pts;
+  }
+  function fillRegionShape(key){
+    const [cx,cy]=centers[key]||[0,0];
+    const pts=regionPolygon(cx,cy,REGION_RADIUS,(key.length*31)+(cx|0)+(cy|0));
+    ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);
+    for(let i=1;i<pts.length;i++){const [x,y]=pts[i];ctx.lineTo(x,y);}ctx.closePath();
+    ctx.fill();
+  }
+
+
+  function drawRegionDecoration(key){
+    const [cx,cy]=centers[key]||[0,0];
+    ctx.save();
+    if(key==='town'){
+      ctx.strokeStyle='#8b7355';ctx.lineWidth=80;
+      ctx.beginPath();ctx.moveTo(cx-HALF,cy);ctx.lineTo(cx+HALF,cy);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(cx,cy-HALF);ctx.lineTo(cx,cy+HALF);ctx.stroke();
+      for(let i=0;i<22;i++){const x=cx-700+((i*271)%1400),y=cy-700+((i*173)%1400);if(Math.hypot(x-cx,y-cy)<270)continue;ctx.fillStyle='#183b25';ctx.beginPath();ctx.arc(x,y,22,0,Math.PI*2);ctx.fill();ctx.fillStyle='#6b4a2e';ctx.fillRect(x-4,y+15,8,18);}
+    }else if(key==='forest'||key==='deepforest'){
+      for(let i=0;i<(key==='deepforest'?70:55);i++){const x=cx-HALF+40+((i*317)%(CELL-80)),y=cy-HALF+40+((i*191)%(CELL-80));ctx.fillStyle=key==='deepforest'?'#0d2b19':'#123b1b';ctx.beginPath();ctx.arc(x,y,20+(i%3)*5,0,Math.PI*2);ctx.fill();ctx.fillStyle='#6b4a2e';ctx.fillRect(x-4,y+15,8,22);}
+      ctx.strokeStyle='#7a5a38';ctx.lineWidth=38;ctx.beginPath();ctx.moveTo(cx-HALF,cy+520);ctx.bezierCurveTo(cx-300,cy+200,cx+200,cy-200,cx+HALF,cy-520);ctx.stroke();
+    }else if(key==='mountain'||key==='snowfield'){
+      for(let i=0;i<22;i++){const x=cx-HALF+100+((i*521)%(CELL-200)),y=cy-HALF+100+((i*277)%(CELL-200));ctx.fillStyle=key==='snowfield'?'#d9e8f1':'#66584a';ctx.beginPath();ctx.moveTo(x,y-55);ctx.lineTo(x-65,y+45);ctx.lineTo(x+65,y+45);ctx.closePath();ctx.fill();}
+    }else if(key==='dungeon'||key==='cave'){
+      ctx.fillStyle=key==='cave'?'#11151f':'#171735';
+      for(let i=0;i<24;i++){const x=cx-HALF+100+((i*433)%(CELL-200)),y=cy-HALF+100+((i*307)%(CELL-200));ctx.fillRect(x,y,90,18);ctx.fillRect(x+36,y-36,18,90);}
+      ctx.strokeStyle=key==='cave'?'#4f5868':'#45456d';ctx.lineWidth=24;ctx.strokeRect(cx-HALF+80,cy-HALF+80,CELL-160,CELL-160);
+    }else if(key==='desert'||key==='wasteland'){
+      for(let i=0;i<38;i++){const x=cx-HALF+70+((i*283)%(CELL-140)),y=cy-HALF+70+((i*419)%(CELL-140));ctx.fillStyle=key==='wasteland'?'#6a5440':'#806b2e';ctx.beginPath();ctx.arc(x,y,16+(i%4)*4,0,Math.PI*2);ctx.fill();}
+      ctx.strokeStyle=key==='wasteland'?'#70584b':'#c09a45';ctx.lineWidth=45;ctx.beginPath();ctx.moveTo(cx-HALF,cy+420);ctx.bezierCurveTo(cx-300,cy+100,cx+300,cy-160,cx+HALF,cy-420);ctx.stroke();
+    }else if(key==='swamp'){
+      ctx.fillStyle='#34513d';for(let i=0;i<28;i++){const x=cx-HALF+80+((i*401)%(CELL-160)),y=cy-HALF+80+((i*233)%(CELL-160));ctx.beginPath();ctx.arc(x,y,30,0,Math.PI*2);ctx.fill();}
+      ctx.strokeStyle='#263e4b';ctx.lineWidth=34;ctx.beginPath();ctx.moveTo(cx-HALF,cy+250);ctx.bezierCurveTo(cx-400,cy-100,cx+200,cy+100,cx+HALF,cy-260);ctx.stroke();
+    }else if(key==='coast'){
+      ctx.fillStyle='#1f6e7d';ctx.fillRect(cx-HALF,cy-420,CELL,840);ctx.strokeStyle='#9bd4df';ctx.lineWidth=20;ctx.beginPath();ctx.moveTo(cx-500,cy-420);ctx.bezierCurveTo(cx-180,cy-180,cx+240,cy+120,cx+500,cy+420);ctx.stroke();
+    }else if(key==='volcano'){
+      ctx.fillStyle='#6a271f';ctx.beginPath();ctx.arc(cx,cy,420,0,Math.PI*2);ctx.fill();ctx.fillStyle='#d5542a';ctx.beginPath();ctx.arc(cx,cy,240,0,Math.PI*2);ctx.fill();ctx.fillStyle='#111';ctx.beginPath();ctx.arc(cx,cy,90,0,Math.PI*2);ctx.fill();
+    }else if(key==='meadow'){
+      ctx.strokeStyle='#718b55';ctx.lineWidth=28;ctx.beginPath();ctx.moveTo(cx-HALF,cy+350);ctx.bezierCurveTo(cx-250,cy-200,cx+300,cy+180,cx+HALF,cy-300);ctx.stroke();
+      for(let i=0;i<35;i++){const x=cx-HALF+50+((i*211)%(CELL-100)),y=cy-HALF+50+((i*157)%(CELL-100));ctx.fillStyle='#718f4b';ctx.beginPath();ctx.arc(x,y,8,0,Math.PI*2);ctx.fill();}
+    }else if(key==='ruins'||key==='ancient'){
+      ctx.strokeStyle=key==='ancient'?'#9e8f72':'#78698a';ctx.lineWidth=40;ctx.strokeRect(cx-470,cy-470,940,940);
+      ctx.fillStyle=key==='ancient'?'#6c5b47':'#5b5268';for(let i=0;i<10;i++){const x=cx-400+((i*173)%800),y=cy-400+((i*257)%800);ctx.fillRect(x,y,55,55);}
+    }else if(key==='abyss'){
+      ctx.strokeStyle='#5d2b7a';ctx.lineWidth=30;for(let i=0;i<5;i++){ctx.beginPath();ctx.arc(cx,cy,140+i*110,0,Math.PI*2);ctx.stroke();}
+      ctx.fillStyle='#160d20';ctx.beginPath();ctx.arc(cx,cy,180,0,Math.PI*2);ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  /* ===== 연결된 대형 월드 렌더링 ===== */
+  drawWorld = function(){
+    ctx.fillStyle='#111';ctx.fillRect(0,0,WORLD_W,WORLD_W);
+    /* 지역은 네모 대신 불규칙한 자연형 영역으로 표시 */
+    for(const r of zonePairs){
+      const z=ZONES[r.key];ctx.fillStyle=z.color;ctx.globalAlpha=.96;fillRegionShape(r.key);
+    }
+    ctx.globalAlpha=1;
+    /* 마을을 중심으로 뻗는 주요 도로 */
+    const road=(points,width=72)=>{ctx.strokeStyle='#6d5b46';ctx.lineWidth=width;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(points[0][0],points[0][1]);for(let i=1;i<points.length;i++){ctx.lineTo(points[i][0],points[i][1]);}ctx.stroke();};
+    const T=centers.town;
+    const roads=[[T,centers.meadow,centers.forest],[T,centers.mountain,centers.snowfield],[T,centers.dungeon,centers.ruins],[T,centers.cave,centers.desert],[T,centers.swamp,centers.wasteland],[T,centers.ancient,centers.coast],[T,centers.volcano],[T,centers.abyss]];
+    for(const path of roads)road(path,82);
+    road([centers.deepforest,centers.forest,T,centers.cave],58);
+    road([centers.coast,centers.ruins,centers.desert],58);
+    road([centers.wasteland,centers.volcano,centers.abyss],58);
+    /* 지역별 자연 장식 */
+    for(const r of zonePairs)drawRegionDecoration(r.key);
+    /* 경계는 선으로만 표시 */
+    for(const r of zonePairs){
+      const pts=regionPolygon(r.x,r.y,REGION_RADIUS,(r.key.length*31)+(r.x|0)+(r.y|0));
+      const active=r.key===game.currentZone;
+      ctx.save();ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);ctx.closePath();
+      ctx.strokeStyle=active?'#00f5ff':'rgba(255,255,255,.10)';ctx.lineWidth=active?5:2;ctx.stroke();
+      ctx.fillStyle='rgba(0,0,0,.28)';ctx.font='bold 23px Arial';ctx.textAlign='center';ctx.fillText(ZONES[r.key].name,r.x,r.y);
+      ctx.restore();
+    }
+  };
+
+  /* ===== 미니맵 ===== */
+  drawMinimap = function(){
+    mCtx.clearRect(0,0,mCanvas.width,mCanvas.height);
+    const scale=mCanvas.width/WORLD_W;mCtx.fillStyle='#111';mCtx.fillRect(0,0,mCanvas.width,mCanvas.height);
+    for(const r of zonePairs){
+      const pts=regionPolygon(r.x,r.y,REGION_RADIUS,(r.key.length*31)+(r.x|0)+(r.y|0));
+      mCtx.beginPath();mCtx.moveTo(pts[0][0]*scale,pts[0][1]*scale);for(let i=1;i<pts.length;i++)mCtx.lineTo(pts[i][0]*scale,pts[i][1]*scale);mCtx.closePath();mCtx.fillStyle=ZONES[r.key].color;mCtx.globalAlpha=.92;mCtx.fill();
+      mCtx.globalAlpha=1;mCtx.strokeStyle=r.key===game.currentZone?'#00f5ff':'rgba(255,255,255,.18)';mCtx.lineWidth=r.key===game.currentZone?2:1;mCtx.stroke();
+    }
+    mCtx.strokeStyle='#6d5b46';mCtx.lineWidth=Math.max(2,10*scale);mCtx.lineCap='round';
+    const line=(a,b)=>{mCtx.beginPath();mCtx.moveTo(a[0]*scale,a[1]*scale);mCtx.lineTo(b[0]*scale,b[1]*scale);mCtx.stroke();};
+    const T=centers.town;for(const k of ['meadow','forest','mountain','snowfield','dungeon','ruins','cave','desert','swamp','wasteland','ancient','coast','volcano','abyss'])line(T,centers[k]);
+    for(const s of STRUCTURES){if((s.zone||'town')!==game.currentZone)continue;mCtx.fillStyle=s.color;mCtx.fillRect(s.x*scale-3,s.y*scale-3,6,6);}
+    const px=game.player.x*scale,py=game.player.y*scale;mCtx.fillStyle='#00f5ff';mCtx.beginPath();mCtx.arc(px,py,5,0,Math.PI*2);mCtx.fill();
+  };
+
+  /* ===== 세계 지도 ===== */
+  drawBigMap = function(){
+    const rect=bigMap.getBoundingClientRect();bigMap.width=Math.max(500,Math.floor(rect.width));bigMap.height=Math.max(400,Math.floor(rect.height));
+    const w=bigMap.width,h=bigMap.height,scale=Math.min(w,h)/WORLD_W,ox=(w-WORLD_W*scale)/2,oy=(h-WORLD_W*scale)/2;
+    bigMapCtx.clearRect(0,0,w,h);bigMapCtx.fillStyle='#111';bigMapCtx.fillRect(0,0,w,h);
+    for(const r of zonePairs){
+      const pts=regionPolygon(r.x,r.y,REGION_RADIUS,(r.key.length*31)+(r.x|0)+(r.y|0));
+      bigMapCtx.beginPath();bigMapCtx.moveTo(ox+pts[0][0]*scale,oy+pts[0][1]*scale);for(let i=1;i<pts.length;i++)bigMapCtx.lineTo(ox+pts[i][0]*scale,oy+pts[i][1]*scale);bigMapCtx.closePath();
+      bigMapCtx.fillStyle=ZONES[r.key].color;bigMapCtx.globalAlpha=.95;bigMapCtx.fill();bigMapCtx.globalAlpha=1;
+      bigMapCtx.strokeStyle=r.key===game.currentZone?'#00f5ff':'rgba(255,255,255,.22)';bigMapCtx.lineWidth=r.key===game.currentZone?4:1.5;bigMapCtx.stroke();
+      bigMapCtx.fillStyle='#fff';bigMapCtx.font='bold 13px Arial';bigMapCtx.textAlign='center';bigMapCtx.fillText(`${ZONES[r.key].name} Lv.${ZONES[r.key].minLevel}+`,ox+r.x*scale,oy+r.y*scale);
+    }
+    bigMapCtx.strokeStyle='#6d5b46';bigMapCtx.lineWidth=Math.max(2,32*scale);bigMapCtx.lineCap='round';
+    const road=(a,b)=>{bigMapCtx.beginPath();bigMapCtx.moveTo(ox+a[0]*scale,oy+a[1]*scale);bigMapCtx.lineTo(ox+b[0]*scale,oy+b[1]*scale);bigMapCtx.stroke();};
+    const T=centers.town;for(const k of Object.keys(centers)){if(k!=='town')road(T,centers[k]);}
+    for(const s of STRUCTURES){if(!centers[s.zone||'town'])continue;bigMapCtx.fillStyle=s.color;bigMapCtx.beginPath();bigMapCtx.arc(ox+s.x*scale,oy+s.y*scale,5,0,Math.PI*2);bigMapCtx.fill();}
+    const px=ox+game.player.x*scale,py=oy+game.player.y*scale;bigMapCtx.fillStyle='#00f5ff';bigMapCtx.shadowColor='#00f5ff';bigMapCtx.shadowBlur=14;bigMapCtx.beginPath();bigMapCtx.arc(px,py,7,0,Math.PI*2);bigMapCtx.fill();bigMapCtx.shadowBlur=0;
+  };
+
+  /* ===== 지역 선택창 ===== */
+  initZoneSelect = function(){
+    const box=document.getElementById('zone-buttons');if(!box)return;box.innerHTML='';
+    for(const key of Object.keys(zoneSpec)){
+      const z=ZONES[key];const btn=document.createElement('button');btn.className='zone-btn'+(key===game.currentZone?' active':'');btn.textContent=`${z.name} · Lv.${z.minLevel}+`;
+      btn.disabled=false;
+      btn.onclick=()=>{
+        if((game.player.level||1)<z.minLevel){showDropNotification(`🔒 ${z.name}은(는) Lv.${z.minLevel}부터 이동할 수 있습니다.`);return;}
+        changeZone(key);
+      };
+      if((game.player.level||1)<z.minLevel)btn.classList.add('locked');
+      box.appendChild(btn);
+    }
+  };
+
+  /* ===== 세계지도 클릭으로 빠른 이동 ===== */
+  bigMap.addEventListener('click',function(ev){
+    const rect=bigMap.getBoundingClientRect(),w=bigMap.width,h=bigMap.height,scale=Math.min(w,h)/WORLD_W,ox=(w-WORLD_W*scale)/2,oy=(h-WORLD_W*scale)/2;
+    const wx=(ev.clientX-rect.left-ox)/scale,wy=(ev.clientY-rect.top-oy)/scale;
+    const key=regionAt(wx,wy);if(!key)return;const z=ZONES[key];
+    if(game.player.level<z.minLevel){showDropNotification(`🔒 ${z.name}은(는) Lv.${z.minLevel}부터 이동할 수 있습니다.`);return;}
+    changeZone(key);
+  });
+
+  /* ===== 걷기로 지역 경계를 넘으면 자동 연결 이동 =====
+     - 연출/이동중 문구 없이 자연스럽게 지역만 전환
+     - 잠긴 지역은 알림만 표시
+  ===== */
+  const baseUpdatePlayer=updatePlayer;
+  let lastLockedNoticeKey=null;
+  let lastLockedNoticeAt=0;
+  updatePlayer=function(){
+    baseUpdatePlayer();
+    if(!gameStarted || gameOver) return;
+    const detected=regionAt(game.player.x,game.player.y);
+    if(!detected) return;
+    const current=game.currentZone;
+    if(detected===current) { lastLockedNoticeKey=null; return; }
+    const target=ZONES[detected];
+    if((game.player.level||1) < (target?.minLevel||1)){
+      const now=performance.now();
+      if(lastLockedNoticeKey!==detected || now-lastLockedNoticeAt>1800){
+        showDropNotification(`🔒 ${target.name}은(는) Lv.${target.minLevel}부터 이동할 수 있습니다.`);
+        lastLockedNoticeKey=detected; lastLockedNoticeAt=now;
+      }
+      return;
+    }
+    lastLockedNoticeKey=null;
+    game.currentZone=detected;
+    currentWorldSize=WORLD_W;
+    game.monsters=[];
+    nearbyStructure=null;
+    initZoneSelect();
+    updateUI();
+    drawMinimap();
+  };
+
+  /* 모든 지역을 같은 대형 월드 크기로 유지 */
+  const baseChangeZone=changeZone;
+  changeZone=function(key){
+    if(!ZONES[key])return;
+    currentWorldSize=WORLD_W;
+    baseChangeZone(key);
+    currentWorldSize=WORLD_W;
+    initZoneSelect();
+    drawMinimap();
+  };
+
+  /* 최신 렌더 루프가 새 미니맵을 사용하도록 보강 */
+  const baseDrawGame=drawGame;
+  drawGame=function(){currentWorldSize=WORLD_W;baseDrawGame();};
+
+  initZoneSelect();
+  drawMinimap();
+})();
+</script>
+<script>
+/* FINAL WORLD POLISH: 지역 이동/레벨 제한/지역별 몬스터 스케일 */
+(function(){
+  /* 지역 간 이동 시 화면에 '이동 중' 문구를 띄우지 않는다. 기존 스폰 모션은 유지. */
+  if(typeof transition==='function'){
+    transition=function(){ /* intentionally silent for region changes */ };
+  }
+
+  /* map/region quick travel: 레벨 미달이면 알림만 */
+  const finalMapTravel=changeZone;
+  changeZone=function(key){
+    const z=ZONES[key];
+    if(!z || !gameStarted || gameOver) return;
+    if((game.player.level||1)<(z.minLevel||1)){
+      showDropNotification(`🔒 ${z.name}은(는) Lv.${z.minLevel}부터 이동할 수 있습니다.`);
+      return;
+    }
+    finalMapTravel(key);
+    currentWorldSize=WORLD_W;
+    initZoneSelect();
+    drawMinimap();
+    if(typeof drawBigMap==='function') drawBigMap();
+  };
+
+  /* 지역 권장 레벨을 기준으로 몬스터 스탯을 조절한다. */
+  const scaledSpawn = spawnMonster;
+  spawnMonster=function(){
+    const zone=ZONES[game.currentZone];
+    if(!zone || game.currentZone==='town' || !zone.spawns?.length || game.monsters.length>=25) return;
+    const safe=zone.safeRadius||0;
+    if(Math.hypot(game.player.x-zone.x,game.player.y-zone.y)<safe) return;
+    const level=Math.max(1,game.player.level||1);
+    const regionLv=Math.max(1,zone.minLevel||1);
+    const candidates=zone.spawns.filter(type=>MONSTERS[type]);
+    if(!candidates.length) return;
+    const type=candidates[Math.floor(Math.random()*candidates.length)];
+    const data=MONSTERS[type];
+    const danger=1+Math.max(0,regionLv-1)*0.055;
+    const playerScale=1+Math.min(0.65,Math.max(0,level-regionLv)*0.018);
+    const hp=data.hp*danger*playerScale;
+    const damage=data.damage*danger*(1+Math.min(0.35,Math.max(0,level-regionLv)*0.01));
+    for(let tries=0;tries<20;tries++){
+      const a=Math.random()*Math.PI*2,dist=700+Math.random()*450;
+      const x=clamp(game.player.x+Math.cos(a)*dist,50,currentWorldSize-50);
+      const y=clamp(game.player.y+Math.sin(a)*dist,50,currentWorldSize-50);
+      if(Math.hypot(x-zone.x,y-zone.y)<safe+80)continue;
+      game.monsters.push({type,x,y,radius:data.isElite?30:22,hp,maxHp:hp,damage,speed:data.speed,exp:Math.round(data.exp*danger),color:data.color,emoji:data.emoji,vision:data.vision,attackRange:data.attackRange,lastAttack:0,attackCooldown:1000,isElite:!!data.isElite,loot:data.loot});
+      return;
+    }
+  };
+
+  /* 구역 스폰이 시작될 때 기존 스폰 모션/사운드를 유지 */
+  const previousStart=spawnMonster;
+  spawnMonster=function(){
+    const before=game.monsters.length;
+    previousStart();
+    if(game.monsters.length>before){
+      const m=game.monsters[game.monsters.length-1];
+      m.spawnStart=performance.now();
+      if(game.effects)game.effects.push({type:'spawn',x:m.x,y:m.y,start:performance.now(),duration:500});
+    }
+  };
+
+  initZoneSelect();
+  drawMinimap();
+})();
+</script>
+\n<script>
+/* FINAL WORLD SIZE PATCH: giant seamless world, town-centered spawn, no empty gaps */
+(function(){
+  const WORLD_W2 = 12000;
+  const C = {
+    town:[6000,6000],
+    meadow:[3300,6000],
+    forest:[4200,4200],
+    deepforest:[2100,3000],
+    mountain:[6000,3300],
+    snowfield:[8700,2700],
+    ruins:[9300,4500],
+    coast:[9300,7000],
+    desert:[8700,9300],
+    volcano:[6000,9300],
+    wasteland:[3300,9000],
+    swamp:[2100,7200],
+    cave:[4000,7200],
+    dungeon:[6000,4500],
+    ancient:[7200,7200],
+    abyss:[6000,10800]
+  };
+  const radiusBy = {
+    town:1750,meadow:1900,forest:1900,deepforest:1900,mountain:1850,snowfield:1900,
+    ruins:1850,coast:1900,desert:1900,volcano:1900,wasteland:1900,swamp:1900,
+    cave:1850,dungeon:1900,ancient:1900,abyss:1850
+  };
+  const spec = {
+    town:['🏘️ 마을',1,[]],meadow:['🌿 평원',3,['wild_boar','horned_beast','grass_sprite']],
+    forest:['🌲 숲',5,['goblin','wolf','deer','forest_spider']],deepforest:['🌳 깊은 숲',8,['treant','poison_spider','mushroom_beast']],
+    mountain:['⛰️ 산맥',12,['orc','dragon_wyvern','rock_golem','wolf']],dungeon:['🏰 던전',15,['skeleton','ghoul','demon','dark_knight']],
+    snowfield:['🏔️ 설원',18,['ice_wolf','frost_golem','snow_sprite']],cave:['🕳️ 동굴',21,['bat','cave_spider','crystal_golem']],
+    ruins:['🏛️ 폐허',24,['ruin_guardian','wraith','skeleton','ancient_guardian']],coast:['🌊 해안',27,['crab','siren','reef_shark']],
+    swamp:['🌫️ 늪지',30,['bog_slime','swamp_lizard','poison_frog']],desert:['🏜️ 사막',33,['scorpion','sand_golem','pharaoh','sand_worm']],
+    wasteland:['☠️ 황무지',36,['bone_beast','cursed_knight','ash_wraith']],ancient:['👑 고대 신전',40,['temple_guardian','mummy_lord','stone_colossus']],
+    volcano:['🌋 화산',45,['flame_sprite','magma_golem','fire_drake']],abyss:['👿 심연',55,['abyss_hunter','void_beast','abyss_lord']]
+  };
+  const colors = {
+    town:'#2a5a4a',meadow:'#49633a',forest:'#1a4d1a',deepforest:'#123d25',mountain:'#4a3a2a',dungeon:'#2a2a4a',
+    snowfield:'#3b5366',cave:'#252935',ruins:'#40364f',coast:'#174a5a',swamp:'#263c2d',desert:'#5a4a1a',
+    wasteland:'#4b4036',ancient:'#4a4058',volcano:'#4a211a',abyss:'#21182b'
+  };
+  Object.keys(spec).forEach(k=>{
+    const s=spec[k]; const [x,y]=C[k];
+    ZONES[k]=Object.assign(ZONES[k]||{}, {name:s[0],minLevel:s[1],worldSize:WORLD_W2,x,y,spawns:s[2],safeRadius:k==='town'?520:420});
+    ZONES[k].color=colors[k]||ZONES[k].color;
+  });
+  currentWorldSize=WORLD_W2;
+
+  /* 시작 위치를 항상 세계 중앙 마을로 고정 */
+  const putPlayerInTown=()=>{
+    if(!game || !game.player)return;
+    game.currentZone='town'; currentWorldSize=WORLD_W2;
+    game.player.x=C.town[0]; game.player.y=C.town[1];
+  };
+  putPlayerInTown();
+
+  function seeded(seed){ const n=Math.sin(seed*12.9898)*43758.5453; return n-Math.floor(n); }
+  function basePoly(cx,cy,r,seed){
+    const pts=[]; const n=16;
+    for(let i=0;i<n;i++){ const a=-Math.PI/2+i*Math.PI*2/n; const wob=.91+seeded(seed+i*13)*.18; pts.push([cx+Math.cos(a)*r*wob,cy+Math.sin(a)*r*wob]); }
+    return pts;
+  }
+  function clip(poly,A,B,Cc){
+    const out=[]; if(!poly.length)return out;
+    const side=p=>A*p[0]+B*p[1]-Cc;
+    for(let i=0;i<poly.length;i++){
+      const P=poly[i], Q=poly[(i+1)%poly.length], sp=side(P), sq=side(Q);
+      const inp=sp<=1e-7, inq=sq<=1e-7;
+      if(inp && inq) out.push(Q);
+      else if(inp && !inq){ const t=sp/(sp-sq); out.push([P[0]+(Q[0]-P[0])*t,P[1]+(Q[1]-P[1])*t]); }
+      else if(!inp && inq){ const t=sp/(sp-sq); out.push([P[0]+(Q[0]-P[0])*t,P[1]+(Q[1]-P[1])*t]); out.push(Q); }
+    }
+    return out;
+  }
+  function vorCell(key){
+    const [x,y]=C[key];
+    let poly=[[0,0],[WORLD_W2,0],[WORLD_W2,WORLD_W2],[0,WORLD_W2]];
+    for(const other of Object.keys(C)){
+      if(other===key)continue;
+      const [ox,oy]=C[other];
+      const A=2*(ox-x), B=2*(oy-y), CC=ox*ox+oy*oy-x*x-y*y;
+      poly=clip(poly,A,B,CC); if(!poly.length)break;
+    }
+    return poly;
+  }
+  const cells={};
+  Object.keys(C).forEach(k=>cells[k]=vorCell(k));
+
+  function drawPath(points,width){
+    ctx.strokeStyle='#6d5b46';ctx.lineWidth=width;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();
+    ctx.moveTo(points[0][0],points[0][1]); for(let i=1;i<points.length;i++)ctx.lineTo(points[i][0],points[i][1]); ctx.stroke();
+  }
+  function decoration(k){
+    const [cx,cy]=C[k]; ctx.save();
+    if(k==='town'){
+      ctx.strokeStyle='#8b7355';ctx.lineWidth=120;drawPath([[0,cy],[WORLD_W2,cy]],120);drawPath([[cx,0],[cx,WORLD_W2]],120);
+      for(let i=0;i<38;i++){const x=150+((i*317)%11700),y=150+((i*191)%11700);if(Math.hypot(x-cx,y-cy)<520)continue;ctx.fillStyle='#183b25';ctx.beginPath();ctx.arc(x,y,28,0,Math.PI*2);ctx.fill();ctx.fillStyle='#6b4a2e';ctx.fillRect(x-5,y+18,10,24);}
+    } else if(k==='forest'||k==='deepforest'){
+      const count=k==='deepforest'?110:90; for(let i=0;i<count;i++){const x=cx-1150+((i*317) % 2300),y=cy-1150+((i*191)%2300);ctx.fillStyle=k==='deepforest'?'#0d2b19':'#123b1b';ctx.beginPath();ctx.arc(x,y,25+(i%3)*6,0,Math.PI*2);ctx.fill();ctx.fillStyle='#6b4a2e';ctx.fillRect(x-5,y+18,10,26);}
+      ctx.strokeStyle='#7a5a38';ctx.lineWidth=54;drawPath([[cx-1200,cy+700],[cx-450,cy+320],[cx+100,cy-200],[cx+1200,cy-720]],54);
+    } else if(k==='mountain'||k==='snowfield'){
+      for(let i=0;i<44;i++){const x=cx-1200+((i*521)%2400),y=cy-1100+((i*277)%2200);ctx.fillStyle=k==='snowfield'?'#d9e8f1':'#66584a';ctx.beginPath();ctx.moveTo(x,y-80);ctx.lineTo(x-90,y+65);ctx.lineTo(x+90,y+65);ctx.closePath();ctx.fill();}
+    } else if(k==='dungeon'||k==='cave'){
+      for(let i=0;i<48;i++){const x=cx-1100+((i*433)%2200),y=cy-1100+((i*307)%2200);ctx.fillStyle=k==='cave'?'#11151f':'#171735';ctx.fillRect(x,y,110,22);ctx.fillRect(x+44,y-44,22,66);}
+    } else if(k==='desert'||k==='wasteland'){
+      for(let i=0;i<70;i++){const x=cx-1150+((i*283)%2300),y=cy-1150+((i*419)%2300);ctx.fillStyle=k==='wasteland'?'#6a5440':'#806b2e';ctx.beginPath();ctx.arc(x,y,18+(i%4)*5,0,Math.PI*2);ctx.fill();}
+      ctx.strokeStyle=k==='wasteland'?'#70584b':'#c09a45';ctx.lineWidth=65;drawPath([[cx-1200,cy+620],[cx-400,cy+120],[cx+450,cy-180],[cx+1200,cy-650]],65);
+    } else if(k==='swamp'){
+      for(let i=0;i<55;i++){const x=cx-1120+((i*401)%2240),y=cy-1100+((i*233)%2200);ctx.fillStyle='#34513d';ctx.beginPath();ctx.arc(x,y,38,0,Math.PI*2);ctx.fill();}
+      ctx.strokeStyle='#263e4b';ctx.lineWidth=50;drawPath([[cx-1200,cy+400],[cx-500,cy-220],[cx+300,cy+160],[cx+1200,cy-450]],50);
+    } else if(k==='coast'){
+      ctx.fillStyle='#1f6e7d';ctx.globalAlpha=.72;ctx.beginPath();ctx.arc(cx+650,cy,780,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+      ctx.strokeStyle='#9bd4df';ctx.lineWidth=28;drawPath([[cx-300,cy-1150],[cx+150,cy-500],[cx+700,cy+150],[cx+1100,cy+1150]],28);
+    } else if(k==='volcano'){
+      ctx.fillStyle='#6a271f';ctx.beginPath();ctx.arc(cx,cy,620,0,Math.PI*2);ctx.fill();ctx.fillStyle='#d5542a';ctx.beginPath();ctx.arc(cx,cy,340,0,Math.PI*2);ctx.fill();ctx.fillStyle='#111';ctx.beginPath();ctx.arc(cx,cy,110,0,Math.PI*2);ctx.fill();
+    } else if(k==='meadow'){
+      ctx.strokeStyle='#718b55';ctx.lineWidth=36;drawPath([[cx-1200,cy+700],[cx-600,cy-100],[cx+100,cy+350],[cx+1200,cy-650]],36);
+      for(let i=0;i<60;i++){const x=cx-1150+((i*211)%2300),y=cy-1150+((i*157)%2300);ctx.fillStyle='#718f4b';ctx.beginPath();ctx.arc(x,y,10,0,Math.PI*2);ctx.fill();}
+    } else if(k==='ruins'||k==='ancient'){
+      ctx.strokeStyle=k==='ancient'?'#9e8f72':'#78698a';ctx.lineWidth=60;ctx.strokeRect(cx-620,cy-620,1240,1240);
+      ctx.fillStyle=k==='ancient'?'#6c5b47':'#5b5268';for(let i=0;i<18;i++){const x=cx-500+((i*173)%1000),y=cy-500+((i*257)%1000);ctx.fillRect(x,y,65,65);}
+    } else if(k==='abyss'){
+      ctx.strokeStyle='#5d2b7a';ctx.lineWidth=40;for(let i=0;i<7;i++){ctx.beginPath();ctx.arc(cx,cy,180+i*150,0,Math.PI*2);ctx.stroke();}ctx.fillStyle='#160d20';ctx.beginPath();ctx.arc(cx,cy,240,0,Math.PI*2);ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  drawWorld=function(){
+    ctx.fillStyle='#34452f';ctx.fillRect(0,0,WORLD_W2,WORLD_W2);
+    for(const k of Object.keys(C)){const poly=cells[k];const z=ZONES[k];ctx.beginPath();ctx.moveTo(poly[0][0],poly[0][1]);for(let i=1;i<poly.length;i++)ctx.lineTo(poly[i][0],poly[i][1]);ctx.closePath();ctx.fillStyle=z.color;ctx.globalAlpha=.96;ctx.fill();}
+    ctx.globalAlpha=1;
+    /* 마을 중심 연결망 + 지역 간 2차 도로 */
+    const T=C.town;
+    const major=['meadow','forest','mountain','dungeon','swamp','cave','ancient','volcano','abyss'];
+    for(const k of major)drawPath([T,C[k]],92);
+    drawPath([C.deepforest,C.forest,C.snowfield,C.ruins,C.coast],72);
+    drawPath([C.meadow,C.cave,C.desert,C.volcano],72);
+    drawPath([C.swamp,C.wasteland,C.ancient,C.coast],72);
+    for(const k of Object.keys(C))decoration(k);
+    for(const k of Object.keys(C)){const poly=cells[k];const active=k===game.currentZone;ctx.save();ctx.beginPath();ctx.moveTo(poly[0][0],poly[0][1]);for(let i=1;i<poly.length;i++)ctx.lineTo(poly[i][0],poly[i][1]);ctx.closePath();ctx.strokeStyle=active?'#00f5ff':'rgba(255,255,255,.10)';ctx.lineWidth=active?6:2;ctx.stroke();ctx.fillStyle='rgba(0,0,0,.28)';ctx.font='bold 28px Arial';ctx.textAlign='center';ctx.fillText(`${ZONES[k].name}`,C[k][0],C[k][1]);ctx.restore();}
+  };
+
+  drawMinimap=function(){
+    mCtx.clearRect(0,0,mCanvas.width,mCanvas.height);const sc=mCanvas.width/WORLD_W2;mCtx.fillStyle='#34452f';mCtx.fillRect(0,0,mCanvas.width,mCanvas.height);
+    for(const k of Object.keys(C)){const p=cells[k];mCtx.beginPath();mCtx.moveTo(p[0][0]*sc,p[0][1]*sc);for(let i=1;i<p.length;i++)mCtx.lineTo(p[i][0]*sc,p[i][1]*sc);mCtx.closePath();mCtx.fillStyle=ZONES[k].color;mCtx.globalAlpha=.9;mCtx.fill();mCtx.globalAlpha=1;mCtx.strokeStyle=k===game.currentZone?'#00f5ff':'rgba(255,255,255,.18)';mCtx.lineWidth=k===game.currentZone?2:1;mCtx.stroke();}
+    mCtx.strokeStyle='#6d5b46';mCtx.lineWidth=Math.max(2,10*sc);mCtx.lineCap='round';
+    const line=(a,b)=>{mCtx.beginPath();mCtx.moveTo(a[0]*sc,a[1]*sc);mCtx.lineTo(b[0]*sc,b[1]*sc);mCtx.stroke();};
+    for(const k of Object.keys(C))if(k!=='town')line(C.town,C[k]);
+    mCtx.fillStyle='#00f5ff';mCtx.beginPath();mCtx.arc(game.player.x*sc,game.player.y*sc,5,0,Math.PI*2);mCtx.fill();
+  };
+
+  drawBigMap=function(){
+    const rect=bigMap.getBoundingClientRect();bigMap.width=Math.max(500,Math.floor(rect.width));bigMap.height=Math.max(400,Math.floor(rect.height));const w=bigMap.width,h=bigMap.height;const sc=Math.min(w,h)/WORLD_W2,ox=(w-WORLD_W2*sc)/2,oy=(h-WORLD_W2*sc)/2;
+    bigMapCtx.clearRect(0,0,w,h);bigMapCtx.fillStyle='#34452f';bigMapCtx.fillRect(0,0,w,h);
+    for(const k of Object.keys(C)){const p=cells[k];bigMapCtx.beginPath();bigMapCtx.moveTo(ox+p[0][0]*sc,oy+p[0][1]*sc);for(let i=1;i<p.length;i++)bigMapCtx.lineTo(ox+p[i][0]*sc,oy+p[i][1]*sc);bigMapCtx.closePath();bigMapCtx.fillStyle=ZONES[k].color;bigMapCtx.globalAlpha=.95;bigMapCtx.fill();bigMapCtx.globalAlpha=1;bigMapCtx.strokeStyle=k===game.currentZone?'#00f5ff':'rgba(255,255,255,.20)';bigMapCtx.lineWidth=k===game.currentZone?4:1.5;bigMapCtx.stroke();bigMapCtx.fillStyle='#fff';bigMapCtx.font='bold 14px Arial';bigMapCtx.textAlign='center';bigMapCtx.fillText(`${ZONES[k].name} Lv.${ZONES[k].minLevel}+`,ox+C[k][0]*sc,oy+C[k][1]*sc);}
+    bigMapCtx.strokeStyle='#6d5b46';bigMapCtx.lineWidth=Math.max(3,11*sc);bigMapCtx.lineCap='round';for(const k of Object.keys(C))if(k!=='town'){bigMapCtx.beginPath();bigMapCtx.moveTo(ox+C.town[0]*sc,oy+C.town[1]*sc);bigMapCtx.lineTo(ox+C[k][0]*sc,oy+C[k][1]*sc);bigMapCtx.stroke();}
+    bigMapCtx.fillStyle='#00f5ff';bigMapCtx.beginPath();bigMapCtx.arc(ox+game.player.x*sc,oy+game.player.y*sc,6,0,Math.PI*2);bigMapCtx.fill();
+  };
+
+  /* 걸어서 다른 지역으로 넘어가도 지역이 자연스럽게 바뀜. 빈 공간 없이 모든 월드 좌표가 어느 지역엔가 속한다. */
+  const regionKeys=Object.keys(C);
+  function nearestRegion(x,y){let best='town',bd=Infinity;for(const k of regionKeys){const d=Math.hypot(x-C[k][0],y-C[k][1]);if(d<bd){bd=d;best=k;}}return best;}
+  const baseUpdatePlayer=updatePlayer;
+  updatePlayer=function(){
+    baseUpdatePlayer();
+    if(!gameStarted||gameOver)return;
+    const next=nearestRegion(game.player.x,game.player.y);
+    if(next!==game.currentZone){
+      const prev=game.currentZone;game.currentZone=next;currentWorldSize=WORLD_W2;
+      game.monsters=[];game.bullets=[];game.groundItems=[];game.effects=[];lastSpawnTime=performance.now()+500;nearbyStructure=null;
+      if(game.effects)game.effects.push({type:'zoneSpawn',x:game.player.x,y:game.player.y,start:performance.now(),duration:700});
+      if(typeof sound==='function')sound(330,.2,'triangle');
+      initZoneSelect();drawMinimap();if(typeof drawBigMap==='function')drawBigMap();
+    }
+  };
+
+  /* 지역별 초대형 맵에서도 시작/재시작은 무조건 마을 중앙 */
+  const oldStart= startGame; startGame=function(){const r=oldStart.apply(this,arguments);putPlayerInTown();return r;};
+  const oldRestart= restartGame; restartGame=function(){const r=oldRestart.apply(this,arguments);putPlayerInTown();return r;};
+
+  currentWorldSize=WORLD_W2;
+  drawWorld();drawMinimap();if(typeof drawBigMap==='function')drawBigMap();
+})();
+</script>
+
+<script>
+/* FINAL WORLD/ZONE FIX
+   - 시작/재시작은 항상 마을 중앙
+   - 마을 시설/구조물 복구
+   - 레벨 부족 지역은 물리적으로 진입 불가 + 알림
+   - 몬스터는 자기 지역 밖으로 이동하지 않음
+   - 몬스터는 다른 지역의 플레이어를 감지하지 않음
+*/
+(function(){
+  const WORLD=12000;
+  const C={
+    town:[6000,6000],meadow:[3300,6000],forest:[4200,4200],deepforest:[2100,3000],mountain:[6000,3300],
+    snowfield:[8700,2700],ruins:[9300,4500],coast:[9300,7000],desert:[8700,9300],volcano:[6000,9300],
+    wasteland:[3300,9000],swamp:[2100,7200],cave:[4000,7200],dungeon:[6000,4500],ancient:[7200,7200],abyss:[6000,10800]
+  };
+  function clip(poly,A,B,D){
+    const out=[]; if(!poly.length)return out;
+    const side=p=>A*p[0]+B*p[1]-D;
+    for(let i=0;i<poly.length;i++){
+      const P=poly[i],Q=poly[(i+1)%poly.length],sp=side(P),sq=side(Q);
+      const inp=sp<=0,inq=sq<=0;
+      if(inp&&inq)out.push(Q);
+      else if(inp&&!inq){const t=sp/(sp-sq);out.push([P[0]+(Q[0]-P[0])*t,P[1]+(Q[1]-P[1])*t]);}
+      else if(!inp&&inq){const t=sp/(sp-sq);out.push([P[0]+(Q[0]-P[0])*t,P[1]+(Q[1]-P[1])*t]);out.push(Q);}
+    }
+    return out;
+  }
+  function makeCell(key){
+    const [x,y]=C[key];let poly=[[0,0],[WORLD,0],[WORLD,WORLD],[0,WORLD]];
+    for(const other of Object.keys(C)){
+      if(other===key)continue;
+      const [ox,oy]=C[other];
+      poly=clip(poly,2*(ox-x),2*(oy-y),ox*ox+oy*oy-x*x-y*y);
+      if(!poly.length)break;
+    }
+    return poly;
+  }
+  const cells={};Object.keys(C).forEach(k=>cells[k]=makeCell(k));
+  function inPoly(x,y,poly){let inside=false;if(!poly||poly.length<3)return false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+    const xi=poly[i][0],yi=poly[i][1],xj=poly[j][0],yj=poly[j][1];
+    const hit=((yi>y)!==(yj>y))&&(x<((xj-xi)*(y-yi))/(yj-yi)+xi);if(hit)inside=!inside;
+  }return inside;}
+  function regionAt(x,y){for(const k of Object.keys(cells))if(inPoly(x,y,cells[k]))return k;return 'town';}
+  function notifyLock(key){
+    const z=ZONES[key];
+    const msg=`🔒 ${z?.name||key}은(는) Lv.${z?.minLevel||1}부터 이동할 수 있습니다.`;
+    const now=performance.now();
+    if(now>(game._zoneLockNoticeUntil||0)){game._zoneLockNoticeUntil=now+900;showDropNotification(msg);}
+  }
+  function townSpawn(){
+    if(!game||!game.player)return;
+    game.currentZone='town';currentWorldSize=WORLD;
+    game.player.x=C.town[0];game.player.y=C.town[1];
+    if(game.camera){game.camera.x=Math.max(0,game.player.x-(canvas.width/2));game.camera.y=Math.max(0,game.player.y-(canvas.height/2));}
+    game.monsters=[];game.bullets=[];game.groundItems=[];game.effects=[];nearbyStructure=null;lastSpawnTime=performance.now()+800;
+  }
+
+  /* 원래 마을 중심 시설을 큰 월드의 마을 중앙으로 복구 */
+  const townBase=[
+    {type:'shop',name:'🛍️ 상점',dx:-350,dy:-450,size:60,color:'#9b59b6',zone:'town'},
+    {type:'forge',name:'⚒️ 무기강화소',dx:-100,dy:-350,size:60,color:'#e74c3c',zone:'town'},
+    {type:'craft',name:'🛠️ 제작소',dx:150,dy:-350,size:60,color:'#f39c12',zone:'town'},
+    {type:'quest',name:'📜 마을 촌장',dx:0,dy:-800,size:58,color:'#00b894',zone:'town',npc:true},
+    {type:'job',job:'warrior',name:'⚔️ 전사 교관',dx:-480,dy:-250,size:52,color:'#c0392b',zone:'town',npc:true},
+    {type:'job',job:'mage',name:'🧙 마법사 길드',dx:0,dy:-250,size:52,color:'#8e44ad',zone:'town',npc:true},
+    {type:'job',job:'archer',name:'🏹 궁수 길드',dx:480,dy:-250,size:52,color:'#27ae60',zone:'town',npc:true},
+    {type:'npc',name:'💬 마을 안내자',dx:480,dy:0,size:50,color:'#3498db',zone:'town',npc:true}
+  ];
+  for(const b of townBase){
+    const exists=STRUCTURES.some(s=>s.type===b.type && s.name===b.name && (s.zone||'town')==='town');
+    if(!exists)STRUCTURES.push({...b,x:C.town[0]+b.dx,y:C.town[1]+b.dy});
+    else{
+      const s=STRUCTURES.find(s=>s.type===b.type && s.name===b.name && (s.zone||'town')==='town');
+      if(s){s.x=C.town[0]+b.dx;s.y=C.town[1]+b.dy;}
+    }
+  }
+  /* 혹시 구버전 구조물이 남아 있으면 월드 바깥으로 두지 않고 마을 중심 주변으로 보정 */
+  for(const s of STRUCTURES){
+    if((s.zone||'town')==='town' && Number.isFinite(s.x) && Number.isFinite(s.y) && (s.x<500||s.x>11500||s.y<500||s.y>11500)){
+      const m=townBase.find(t=>t.name===s.name);if(m){s.x=C.town[0]+m.dx;s.y=C.town[1]+m.dy;}
+    }
+  }
+
+  /* 지역별 퀘스트 NPC 복구: 각 지역 안전 구역 가장자리에 배치 */
+  const regionalQuestNPCs = [
+    {zone:'forest',name:'📜 숲의 안내자',dx:0,dy:-180,color:'#2ecc71'},
+    {zone:'mountain',name:'📜 산악 정찰병',dx:0,dy:-180,color:'#8e7dff'},
+    {zone:'dungeon',name:'📜 던전 사제',dx:0,dy:-180,color:'#9b59b6'},
+    {zone:'desert',name:'📜 사막 탐험가',dx:0,dy:-180,color:'#e0a458'},
+    {zone:'ruins',name:'📜 폐허 연구자',dx:0,dy:-180,color:'#b58b62'}
+  ];
+  for(const qnpc of regionalQuestNPCs){
+    const c=C[qnpc.zone];
+    if(!c) continue;
+    let s=STRUCTURES.find(x=>x.type==='quest' && x.zone===qnpc.zone);
+    if(!s){
+      STRUCTURES.push({type:'quest',name:qnpc.name,x:c[0]+qnpc.dx,y:c[1]+qnpc.dy,size:58,color:qnpc.color,zone:qnpc.zone,npc:true});
+    }else{
+      s.name=qnpc.name; s.x=c[0]+qnpc.dx; s.y=c[1]+qnpc.dy; s.color=qnpc.color; s.size=58; s.npc=true;
+    }
+  }
+
+  /* 시작/재시작 강제 스폰 */
+  const oldStart=window.startGame;
+  window.startGame=function(){const r=oldStart.apply(this,arguments);townSpawn();setTimeout(townSpawn,0);setTimeout(townSpawn,80);return r;};
+  const oldRestart=window.restartGame;
+  window.restartGame=function(){const r=oldRestart.apply(this,arguments);townSpawn();setTimeout(townSpawn,0);return r;};
+
+  /* 걷기 지역 판정은 중심점 근처가 아니라 실제 Voronoi 지역으로 처리 */
+  const oldUpdatePlayer=window.updatePlayer;
+  window.updatePlayer=function(){
+    const beforeX=game.player.x,beforeY=game.player.y,beforeZone=game.currentZone||'town';
+    oldUpdatePlayer();
+    if(!gameStarted||gameOver)return;
+    const next=regionAt(game.player.x,game.player.y);
+    if(next!==beforeZone){
+      const min=(ZONES[next]?.minLevel||1);
+      if((game.player.level||1)<min){
+        game.player.x=beforeX;game.player.y=beforeY;game.currentZone=beforeZone;currentWorldSize=WORLD;notifyLock(next);
+        return;
+      }
+      game.currentZone=next;currentWorldSize=WORLD;
+      game.monsters=[];game.bullets=[];game.groundItems=[];game.effects=[];lastSpawnTime=performance.now()+500;nearbyStructure=null;
+      initZoneSelect();if(typeof drawMinimap==='function')drawMinimap();if(typeof drawBigMap==='function')drawBigMap();
+    }else{
+      game.currentZone=beforeZone;
+    }
+  };
+
+  /* 몬스터 지역 격리: 각 몬스터는 생성된 지역에 고정 */
+  const oldSpawn=window.spawnMonster;
+  window.spawnMonster=function(){
+    const before=game.monsters.length;oldSpawn();
+    if(game.monsters.length>before){
+      const m=game.monsters[game.monsters.length-1];m.region=game.currentZone;
+    }
+  };
+
+  const oldUpdateMonsters=window.updateMonsters;
+  window.updateMonsters=function(){
+    if(!gameStarted||gameOver||isPaused)return;
+    const snapshots=new Map();
+    for(const m of game.monsters){
+      if(!m.region)m.region=game.currentZone||'town';
+      snapshots.set(m,[m.x,m.y,m.vision]);
+      if(m.region!==game.currentZone)m.vision=0;
+    }
+    oldUpdateMonsters();
+    for(const m of game.monsters){
+      const s=snapshots.get(m);const cell=cells[m.region];
+      /* 다른 지역이면 아예 플레이어를 감지할 수 없고, 셀 밖으로 나갈 수도 없음 */
+      if(m.region!==game.currentZone){m.x=s?s[0]:m.x;m.y=s?s[1]:m.y;m.vision=0;continue;}
+      if(cell&&!inPoly(m.x,m.y,cell)){m.x=s?s[0]:C[m.region][0];m.y=s?s[1]:C[m.region][1];}
+      if(s)m.vision=s[2];
+    }
+  };
+
+  /* 지역 선택 버튼도 레벨 부족 지역은 즉시 차단 */
+  const oldChangeZone=window.changeZone;
+  window.changeZone=function(key){
+    const z=ZONES[key];if(!z||!gameStarted||gameOver)return;
+    if((game.player.level||1)<(z.minLevel||1)){notifyLock(key);return;}
+    return oldChangeZone(key);
+  };
+
+  /* UI가 사막으로 잘못 표시되는 것을 방지: 현재 위치의 실제 지역을 우선 */
+  const oldUpdateUI=window.updateUI;
+  window.updateUI=function(){
+    if(gameStarted&&!gameOver)game.currentZone=regionAt(game.player.x,game.player.y);
+    return oldUpdateUI();
+  };
+
+  game.currentZone='town';currentWorldSize=WORLD;townSpawn();
+})();
+</script>
+
+
+<script>
+/* FINAL ZONE CLEANUP FIX
+   - 숲은 Lv.1부터 입장
+   - 촌장은 마을 중앙에 고정
+   - 자동 지역 판정으로 레벨 부족 알림이 반복되지 않음
+   - 레벨 제한 알림은 지역 이동을 직접 시도할 때만 표시
+*/
+(function(){
+  const WORLD=12000;
+  const TOWN=[6000,6000];
+
+  if(typeof ZONES!=='undefined'){
+    ZONES.town.minLevel=1;
+    ZONES.forest.minLevel=1;
+    /* 현재 월드 설계의 사막 제한은 유지하되 자동 판정에서는 알림하지 않음 */
+    ZONES.desert.minLevel=33;
+  }
+
+  /* 촌장/마을 시설을 반드시 마을에 고정 */
+  if(typeof STRUCTURES!=='undefined'){
+    const townLayout={
+      '🛍️ 상점':[-350,-450],
+      '⚒️ 무기강화소':[-100,-350],
+      '🛠️ 제작소':[150,-350],
+      '📜 마을 촌장':[0,-800],
+      '⚔️ 전사 교관':[-480,-250],
+      '🧙 마법사 길드':[0,-250],
+      '🏹 궁수 길드':[480,-250],
+      '💬 마을 안내자':[480,0]
+    };
+    for(const s of STRUCTURES){
+      if((s.zone||'town')!=='town') continue;
+      const pos=townLayout[s.name];
+      if(pos){s.x=TOWN[0]+pos[0];s.y=TOWN[1]+pos[1];}
+    }
+  }
+
+  function lockNotice(key){
+    const z=ZONES[key];
+    if(!z) return;
+    const now=performance.now();
+    if(now<(game._manualZoneNoticeUntil||0)) return;
+    game._manualZoneNoticeUntil=now+1200;
+    showDropNotification(`🔒 ${z.name}은(는) Lv.${z.minLevel}부터 이동할 수 있습니다.`);
+  }
+
+  /* 직접 지역 이동을 시도할 때만 레벨 제한 알림 */
+  if(typeof window.changeZone==='function'){
+    const previousChangeZone=window.changeZone;
+    window.changeZone=function(key){
+      const z=ZONES[key];
+      if(!z || !gameStarted || gameOver) return;
+      if((game.player.level||1)<(z.minLevel||1)){
+        lockNotice(key);
+        return;
+      }
+      return previousChangeZone(key);
+    };
+  }
+
+  /* 자동 이동 시 레벨 부족 지역에 들어가려 하면 이동만 되돌리고 알림은 띄우지 않음 */
+  if(typeof window.updatePlayer==='function'){
+    const previousUpdatePlayer=window.updatePlayer;
+    window.updatePlayer=function(){
+      const bx=game.player.x, by=game.player.y, bz=game.currentZone||'town';
+      previousUpdatePlayer();
+      if(!gameStarted || gameOver) return;
+
+      const next=game.currentZone;
+      if(next && ZONES[next] && (game.player.level||1)<(ZONES[next].minLevel||1)){
+        game.player.x=bx;
+        game.player.y=by;
+        game.currentZone=bz;
+        return;
+      }
+
+      /* 시작 직후/마을 근처에서 지역 상태가 튀는 것을 방지 */
+      if(Math.hypot(game.player.x-TOWN[0],game.player.y-TOWN[1])<900 && bz==='town'){
+        game.currentZone='town';
+      }
+    };
+  }
+
+  /* updateUI가 위치 때문에 사막을 강제로 표시하지 않도록 현재 확정 지역을 사용 */
+  if(typeof window.updateUI==='function'){
+    const previousUpdateUI=window.updateUI;
+    window.updateUI=function(){
+      const saved=game.currentZone;
+      const result=previousUpdateUI();
+      if(saved && ZONES[saved] && game.currentZone!==saved){
+        game.currentZone=saved;
+      }
+      return result;
+    };
+  }
+
+  /* 첫 시작/재시작은 항상 마을 */
+  function townSpawnFinal(){
+    if(!game || !game.player) return;
+    game.currentZone='town';
+    currentWorldSize=WORLD;
+    game.player.x=TOWN[0];
+    game.player.y=TOWN[1];
+    if(game.camera){
+      game.camera.x=Math.max(0,game.player.x-canvas.width/2);
+      game.camera.y=Math.max(0,game.player.y-canvas.height/2);
+    }
+  }
+  const oldStart=window.startGame;
+  window.startGame=function(){
+    const r=oldStart.apply(this,arguments);
+    townSpawnFinal();
+    setTimeout(townSpawnFinal,0);
+    setTimeout(townSpawnFinal,120);
+    return r;
+  };
+  const oldRestart=window.restartGame;
+  window.restartGame=function(){
+    const r=oldRestart.apply(this,arguments);
+    townSpawnFinal();
+    setTimeout(townSpawnFinal,0);
+    return r;
+  };
+
+  game.currentZone='town';
+  currentWorldSize=WORLD;
+  townSpawnFinal();
+})();
+</script>
+
+<script>
+(function(){
+  const WORLD=12000;
+  function getRegion(x,y){
+    if(typeof authoritativeRegion==='function') return authoritativeRegion(x,y);
+    if(typeof regionAt==='function') return regionAt(x,y);
+    return game.currentZone||'town';
+  }
+  function movementIntent(){
+    let dx=0,dy=0;
+    if(game.keys?.w||game.keys?.arrowup)dy--;
+    if(game.keys?.s||game.keys?.arrowdown)dy++;
+    if(game.keys?.a||game.keys?.arrowleft)dx--;
+    if(game.keys?.d||game.keys?.arrowright)dx++;
+    if(!dx&&!dy)return [0,0];
+    const len=Math.hypot(dx,dy); return [dx/len,dy/len];
+  }
+  function lockMessageSuppressed(msg){
+    return /Lv\.\d+부터 이동할 수 있습니다/.test(String(msg));
+  }
+  const baseNotify=window.showDropNotification;
+  if(baseNotify){
+    window.showDropNotification=function(msg){
+      if(lockMessageSuppressed(msg) && !window.__allowBoundaryLockNotice) return;
+      return baseNotify.apply(this,arguments);
+    };
+  }
+  let lastBlockedKey='', lastBlockedAt=0;
+  window.updatePlayer=function(){
+    if(!gameStarted||gameOver)return;
+    const [dx,dy]=movementIntent();
+    if(dx===0&&dy===0){
+      return;
+    }
+    if(typeof returnChannelStart!=='undefined' && returnChannelStart) cancelReturnChannel();
+    const step=game.player.speed||0;
+    const tx=game.player.x+dx*step;
+    const ty=game.player.y+dy*step;
+    const current=getRegion(game.player.x,game.player.y);
+    const target=getRegion(tx,ty);
+    const z=ZONES[target];
+    if(target!==current && z && (game.player.level||1)<(z.minLevel||1)){
+      const now=performance.now();
+      const key=current+'>'+target;
+      if(key!==lastBlockedKey || now-lastBlockedAt>1000){
+        lastBlockedKey=key;lastBlockedAt=now;
+        window.__allowBoundaryLockNotice=true;
+        showDropNotification(`🔒 ${z.name}은(는) Lv.${z.minLevel}부터 이동할 수 있습니다.`);
+        window.__allowBoundaryLockNotice=false;
+      }
+      return; // invisible wall: position never enters the locked region
+    }
+    game.player.x=clamp(tx,game.player.radius,WORLD-game.player.radius);
+    game.player.y=clamp(ty,game.player.radius,WORLD-game.player.radius);
+    const next=getRegion(game.player.x,game.player.y);
+    if(next!==game.currentZone){
+      game.currentZone=next;currentWorldSize=WORLD;
+      if(typeof clearDynamicOnZoneChange==='function')clearDynamicOnZoneChange();
+      game.monsters=[];game.bullets=[];game.groundItems=[];
+      if(game.effects)game.effects.push({type:'zoneSpawn',x:game.player.x,y:game.player.y,start:performance.now(),duration:850});
+      if(typeof initZoneSelect==='function')initZoneSelect();
+    }
+    game.player.movementAnimation=(game.player.movementAnimation||0)+0.2;
+  };
+
+  // Draw locked-region walls only on the boundary edges of the current region.
+  const baseDrawWorld=window.drawWorld;
+  window.drawWorld=function(){
+    baseDrawWorld.apply(this,arguments);
+    if(!gameStarted||!game.currentZone||typeof cells==='undefined'||!cells[game.currentZone])return;
+    const poly=cells[game.currentZone];
+    if(!poly||poly.length<3)return;
+    let cx=0,cy=0;for(const p of poly){cx+=p[0];cy+=p[1];}cx/=poly.length;cy/=poly.length;
+    ctx.save();ctx.strokeStyle='#d32f2f';ctx.lineWidth=26;ctx.lineCap='round';ctx.shadowColor='rgba(255,80,80,.5)';ctx.shadowBlur=12;
+    for(let i=0;i<poly.length;i++){
+      const a=poly[i],b=poly[(i+1)%poly.length];
+      const mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2;
+      const nx=mx-cx,ny=my-cy,len=Math.hypot(nx,ny)||1;
+      const sx=mx+nx/len*25,sy=my+ny/len*25;
+      const target=getRegion(sx,sy); const z=ZONES[target];
+      if(target!==game.currentZone && z && (game.player.level||1)<(z.minLevel||1)){
+        ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();
+      }
+    }
+    ctx.restore();
+  };
+})();
+
 </script>
 </body>
 </html>
+<script>
+/* FINAL MAP/ZONE AUTHORITY
+   - gameplay region detection and world-map regions use the exact same Voronoi rule
+   - automatic region changes never show level-lock notifications
+   - level-lock notifications happen only on explicit region-travel requests
+   - forest Lv.1
+   - large map UI
+*/
+(function(){
+  const WORLD=12000;
+  const C={
+    town:[6000,6000],meadow:[3300,6000],forest:[4200,4200],deepforest:[2100,3000],
+    mountain:[6000,3300],dungeon:[6000,4500],snowfield:[8700,2700],ruins:[9300,4500],
+    coast:[9300,7000],desert:[8700,9300],volcano:[6000,9300],wasteland:[3300,9000],
+    swamp:[2100,7200],cave:[4000,7200],ancient:[7200,7200],abyss:[6000,10800]
+  };
+
+  currentWorldSize=WORLD;
+  if(typeof ZONES!=='undefined'){
+    ZONES.forest.minLevel=1;
+    ZONES.town.minLevel=1;
+    ZONES.meadow.minLevel=3;
+    ZONES.deepforest.minLevel=8;
+    ZONES.mountain.minLevel=12;
+    ZONES.dungeon.minLevel=15;
+    ZONES.snowfield.minLevel=18;
+    ZONES.cave.minLevel=21;
+    ZONES.ruins.minLevel=24;
+    ZONES.coast.minLevel=27;
+    ZONES.swamp.minLevel=30;
+    ZONES.desert.minLevel=33;
+    ZONES.wasteland.minLevel=36;
+    ZONES.ancient.minLevel=40;
+    ZONES.volcano.minLevel=45;
+    ZONES.abyss.minLevel=55;
+    for(const k of Object.keys(C)){
+      if(ZONES[k]){ ZONES[k].x=C[k][0]; ZONES[k].y=C[k][1]; ZONES[k].worldSize=WORLD; }
+    }
+  }
+
+  /* Exact same region rule used by map layout: nearest region center. */
+  const keys=Object.keys(C);
+  function authoritativeRegion(x,y){
+    let best='town',bestD=Infinity;
+    for(const k of keys){
+      const dx=x-C[k][0],dy=y-C[k][1],d=dx*dx+dy*dy;
+      if(d<bestD){bestD=d;best=k;}
+    }
+    return best;
+  }
+  window.authoritativeRegion=authoritativeRegion;
+
+  function clearDynamicOnZoneChange(){
+    game.monsters=[];game.bullets=[];game.groundItems=[];
+    nearbyStructure=null;
+    if(typeof lastSpawnTime!=='undefined') lastSpawnTime=performance.now()+500;
+    initZoneSelect();
+    if(typeof drawMinimap==='function')drawMinimap();
+    if(typeof drawBigMap==='function')drawBigMap();
+  }
+
+  function manualZoneRequest(key){
+    const z=ZONES[key];
+    if(!z || !gameStarted || gameOver)return;
+    const lv=game.player.level||1;
+    if(lv<(z.minLevel||1)){
+      const now=performance.now();
+      if(now>(game._manualTravelNoticeUntil||0)){
+        game._manualTravelNoticeUntil=now+1000;
+        showDropNotification(`🔒 ${z.name}은(는) Lv.${z.minLevel}부터 이동할 수 있습니다.`);
+      }
+      return;
+    }
+    const prev=game.currentZone;
+    game.currentZone=key;
+    currentWorldSize=WORLD;
+    if(prev!==key){
+      const target=C[key];
+      game.player.x=target[0]; game.player.y=target[1];
+      clearDynamicOnZoneChange();
+      /* 기존 지역 이동 스폰 모션만 유지 */
+      if(game.effects && typeof performance!=='undefined'){
+        game.effects.push({type:'zoneSpawn',x:game.player.x,y:game.player.y,start:performance.now(),duration:850});
+      }
+    }
+  }
+  window.manualZoneRequest=manualZoneRequest;
+
+  /* Legacy changeZone calls become silent/safe; only manualZoneRequest announces locks. */
+  window.changeZone=function(key){
+    const z=ZONES[key];
+    if(!z || !gameStarted || gameOver)return;
+    if((game.player.level||1)<(z.minLevel||1))return;
+    const prev=game.currentZone;
+    game.currentZone=key;currentWorldSize=WORLD;
+    if(prev!==key){
+      game.player.x=C[key][0];game.player.y=C[key][1];clearDynamicOnZoneChange();
+      if(game.effects)game.effects.push({type:'zoneSpawn',x:game.player.x,y:game.player.y,start:performance.now(),duration:850});
+    }
+  };
+
+  /* Region selector is rebuilt so every explicit click goes through the manual gate. */
+  window.initZoneSelect=function(){
+    const box=document.getElementById('zone-buttons');
+    if(!box)return;
+    box.innerHTML='';
+    for(const key of keys){
+      const z=ZONES[key]; if(!z)continue;
+      const btn=document.createElement('button');
+      btn.className='zone-btn'+(key===game.currentZone?' active':'');
+      btn.textContent=`${z.name} · Lv.${z.minLevel}+`;
+      const locked=(game.player.level||1)<(z.minLevel||1);
+      if(locked)btn.classList.add('locked');
+      btn.onclick=(e)=>{e.stopPropagation();manualZoneRequest(key);};
+      box.appendChild(btn);
+    }
+  };
+
+  /* Walking: same rule as map. Crossing into a locked region is blocked silently. */
+  const oldUpdatePlayer=window.updatePlayer;
+  if(oldUpdatePlayer){
+    window.updatePlayer=function(){
+      const bx=game.player.x,by=game.player.y,bz=game.currentZone||'town';
+      oldUpdatePlayer.apply(this,arguments);
+      if(!gameStarted||gameOver)return;
+      const next=authoritativeRegion(game.player.x,game.player.y);
+      const z=ZONES[next];
+      if(z && (game.player.level||1)<(z.minLevel||1)){
+        game.player.x=bx;game.player.y=by;game.currentZone=bz;currentWorldSize=WORLD;return;
+      }
+      if(next!==bz){
+        game.currentZone=next;currentWorldSize=WORLD;clearDynamicOnZoneChange();
+        if(game.effects)game.effects.push({type:'zoneSpawn',x:game.player.x,y:game.player.y,start:performance.now(),duration:850});
+      }else{
+        game.currentZone=next;
+      }
+    };
+  }
+
+  /* UI always reads the authoritative gameplay region, never an unrelated old zone calculation. */
+  const oldUpdateUI=window.updateUI;
+  if(oldUpdateUI){
+    window.updateUI=function(){
+      if(gameStarted&&!gameOver)game.currentZone=authoritativeRegion(game.player.x,game.player.y);
+      return oldUpdateUI.apply(this,arguments);
+    };
+  }
+
+  /* World map and minimap display the same region membership used by gameplay. */
+  if(typeof drawBigMap==='function'){
+    const oldDrawBigMap=drawBigMap;
+    window.drawBigMap=function(){return oldDrawBigMap.apply(this,arguments);};
+  }
+  if(typeof drawMinimap==='function'){
+    const oldDrawMinimap=drawMinimap;
+    window.drawMinimap=function(){return oldDrawMinimap.apply(this,arguments);};
+  }
+
+  /* First spawn is always the town center. */
+  function forceTownSpawn(){
+    if(!game||!game.player)return;
+    game.currentZone='town';currentWorldSize=WORLD;
+    game.player.x=C.town[0];game.player.y=C.town[1];
+    if(game.camera){
+      game.camera.x=Math.max(0,game.player.x-canvas.width/2);
+      game.camera.y=Math.max(0,game.player.y-canvas.height/2);
+    }
+    game.monsters=[];game.bullets=[];game.groundItems=[];nearbyStructure=null;
+    initZoneSelect();
+  }
+  const baseStart=window.startGame;
+  window.startGame=function(){const r=baseStart.apply(this,arguments);forceTownSpawn();setTimeout(forceTownSpawn,0);setTimeout(forceTownSpawn,120);return r;};
+  const baseRestart=window.restartGame;
+  window.restartGame=function(){const r=baseRestart.apply(this,arguments);forceTownSpawn();setTimeout(forceTownSpawn,0);return r;};
+
+  /* Make the visible maps larger without changing the world rules. */
+  const css=document.createElement('style');
+  css.id='final-map-size-fix';
+  css.textContent=`
+    #map-window{width:min(1080px,94vw)!important;height:min(860px,88vh)!important;}
+    #big-map{width:100%!important;height:calc(100% - 45px)!important;}
+    #minimap-container{top:24px!important;right:24px!important;padding:5px!important;}
+    #minimap{width:280px!important;height:280px!important;}
+    @media(max-width:800px){
+      #map-window{width:96vw!important;height:82vh!important;}
+      #minimap{width:190px!important;height:190px!important;}
+    }
+  `;
+  document.head.appendChild(css);
+
+  game.currentZone='town';currentWorldSize=WORLD;forceTownSpawn();
+})();
+</script>
+<script>
+/* FINAL PATCH — locked-region notice only at an actual boundary crossing attempt */
+(function(){
+  const previousUpdatePlayer = window.updatePlayer;
+  if(!previousUpdatePlayer) return;
+  window.updatePlayer = function(){
+    const beforeX = game.player.x;
+    const beforeY = game.player.y;
+    const beforeZone = game.currentZone || (typeof authoritativeRegion === 'function' ? authoritativeRegion(beforeX,beforeY) : 'town');
+
+    previousUpdatePlayer.apply(this, arguments);
+
+    if(!gameStarted || gameOver) return;
+
+    const moved = Math.hypot(game.player.x-beforeX, game.player.y-beforeY) > 0.01;
+    const nextZone = typeof authoritativeRegion === 'function'
+      ? authoritativeRegion(game.player.x, game.player.y)
+      : beforeZone;
+    const nextData = ZONES[nextZone];
+
+    if(nextZone !== beforeZone && nextData && (game.player.level||1) < (nextData.minLevel||1)){
+      /* Restore the exact pre-move position. No notification unless the player
+         actually tried to cross into a locked region. */
+      game.player.x = beforeX;
+      game.player.y = beforeY;
+      game.currentZone = beforeZone;
+      currentWorldSize = 12000;
+
+      if(moved){
+        const now = performance.now();
+        if(now > (game._boundaryLockNoticeUntil||0)){
+          game._boundaryLockNoticeUntil = now + 900;
+          showDropNotification(`🔒 ${nextData.name}은(는) Lv.${nextData.minLevel}부터 이동할 수 있습니다.`);
+        }
+      }
+      return;
+    }
+
+    if(nextZone !== beforeZone){
+      game.currentZone = nextZone;
+      currentWorldSize = 12000;
+      if(typeof nearbyStructure !== 'undefined') nearbyStructure = null;
+      if(game.effects){
+        game.effects.push({type:'zoneSpawn',x:game.player.x,y:game.player.y,start:performance.now(),duration:850});
+      }
+    }
+  };
+})();
+</script>
+
+
+<script>
+/* FINAL WORLD MONSTER/NPC FIX
+   - 촌장은 반드시 마을 중심에 배치
+   - 지역 이동 시 기존 몬스터를 삭제하지 않음
+   - 몬스터는 생성 지역(region)에 고정
+   - 다른 지역의 플레이어는 감지하지 않음
+   - 몬스터 최대 수/생성 빈도 증가
+*/
+(function(){
+  const WORLD_SIZE = 12000;
+  const TOWN_X = 6000, TOWN_Y = 6000;
+
+  /* 촌장 위치를 현재 월드의 마을 중심으로 강제 */
+  if(typeof STRUCTURES !== 'undefined'){
+    for(const s of STRUCTURES){
+      if(s && (s.name === '📜 마을 촌장' || s.name === '촌장')){
+        s.zone='town'; s.npc=true; s.x=TOWN_X; s.y=TOWN_Y-180;
+      }
+    }
+    if(!STRUCTURES.some(s=>s && s.name==='📜 마을 촌장')){
+      STRUCTURES.push({type:'quest',name:'📜 마을 촌장',x:TOWN_X,y:TOWN_Y-180,size:58,color:'#00b894',zone:'town',npc:true});
+    }
+  }
+
+  /* 지역 이동 때 몬스터를 전부 비우던 기존 래퍼를 차단한다. */
+  const oldChange = window.changeZone;
+  window.changeZone = function(key){
+    const before = game.currentZone;
+    if(typeof oldChange==='function') oldChange(key);
+    if(before !== game.currentZone){
+      /* 기존 changeZone 내부에서 삭제됐더라도, 이후 지역에 있는 몬스터는 유지한다는
+         의미로 현재 이후 생성분은 지역을 명시적으로 보존한다. */
+      for(const m of game.monsters){ if(!m.region) m.region=before || game.currentZone; }
+    }
+  };
+
+  /* 시작/재시작은 마을에서만 전체 몬스터를 초기화 */
+  const oldStart = window.startGame;
+  if(typeof oldStart==='function') window.startGame=function(){
+    oldStart();
+    game.currentZone='town';
+    currentWorldSize=WORLD_SIZE;
+    game.player.x=TOWN_X; game.player.y=TOWN_Y;
+    game.monsters=[];
+  };
+
+  /* 기존 지역 전환 후 초기화 래퍼가 배열을 비우는 것을 마지막 단계에서 복구하기는 어렵기 때문에
+     update 단계에서 지역별 보존 스냅샷을 유지한다. */
+  const persistent = new Map();
+  function stash(){
+    if(!game.monsters) return;
+    for(const m of game.monsters){
+      if(!m.region) m.region=game.currentZone||'town';
+      persistent.set(m,m.region);
+    }
+  }
+  function restore(){
+    if(!game.monsters) return;
+    for(const m of game.monsters){ if(!m.region) m.region=persistent.get(m)||game.currentZone||'town'; }
+  }
+
+  /* 더 많은 몬스터: 총 60마리까지, 생성 간격도 짧게 */
+  const originalSpawn = window.spawnMonster;
+  window.spawnMonster = function(){
+    if(!gameStarted || gameOver || isPaused || game.currentZone==='town') return;
+    if(game.monsters.length >= 60) return;
+    const zone=ZONES[game.currentZone];
+    if(!zone || !zone.spawns || !zone.spawns.length) return;
+    const safe=zone.safeRadius||0;
+    if(Math.hypot(game.player.x-zone.x,game.player.y-zone.y)<safe) return;
+    if(typeof originalSpawn==='function') originalSpawn();
+    if(game.monsters.length){
+      const m=game.monsters[game.monsters.length-1];
+      if(!m.region) m.region=game.currentZone;
+    }
+    stash();
+  };
+
+  /* 지역 이동/시간에 따른 삭제 방지 + 지역 외 몬스터 AI/감지 차단 */
+  const originalUpdate = window.updateMonsters;
+  window.updateMonsters = function(){
+    if(!gameStarted || gameOver || isPaused) return;
+    restore();
+    if(typeof originalUpdate==='function') originalUpdate();
+    if(!game.monsters) return;
+    for(const m of game.monsters){
+      const region=m.region||game.currentZone;
+      m.region=region;
+      if(region!==game.currentZone){
+        /* 위치 고정: 다른 지역의 플레이어를 추적하지 않음 */
+        if(!m._safeX){m._safeX=m.x;m._safeY=m.y;}
+        m.x=m._safeX;m.y=m._safeY;
+        m.vision=0;
+        m.target=null;
+      }else{
+        m._safeX=m.x;m._safeY=m.y;
+      }
+    }
+    stash();
+  };
+
+  /* 지역 이동 때 배열이 비워지는 구간을 감안해 지역별 몬스터를 별도 보관 */
+  const savedByRegion = {};
+  const originalUpdateLogic = window.updateLogic;
+  window.updateLogic = function(){
+    if(gameStarted && game.monsters){
+      for(const m of game.monsters){
+        if(!m.region)m.region=game.currentZone||'town';
+        const r=m.region; (savedByRegion[r] ||= new Set()).add(m);
+      }
+    }
+    if(typeof originalUpdateLogic==='function') originalUpdateLogic();
+    /* 현재 배열의 몬스터는 항상 region을 유지 */
+    if(game.monsters) for(const m of game.monsters) if(!m.region)m.region=game.currentZone||'town';
+  };
+
+  /* 현재 지역에서만 빠르게 보충 */
+  let lastMassSpawn=0;
+  const originalFrameUpdate=window.updateLogic;
+  /* 별도 타이머: 기존 스폰 루프와 충돌하지 않도록 보충만 담당 */
+  setInterval(function(){
+    if(!gameStarted || gameOver || isPaused || game.currentZone==='town') return;
+    const now=performance.now();
+    if(now-lastMassSpawn<900) return;
+    lastMassSpawn=now;
+    if(game.monsters.length<60) window.spawnMonster();
+  },900);
+})();
+</script>
