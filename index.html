@@ -2997,7 +2997,7 @@ function unequipArmor() {
 
 function startGame() {
     // 로그인 여부 확인
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("rpgAuthToken");
 
     // 로그인하지 않은 경우 로그인 페이지로 이동
     if (!token) {
