@@ -1231,125 +1231,6 @@ canvas {
  #hp-status{top:10px!important}.exp-status{top:50px!important}.mana-status{top:90px!important}
  #stats-toggle{top:130px!important;left:10px!important;}
 }
-
-/* ===== 메인메뉴 설정 (배경음악 / 조작방식) ===== */
-.menu-settings {
-    display: flex;
-    flex-direction: row;
-    gap: 14px;
-    margin: 18px 0 8px;
-    flex-wrap: wrap;
-    justify-content: center;
-}
-.setting-card {
-    background: rgba(0,0,0,0.55);
-    border: 2px solid #00f5ff;
-    border-radius: 10px;
-    padding: 12px 16px;
-    min-width: 200px;
-    text-align: center;
-}
-.setting-card h3 {
-    color: #00f5ff;
-    font-size: 14px;
-    margin-bottom: 10px;
-    letter-spacing: 0.5px;
-}
-.setting-row {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-    flex-wrap: wrap;
-}
-.setting-btn {
-    padding: 8px 14px !important;
-    font-size: 14px !important;
-    background: #333 !important;
-    color: #fff !important;
-    border: 2px solid #555 !important;
-    border-radius: 6px !important;
-    cursor: pointer;
-    font-weight: bold;
-    transition: all 0.2s;
-}
-.setting-btn:hover {
-    border-color: #00f5ff !important;
-    background: #222 !important;
-}
-.setting-btn.active {
-    background: #00f5ff !important;
-    color: #000 !important;
-    border-color: #00f5ff !important;
-    box-shadow: 0 0 12px rgba(0,245,255,0.4);
-}
-.setting-hint {
-    color: #888;
-    font-size: 11px;
-    margin-top: 8px;
-}
-
-/* 가상 조이스틱 */
-#virtual-joystick {
-    position: fixed;
-    left: 28px;
-    bottom: 120px;
-    width: 140px;
-    height: 140px;
-    z-index: 2147483000;
-    display: none;
-    pointer-events: none;
-    touch-action: none;
-}
-#virtual-joystick.visible {
-    display: block;
-    pointer-events: auto;
-}
-.joystick-base {
-    position: absolute;
-    width: 140px;
-    height: 140px;
-    border-radius: 50%;
-    background: rgba(0,0,0,0.45);
-    border: 3px solid rgba(0,245,255,0.55);
-    box-shadow: 0 0 18px rgba(0,245,255,0.25);
-}
-.joystick-stick {
-    position: absolute;
-    width: 58px;
-    height: 58px;
-    left: 41px;
-    top: 41px;
-    border-radius: 50%;
-    background: rgba(0,245,255,0.75);
-    border: 2px solid #fff;
-    box-shadow: 0 0 12px #00f5ff;
-    transition: transform 0.05s linear;
-}
-#joystick-attack-btn {
-    position: fixed;
-    right: 28px;
-    bottom: 140px;
-    width: 78px;
-    height: 78px;
-    border-radius: 50%;
-    background: rgba(255,71,87,0.85);
-    border: 3px solid #fff;
-    color: #fff;
-    font-weight: bold;
-    font-size: 15px;
-    z-index: 2147483000;
-    display: none;
-    box-shadow: 0 0 16px rgba(255,71,87,0.5);
-    touch-action: none;
-}
-#joystick-attack-btn.visible { display: flex; align-items: center; justify-content: center; }
-@media (max-width: 700px) {
-    #virtual-joystick { left: 16px; bottom: 100px; width: 120px; height: 120px; }
-    .joystick-base { width: 120px; height: 120px; }
-    .joystick-stick { width: 50px; height: 50px; left: 35px; top: 35px; }
-    #joystick-attack-btn { right: 16px; bottom: 110px; width: 68px; height: 68px; font-size: 13px; }
-}
-
 </style>
 </head>
 
@@ -1364,25 +1245,6 @@ canvas {
     <div class="name-input-wrap">
         <label for="player-name-input">플레이어 이름</label>
         <input id="player-name-input" maxlength="12" placeholder="이름을 입력하세요" autocomplete="off">
-    </div>
-
-    <div class="menu-settings">
-        <div class="setting-card">
-            <h3>🎵 배경음악</h3>
-            <div class="setting-row">
-                <button type="button" id="setting-bgm-on" class="setting-btn active" onclick="setBgmEnabled(true)">ON</button>
-                <button type="button" id="setting-bgm-off" class="setting-btn" onclick="setBgmEnabled(false)">OFF</button>
-            </div>
-            <div class="setting-hint">게임 중 지역별 BGM</div>
-        </div>
-        <div class="setting-card">
-            <h3>🎮 조작 방식</h3>
-            <div class="setting-row">
-                <button type="button" id="setting-ctrl-keyboard" class="setting-btn active" onclick="setControlMode('keyboard')">키보드</button>
-                <button type="button" id="setting-ctrl-joystick" class="setting-btn" onclick="setControlMode('joystick')">조이스틱</button>
-            </div>
-            <div class="setting-hint">모바일은 조이스틱 추천</div>
-        </div>
     </div>
 
     <div class="menu-buttons">
@@ -3424,7 +3286,9 @@ function renderInventory() {
         `;
 
         slot.title =
-            `${data.name}\n클릭: 사용/장착\n더블클릭: 핫바 등록`;
+            `${data.name}
+클릭: 사용/장착
+더블클릭: 핫바 등록`;
 
         /*
          * 클릭:
@@ -3695,7 +3559,8 @@ function renderInventoryHotbar() {
                  </span>`;
 
             slot.title =
-                `${data.name}\n클릭: 사용`;
+                `${data.name}
+클릭: 사용`;
 
         }
         else {
@@ -9493,15 +9358,19 @@ __setHudVisibilityV7();
     const w=getEquippedWeapon();
     if(!w || !id) return;
     const p=game.player;
-    const a=p.facingAngle;
+    const baseAngle=p.facingAngle;
     const now=performance.now();
     const anim=p.attackAnimation;
-    let swing=0;
+    let ang=baseAngle;
     if(anim && anim.type && anim.start){
       const pr=Math.max(0,Math.min(1,(now-anim.start)/(anim.duration||250)));
-      swing=Math.sin(pr*Math.PI)*(id==='wood_club'?0.72:1.0);
+      const centerAngle=(anim.angle===undefined?baseAngle:anim.angle);
+      const arc=(w.attackType==='melee' && Number.isFinite(w.arc)) ? w.arc : (id==='wood_club'?1.25:1.4);
+      /* 실제 공격 판정과 동일한 범위의 양 끝을 왕복한다.
+         0 = center - arc/2, 0.5 = center, 1 = center + arc/2 */
+      ang=centerAngle-arc/2+pr*arc;
+      if(id==='wood_club') ang=centerAngle-arc/2+pr*arc;
     }
-    const ang=a+swing;
     const hx=p.x+Math.cos(ang)*10, hy=p.y+Math.sin(ang)*10;
     const ux=Math.cos(ang),uy=Math.sin(ang),px=-uy,py=ux;
     const lvl=getWeaponUpgradeLevel();
@@ -10818,7 +10687,9 @@ __setHudVisibilityV7();
         const data=ITEMS[item.id];
         if(!data){grid.appendChild(slot);continue;}
         slot.innerHTML=`${data.emoji}<span class="item-count">${item.count}</span>`;
-        slot.title=`${data.name}\n클릭: 사용/장착\n드래그: 다른 칸으로 이동`;
+        slot.title=`${data.name}
+클릭: 사용/장착
+드래그: 다른 칸으로 이동`;
         slot.onclick=()=>{
           if(data.type==='weapon'||data.type==='armor')equipItem(item.id);
           else if(data.type==='consumable')useInventorySlot(index);
@@ -12074,6 +11945,7 @@ __setHudVisibilityV7();
     }
 
     function startMusic(){
+        if(localStorage.getItem('rpg_bgm')==='off') { stopNotes(); return; }
         if(!gameStarted || gameOver) return;
         if(!music.context){
             music.context = new OriginalContext();
@@ -12088,6 +11960,7 @@ __setHudVisibilityV7();
         }
         if(music.timer) return;
         music.timer = setInterval(()=>{
+            if(localStorage.getItem('rpg_bgm')==='off'){ stopNotes(); return; }
             if(!gameStarted || gameOver || isPaused) return;
             const now = music.context.currentTime;
             const oscillator = music.context.createOscillator();
@@ -12611,7 +12484,8 @@ __setHudVisibilityV7();
             const grade = getItemGrade(ITEMS[item?.id]);
             if(item && ITEMS[item.id]){
                 slot.style.borderColor = grade.color;
-                slot.title = `${ITEMS[item.id].name} · ${grade.name}\n클릭: 사용/장착`;
+                slot.title = `${ITEMS[item.id].name} · ${grade.name}
+클릭: 사용/장착`;
             }
         });
     };
@@ -13382,7 +13256,8 @@ __setHudVisibilityV7();
   drawMinimap();
 })();
 </script>
-\n<script>
+
+<script>
 /* FINAL WORLD SIZE PATCH: giant seamless world, town-centered spawn, no empty gaps */
 (function(){
   const WORLD_W2 = 12000;
@@ -13965,314 +13840,358 @@ __setHudVisibilityV7();
 
 </script>
 
-<!-- Virtual Joystick -->
-<div id="virtual-joystick" aria-hidden="true">
-  <div class="joystick-base"></div>
-  <div class="joystick-stick" id="joystick-stick"></div>
-</div>
-<button id="joystick-attack-btn" type="button" aria-label="공격">공격</button>
-
+<style>
+/* ===== FINAL SETTINGS / JOYSTICK PATCH ===== */
+#settings-toggle{
+  position:absolute; left:20px; top:240px; z-index:30;
+  background:#444;color:#fff;border:1px solid #777;border-radius:6px;
+  padding:9px 13px;font-weight:bold;cursor:pointer;
+}
+#settings-panel{
+  position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:min(390px,92vw);background:rgba(0,0,0,.97);border:2px solid #00f5ff;
+  border-radius:10px;padding:16px;z-index:10000;display:none;
+  box-shadow:0 0 30px rgba(0,0,0,.7);
+}
+.settings-title{color:#00f5ff;font-size:20px;font-weight:bold;text-align:center;margin-bottom:14px}
+.settings-row{background:#191919;border:1px solid #444;border-radius:7px;padding:11px;margin:8px 0;color:#ddd}
+.settings-row b{color:#ffa502;display:block;margin-bottom:7px}
+.settings-actions{display:flex;gap:7px}
+.settings-actions button{flex:1;background:#222;color:#fff;border:1px solid #666;border-radius:5px;padding:9px;cursor:pointer}
+.settings-actions button.active{background:#00f5ff;color:#000;font-weight:bold;border-color:#00f5ff}
+#joystick{
+  position:fixed;left:24px;bottom:95px;width:120px;height:120px;border-radius:50%;
+  background:rgba(0,0,0,.35);border:2px solid rgba(255,255,255,.35);
+  z-index:9998;display:none;touch-action:none;
+}
+#joystick-knob{
+  position:absolute;left:35px;top:35px;width:50px;height:50px;border-radius:50%;
+  background:rgba(0,245,255,.65);border:2px solid #00f5ff;
+}
+@media(max-width:700px){
+  #settings-toggle{top:132px;left:10px;font-size:10px;padding:7px 9px}
+  #joystick{left:18px;bottom:125px}
+}
+</style>
 
 <script>
 /* =========================================================
-   SETTINGS + VIRTUAL JOYSTICK
-   메뉴: 배경음악 ON/OFF, 키보드/조이스틱 나란히 설정
+   FINAL REQUEST PATCH
+   - 메뉴에서 BGM / 키보드·조이스틱 선택
+   - 지역 이동 시 모든 지역 몬스터 유지
+   - 지역별 몬스터 고정/비감지
+   - 몬스터 최대 수와 생성 빈도 증가
 ========================================================= */
 (function(){
-  const SETTINGS_KEY = 'rpg_shooter_settings_v1';
-  const defaultSettings = { bgm: true, control: 'keyboard' };
+  /* ---------- Settings UI ---------- */
+  const menu=document.getElementById('main-menu');
+  if(menu && !document.getElementById('settings-toggle')){
+    const b=document.createElement('button');
+    b.id='settings-toggle'; b.textContent='⚙️ 설정';
+    b.onclick=()=>document.getElementById('settings-panel').style.display='block';
+    menu.appendChild(b);
+  }
 
-  function loadSettings(){
-    try{
-      const raw = localStorage.getItem(SETTINGS_KEY);
-      if(!raw) return {...defaultSettings};
-      const parsed = JSON.parse(raw);
-      return {
-        bgm: parsed.bgm !== false,
-        control: parsed.control === 'joystick' ? 'joystick' : 'keyboard'
+  if(!document.getElementById('settings-panel')){
+    const panel=document.createElement('div');
+    panel.id='settings-panel';
+    panel.innerHTML=`
+      <div class="settings-title">⚙️ 게임 설정</div>
+      <div class="settings-row">
+        <b>🎵 배경음악</b>
+        <div class="settings-actions">
+          <button id="bgm-on">🔊 켜짐</button>
+          <button id="bgm-off">🔇 꺼짐</button>
+        </div>
+      </div>
+      <div class="settings-row">
+        <b>🎮 조작 방식</b>
+        <div class="settings-actions">
+          <button id="control-keyboard">⌨️ 키보드</button>
+          <button id="control-joystick">🕹️ 조이스틱</button>
+        </div>
+      </div>
+      <button class="close-btn" style="width:100%;margin-top:8px" id="settings-close">닫기</button>`;
+    document.body.appendChild(panel);
+  }
+
+  const joystick=document.createElement('div');
+  joystick.id='joystick';
+  joystick.innerHTML='<div id="joystick-knob"></div>';
+  document.body.appendChild(joystick);
+
+  if(!localStorage.getItem('rpg_bgm')) localStorage.setItem('rpg_bgm','on');
+  if(!localStorage.getItem('rpg_control')) localStorage.setItem('rpg_control','keyboard');
+  let bgmEnabled=localStorage.getItem('rpg_bgm')!=='off';
+  let controlMode=localStorage.getItem('rpg_control')||'keyboard';
+
+  function applyBgmUI(){
+    const on=document.getElementById('bgm-on'),off=document.getElementById('bgm-off');
+    if(on)on.classList.toggle('active',bgmEnabled);
+    if(off)off.classList.toggle('active',!bgmEnabled);
+  }
+  function setBGM(v){
+    bgmEnabled=!!v; localStorage.setItem('rpg_bgm',bgmEnabled?'on':'off');
+    applyBgmUI();
+    const audioBtn=document.getElementById('audio-toggle');
+    if(audioBtn){
+      const isOn=audioBtn.textContent.includes('켜짐');
+      if(isOn!==bgmEnabled) audioBtn.click();
+    }
+    if(bgmEnabled && typeof window.playGameMusic==='function') window.playGameMusic();
+  }
+  function applyControlUI(){
+    const k=document.getElementById('control-keyboard'),j=document.getElementById('control-joystick');
+    if(k)k.classList.toggle('active',controlMode==='keyboard');
+    if(j)j.classList.toggle('active',controlMode==='joystick');
+    joystick.style.display=(controlMode==='joystick' && gameStarted && !gameOver)?'block':'none';
+    if(controlMode==='keyboard') clearJoystickKeys();
+  }
+  function setControl(v){
+    controlMode=v; localStorage.setItem('rpg_control',v); applyControlUI();
+  }
+
+  document.getElementById('bgm-on').onclick=()=>setBGM(true);
+  document.getElementById('bgm-off').onclick=()=>setBGM(false);
+  document.getElementById('control-keyboard').onclick=()=>setControl('keyboard');
+  document.getElementById('control-joystick').onclick=()=>setControl('joystick');
+  document.getElementById('settings-close').onclick=()=>document.getElementById('settings-panel').style.display='none';
+  applyBgmUI(); applyControlUI();
+
+  /* ---------- Joystick ---------- */
+  const knob=document.getElementById('joystick-knob');
+  let joyActive=false, joyX=0, joyY=0;
+  function clearJoystickKeys(){
+    if(!window.game?.keys)return;
+    ['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].forEach(k=>game.keys[k]=false);
+    joyX=joyY=0;
+    if(knob){knob.style.left='35px';knob.style.top='35px';}
+  }
+  function setJoy(e){
+    const r=joystick.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
+    const p=e.touches?e.touches[0]:e;
+    let dx=p.clientX-cx,dy=p.clientY-cy;
+    const max=35, len=Math.hypot(dx,dy)||1;
+    if(len>max){dx=dx/len*max;dy=dy/len*max;}
+    joyX=dx/max;joyY=dy/max;
+    knob.style.left=(35+dx)+'px';knob.style.top=(35+dy)+'px';
+    if(window.game?.keys){
+      game.keys.w=joyY<-.22; game.keys.s=joyY>.22;
+      game.keys.a=joyX<-.22; game.keys.d=joyX>.22;
+    }
+  }
+  joystick.addEventListener('pointerdown',e=>{if(controlMode!=='joystick')return;joyActive=true;joystick.setPointerCapture?.(e.pointerId);setJoy(e);});
+  joystick.addEventListener('pointermove',e=>{if(joyActive)setJoy(e);});
+  joystick.addEventListener('pointerup',()=>{joyActive=false;clearJoystickKeys();});
+  joystick.addEventListener('pointercancel',()=>{joyActive=false;clearJoystickKeys();});
+
+  /* ---------- Persistent monsters by region ---------- */
+  const worldMonsters=new Map(); // monster object -> region
+  let resettingWorld=false;
+
+  function clearWorldMonsters(){
+    worldMonsters.clear();
+    if(window.game && Array.isArray(game.monsters)) game.monsters.length=0;
+  }
+  function rememberAll(){
+    if(!window.game || !Array.isArray(game.monsters))return;
+    for(const m of game.monsters){
+      if(!m.region)m.region=game.currentZone||'town';
+      worldMonsters.set(m,m.region);
+    }
+  }
+  function restoreWorld(){
+    if(!window.game || !Array.isArray(game.monsters))return;
+    const arr=[];
+    for(const [m,r] of worldMonsters){
+      if(!m || m._dead)continue;
+      m.region=r||'town';
+      arr.push(m);
+    }
+    game.monsters=arr;
+  }
+  function currentMonsters(){
+    const z=game.currentZone||'town';
+    return [...worldMonsters].filter(([m,r])=>r===z && m && !m._dead).map(([m])=>m);
+  }
+
+  /* Final spawn: 90 monsters total, 700ms supplemental cadence. */
+  const oldSpawn=window.spawnMonster;
+  window.spawnMonster=function(){
+    if(!gameStarted || gameOver || isPaused || game.currentZone==='town')return;
+    if(worldMonsters.size>=90)return;
+    const zone=ZONES[game.currentZone];
+    if(!zone || !zone.spawns?.length)return;
+    const safe=zone.safeRadius||300;
+    if(Math.hypot(game.player.x-zone.x,game.player.y-zone.y)<safe)return;
+    const type=zone.spawns[Math.floor(Math.random()*zone.spawns.length)];
+    const data=MONSTERS[type]; if(!data)return;
+    for(let tries=0;tries<20;tries++){
+      const a=Math.random()*Math.PI*2;
+      const dist=650+Math.random()*500;
+      const x=clamp(game.player.x+Math.cos(a)*dist,50,currentWorldSize-50);
+      const y=clamp(game.player.y+Math.sin(a)*dist,50,currentWorldSize-50);
+      if(Math.hypot(x-zone.x,y-zone.y)<safe+80)continue;
+      const level=Math.max(1,game.player.level||1);
+      const hpMultiplier=1+Math.min(.8,level*.08);
+      const damageMultiplier=Math.min(.70,.45+level*.01);
+      const m={
+        type,x,y,radius:data.isElite?30:22,
+        hp:data.hp*hpMultiplier,maxHp:data.hp*hpMultiplier,
+        damage:data.damage*damageMultiplier,speed:data.speed,
+        exp:data.exp,color:data.color,emoji:data.emoji,
+        vision:data.vision,attackRange:data.attackRange,
+        loot:data.loot,lastAttack:0,
+        attackCooldown:1400,isElite:!!data.isElite
       };
-    }catch(e){
-      return {...defaultSettings};
+      m.region=game.currentZone;
+      m.homeX=x;m.homeY=y;m.lastSeenX=x;m.lastSeenY=y;
+      m.baseSpeed=Math.min(m.speed||1,1.35);
+      m.speed=m.baseSpeed;m.state='patrol';
+      worldMonsters.set(m,m.region);
+      game.monsters.push(m);
+      if(typeof game.effects!=='undefined')
+        game.effects.push({type:'spawn',x,y,start:performance.now(),duration:500});
+      return m;
     }
-  }
-
-  function saveSettings(){
-    try{
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify({
-        bgm: window.__gameSettings.bgm,
-        control: window.__gameSettings.control
-      }));
-    }catch(e){}
-  }
-
-  window.__gameSettings = loadSettings();
-  // 터치 기기 기본값: 조이스틱 (사용자가 저장한 값이 없을 때만)
-  try{
-    if(!localStorage.getItem(SETTINGS_KEY) && ('ontouchstart' in window || navigator.maxTouchPoints > 0)){
-      window.__gameSettings.control = 'joystick';
-    }
-  }catch(e){}
-
-
-  /* ---- BGM bridge: 모든 WebAudio 컨텍스트 + 기존 토글 동기화 ---- */
-  window.__bgmEnabled = !!window.__gameSettings.bgm;
-
-  // Oscillator 생성 가로채기: BGM OFF 시 무음
-  (function patchAudio(){
-    const Native = window.AudioContext || window.webkitAudioContext;
-    if(!Native || Native.__bgmPatched) return;
-    Native.__bgmPatched = true;
-    const origCreate = Native.prototype.createOscillator;
-    Native.prototype.createOscillator = function(){
-      const osc = origCreate.apply(this, arguments);
-      if(!window.__bgmEnabled){
-        try{
-          const g = this.createGain();
-          g.gain.value = 0;
-          const connect = osc.connect.bind(osc);
-          osc.connect = function(dest){
-            try{ connect(g); g.connect(dest); }catch(e){ return connect(dest); }
-            return g;
-          };
-        }catch(e){}
-      }
-      return osc;
-    };
-  })();
-
-  function applyBgmState(){
-    const on = !!window.__gameSettings.bgm;
-    window.__bgmEnabled = on;
-    document.querySelectorAll('#audio-toggle').forEach(btn=>{
-      btn.textContent = on ? '🔊 음악' : '🔇 음악';
-    });
-    // 알려진 전역 플래그
-    try{ if(window.audio) window.audio.enabled = on; }catch(e){}
-    // 실행 중인 모든 AudioContext 정지/재개
-    try{
-      const Native = window.AudioContext || window.webkitAudioContext;
-      // trackedContexts 가 있을 수 있음
-      if(window.trackedContexts && window.trackedContexts.forEach){
-        window.trackedContexts.forEach(ctx=>{
-          if(!ctx) return;
-          if(!on && ctx.state==='running') ctx.suspend().catch(()=>{});
-          if(on && ctx.state==='suspended') ctx.resume().catch(()=>{});
-        });
-      }
-    }catch(e){}
-  }
-
-  window.setBgmEnabled = function(on){
-    window.__gameSettings.bgm = !!on;
-    window.__bgmEnabled = !!on;
-    saveSettings();
-    updateSettingsUI();
-    applyBgmState();
-    try{ if(window.audio) window.audio.enabled = !!on; }catch(e){}
   };
 
-  window.setControlMode = function(mode){
-    window.__gameSettings.control = mode === 'joystick' ? 'joystick' : 'keyboard';
-    saveSettings();
-    updateSettingsUI();
-    updateJoystickVisibility();
+  /* Kill means permanently remove from its region. */
+  const oldKill=window.killMonster;
+  window.killMonster=function(monster){
+    if(monster)monster._dead=true;
+    worldMonsters.delete(monster);
+    return oldKill.apply(this,arguments);
   };
 
-  function updateSettingsUI(){
-    const bgmOn = document.getElementById('setting-bgm-on');
-    const bgmOff = document.getElementById('setting-bgm-off');
-    const kb = document.getElementById('setting-ctrl-keyboard');
-    const js = document.getElementById('setting-ctrl-joystick');
-    if(bgmOn && bgmOff){
-      bgmOn.classList.toggle('active', window.__gameSettings.bgm);
-      bgmOff.classList.toggle('active', !window.__gameSettings.bgm);
+  /*
+    The old code empties game.monsters during region changes.
+    We therefore treat worldMonsters as the authoritative collection and
+    expose only the current region to the original game logic.
+  */
+  const oldUpdateLogic=window.updateLogic;
+  window.updateLogic=function(){
+    if(!gameStarted || gameOver || isPaused){
+      if(gameStarted===false)joystick.style.display='none';
+      return oldUpdateLogic.apply(this,arguments);
     }
-    if(kb && js){
-      kb.classList.toggle('active', window.__gameSettings.control === 'keyboard');
-      js.classList.toggle('active', window.__gameSettings.control === 'joystick');
-    }
-  }
 
-  /* ---- Virtual Joystick ---- */
-  const joy = {
-    active: false,
-    pointerId: null,
-    originX: 0,
-    originY: 0,
-    dx: 0,
-    dy: 0,
-    maxR: 48
-  };
+    rememberAll();
+    const beforeZone=game.currentZone||'town';
+    const beforeCurrent=new Set(currentMonsters());
 
-  function joyEl(){ return document.getElementById('virtual-joystick'); }
-  function stickEl(){ return document.getElementById('joystick-stick'); }
-  function attackBtn(){ return document.getElementById('joystick-attack-btn'); }
+    /* Original systems operate only on the current region. */
+    game.monsters=currentMonsters();
 
-  function updateJoystickVisibility(){
-    const show = gameStarted && !gameOver && !isPaused && window.__gameSettings.control === 'joystick';
-    const j = joyEl();
-    const a = attackBtn();
-    if(j) j.classList.toggle('visible', !!show);
-    if(a) a.classList.toggle('visible', !!show);
-    if(!show){
-      joy.dx = 0; joy.dy = 0; joy.active = false;
-      if(stickEl()) stickEl().style.transform = 'translate(0px,0px)';
-      // clear movement keys injected by joystick
-      if(game && game.keys){
-        game.keys.w = game.keys.a = game.keys.s = game.keys.d = false;
+    oldUpdateLogic.apply(this,arguments);
+
+    const afterZone=game.currentZone||beforeZone;
+    const changed=afterZone!==beforeZone;
+
+    /* Capture newly spawned current-region monsters. */
+    if(Array.isArray(game.monsters)){
+      for(const m of game.monsters){
+        if(!m._dead){
+          if(!m.region)m.region=afterZone;
+          worldMonsters.set(m,m.region);
+        }
       }
     }
-  }
 
-  function applyJoystickKeys(){
-    if(!game || !game.keys) return;
-    if(window.__gameSettings.control !== 'joystick' || !gameStarted || gameOver || isPaused){
-      return;
+    /* If we stayed in the same region, missing monsters are normally kills.
+       On a zone transition, NEVER treat the array reset as deaths. */
+    if(!changed){
+      for(const m of beforeCurrent){
+        if(!game.monsters.includes(m) && !m._dead){
+          worldMonsters.delete(m);
+        }
+      }
     }
-    const dead = 0.22;
-    const nx = joy.dx / joy.maxR;
-    const ny = joy.dy / joy.maxR;
-    game.keys.w = ny < -dead;
-    game.keys.s = ny > dead;
-    game.keys.a = nx < -dead;
-    game.keys.d = nx > dead;
-    // face direction from stick if moving
-    if(Math.hypot(nx,ny) > dead){
-      game.player.facingAngle = Math.atan2(ny, nx);
+
+    /* Restore every region. Non-current monsters are frozen by region. */
+    for(const [m,r] of worldMonsters){
+      if(!m || m._dead)continue;
+      m.region=r;
+      if(r!==afterZone){
+        if(m._persistentX===undefined){m._persistentX=m.x;m._persistentY=m.y;}
+        m.x=m._persistentX;m.y=m._persistentY;
+        m.target=null;m.vision=0;
+      }else{
+        m._persistentX=m.x;m._persistentY=m.y;
+        if(m.vision===0){
+          const d=MONSTERS[m.type]?.vision||500;
+          m.vision=d;
+        }
+      }
     }
-  }
+    restoreWorld();
 
-  function onJoyStart(e){
-    if(window.__gameSettings.control !== 'joystick') return;
-    const j = joyEl();
-    if(!j) return;
-    const t = e.changedTouches ? e.changedTouches[0] : e;
-    joy.active = true;
-    joy.pointerId = t.pointerId != null ? t.pointerId : (t.identifier != null ? t.identifier : 1);
-    const rect = j.getBoundingClientRect();
-    joy.originX = rect.left + rect.width/2;
-    joy.originY = rect.top + rect.height/2;
-    onJoyMove(e);
-    e.preventDefault();
-  }
-
-  function onJoyMove(e){
-    if(!joy.active) return;
-    const touches = e.changedTouches || [e];
-    let t = null;
-    for(const x of touches){
-      const id = x.pointerId != null ? x.pointerId : x.identifier;
-      if(id === joy.pointerId || joy.pointerId == null){ t = x; break; }
-    }
-    if(!t) t = touches[0];
-    if(!t) return;
-    let dx = t.clientX - joy.originX;
-    let dy = t.clientY - joy.originY;
-    const dist = Math.hypot(dx, dy);
-    if(dist > joy.maxR){
-      dx = dx / dist * joy.maxR;
-      dy = dy / dist * joy.maxR;
-    }
-    joy.dx = dx; joy.dy = dy;
-    const stick = stickEl();
-    if(stick) stick.style.transform = `translate(${dx}px,${dy}px)`;
-    applyJoystickKeys();
-    e.preventDefault();
-  }
-
-  function onJoyEnd(e){
-    if(!joy.active) return;
-    joy.active = false;
-    joy.dx = 0; joy.dy = 0;
-    const stick = stickEl();
-    if(stick) stick.style.transform = 'translate(0px,0px)';
-    if(game && game.keys){
-      game.keys.w = game.keys.a = game.keys.s = game.keys.d = false;
-    }
-  }
-
-  function bindJoystick(){
-    const j = joyEl();
-    const a = attackBtn();
-    if(!j) return;
-    // Prefer pointer events
-    j.addEventListener('pointerdown', onJoyStart, {passive:false});
-    window.addEventListener('pointermove', onJoyMove, {passive:false});
-    window.addEventListener('pointerup', onJoyEnd, {passive:false});
-    window.addEventListener('pointercancel', onJoyEnd, {passive:false});
-    // Touch fallback
-    j.addEventListener('touchstart', onJoyStart, {passive:false});
-    j.addEventListener('touchmove', onJoyMove, {passive:false});
-    j.addEventListener('touchend', onJoyEnd, {passive:false});
-    j.addEventListener('touchcancel', onJoyEnd, {passive:false});
-
-    if(a){
-      const fire = (ev)=>{
-        ev.preventDefault();
-        if(typeof playerAttack === 'function') playerAttack();
-      };
-      a.addEventListener('pointerdown', fire, {passive:false});
-      a.addEventListener('touchstart', fire, {passive:false});
-    }
-  }
-
-  /* Hook game lifecycle */
-  const prevStart = window.startGame;
-  window.startGame = function(){
-    if(typeof prevStart === 'function') prevStart.apply(this, arguments);
-    applyBgmState();
-    updateJoystickVisibility();
+    /* HUD/joystick state */
+    joystick.style.display=(controlMode==='joystick' && gameStarted && !gameOver)?'block':'none';
   };
-  const prevRestart = window.restartGame;
-  window.restartGame = function(){
-    if(typeof prevRestart === 'function') prevRestart.apply(this, arguments);
-    applyBgmState();
-    updateJoystickVisibility();
-  };
-  const prevMenu = window.goToMenu;
-  window.goToMenu = function(){
-    if(typeof prevMenu === 'function') prevMenu.apply(this, arguments);
-    updateJoystickVisibility();
-  };
-  const prevPause = window.togglePause;
-  if(typeof prevPause === 'function'){
-    window.togglePause = function(){
-      prevPause.apply(this, arguments);
-      updateJoystickVisibility();
-    };
-  }
 
-  /* Override sound gate when BGM/SFX off */
-  const prevSound = window.sound;
-  if(typeof prevSound === 'function'){
-    window.sound = function(){
-      if(!window.__gameSettings.bgm) return;
-      return prevSound.apply(this, arguments);
-    };
-  }
+  /* More frequent spawning, while still respecting safe zones. */
+  let massSpawnClock=0;
+  setInterval(()=>{
+    if(!gameStarted || gameOver || isPaused || game.currentZone==='town')return;
+    const now=performance.now();
+    if(now-massSpawnClock<700)return;
+    massSpawnClock=now;
+    /* Up to 6 new monsters per active region before global cap. */
+    const active=currentMonsters().length;
+    if(active<18) window.spawnMonster();
+    if(active<10 && worldMonsters.size<90) window.spawnMonster();
+  },700);
 
-  /* Continuously sync joystick -> keys while in game */
-  setInterval(function(){
-    if(gameStarted && !gameOver && !isPaused && window.__gameSettings.control === 'joystick'){
-      applyJoystickKeys();
+  /* Start/restart/menu reset the persistent world correctly. */
+  const oldStartFinal=window.startGame;
+  window.startGame=function(){
+    clearWorldMonsters();
+    const r=oldStartFinal.apply(this,arguments);
+    setTimeout(()=>{applyControlUI();if(bgmEnabled)setBGM(true);},80);
+    return r;
+  };
+  const oldRestartFinal=window.restartGame;
+  window.restartGame=function(){
+    clearWorldMonsters();
+    const r=oldRestartFinal.apply(this,arguments);
+    setTimeout(()=>{applyControlUI();if(bgmEnabled)setBGM(true);},80);
+    return r;
+  };
+  const oldMenuFinal=window.goToMenu;
+  window.goToMenu=function(){
+    const r=oldMenuFinal.apply(this,arguments);
+    clearWorldMonsters();
+    applyControlUI();
+    document.getElementById('settings-panel').style.display='none';
+    return r;
+  };
+
+  /* Physical/walked region transition must never clear the world collection. */
+  const oldUpdatePlayerFinal=window.updatePlayer;
+  window.updatePlayer=function(){
+    const before=game.currentZone||'town';
+    const savedAll=[...worldMonsters.keys()];
+    oldUpdatePlayerFinal.apply(this,arguments);
+    const after=game.currentZone||before;
+    if(after!==before){
+      /* Any monster objects still alive remain in their original regions. */
+      for(const m of savedAll){
+        if(m && !m._dead && !worldMonsters.has(m)){
+          m.region=m.region||before;
+          worldMonsters.set(m,m.region);
+        }
+      }
+      /* Do not allow a legacy wrapper to erase the authoritative collection. */
+      restoreWorld();
     }
-    updateJoystickVisibility();
-  }, 50);
+  };
 
-  /* Init UI after DOM ready */
-  function init(){
-    updateSettingsUI();
-    applyBgmState();
-    bindJoystick();
-    updateJoystickVisibility();
-  }
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
+  /* Re-apply settings after the late-created game UI is ready. */
+  setTimeout(applyControlUI,0);
 })();
 </script>
 
-</body>
-</html>
 <script>
 /* FINAL MAP/ZONE AUTHORITY
    - gameplay region detection and world-map regions use the exact same Voronoi rule
@@ -14644,5 +14563,2018 @@ __setHudVisibilityV7();
     lastMassSpawn=now;
     if(game.monsters.length<60) window.spawnMonster();
   },900);
+})();
+</script>
+<style id="final-mobile-control-fix">
+#joystick,#attack-joystick{user-select:none;-webkit-user-select:none;touch-action:none;}
+#joystick{
+  width:128px!important;height:128px!important;left:22px!important;bottom:92px!important;
+  display:none;position:fixed!important;z-index:99990!important;
+}
+#joystick-knob{
+  left:37px!important;top:37px!important;width:50px!important;height:50px!important;
+}
+#attack-joystick{
+  position:fixed;right:22px;bottom:92px;width:128px;height:128px;border-radius:50%;
+  background:rgba(255,71,87,.18);border:2px solid rgba(255,120,130,.6);
+  z-index:99990;display:none;touch-action:none;
+}
+#attack-joystick-knob{
+  position:absolute;left:37px;top:37px;width:50px;height:50px;border-radius:50%;
+  background:rgba(255,71,87,.72);border:2px solid #ff4757;
+  box-shadow:0 0 12px rgba(255,71,87,.45);
+}
+#attack-joystick-label{
+  position:absolute;left:0;right:0;top:-25px;text-align:center;color:#fff;
+  font-size:12px;font-weight:bold;text-shadow:0 1px 3px #000;pointer-events:none;
+}
+@media(max-width:700px){
+  #joystick{left:16px!important;bottom:118px!important;}
+  #attack-joystick{right:16px;bottom:118px;}
+}
+</style>
+
+<script>
+/* FINAL PATCH 2
+   1) 실제로 작동하는 이동 조이스틱
+   2) 오른쪽 공격 조이스틱: 방향 지정 + 자동 공격
+   3) 몬스터는 생성된 지역에서만 생성/이동
+   4) 지역을 이동해도 기존 몬스터 전부 유지 + 화면에 표시 + 자기 지역에서 순찰
+   5) 지역별 스폰 최대치(maxMonsters)
+*/
+(function(){
+  'use strict';
+
+  if(!window.game) return;
+
+  /* ---------------------------------------------------------
+     지역 설정
+  --------------------------------------------------------- */
+  const REGION_MAX_DEFAULT=25;
+  const REGION_CAPS={
+    town:0, meadow:25, forest:25, deepforest:25, mountain:25, dungeon:25,
+    snowfield:25, ruins:25, coast:25, desert:25, volcano:25, wasteland:25,
+    swamp:25, cave:25, ancient:25, abyss:25
+  };
+  if(typeof ZONES!=='undefined'){
+    for(const key of Object.keys(ZONES)){
+      if(ZONES[key]) ZONES[key].maxMonsters = REGION_CAPS[key] ?? REGION_MAX_DEFAULT;
+    }
+  }
+
+  const regionCenters={
+    town:[6000,6000], meadow:[3300,6000], forest:[4200,4200], deepforest:[2100,3000],
+    mountain:[6000,3300], dungeon:[6000,4500], snowfield:[8700,2700], ruins:[9300,4500],
+    coast:[9300,7000], desert:[8700,9300], volcano:[6000,9300], wasteland:[3300,9000],
+    swamp:[2100,7200], cave:[4000,7200], ancient:[7200,7200], abyss:[6000,10800]
+  };
+
+  function getRegion(x,y){
+    if(typeof authoritativeRegion==='function') return authoritativeRegion(x,y);
+    let best='town',bd=Infinity;
+    for(const [k,p] of Object.entries(regionCenters)){
+      const dx=x-p[0],dy=y-p[1],d=dx*dx+dy*dy;
+      if(d<bd){bd=d;best=k;}
+    }
+    return best;
+  }
+  function zoneOfMonster(m){return m && m.region ? m.region : getRegion(m?.x||0,m?.y||0);}
+  function capFor(region){return Number(ZONES?.[region]?.maxMonsters ?? REGION_MAX_DEFAULT);}
+  function countRegion(region,world){
+    let n=0;
+    for(const m of world.values()) if(m && !m._dead && zoneOfMonster(m)===region)n++;
+    return n;
+  }
+
+  /* ---------------------------------------------------------
+     영구 몬스터 저장소: 지역 이동과 관계없이 같은 객체 유지
+  --------------------------------------------------------- */
+  const world=new Set();
+  let syncing=false;
+
+  function absorb(){
+    if(!Array.isArray(game.monsters)) return;
+    for(const m of game.monsters){
+      if(!m || m._dead) continue;
+      if(!m.region) m.region=getRegion(m.x,m.y)||game.currentZone||'town';
+      world.add(m);
+    }
+  }
+  function prune(){
+    for(const m of [...world]) if(!m || m._dead || !Number.isFinite(m.x) || !Number.isFinite(m.y)) world.delete(m);
+  }
+  function exposeAll(){
+    prune();
+    game.monsters=[...world].filter(m=>m && !m._dead);
+  }
+
+  /* 기존 배열 초기화 코드를 완전히 무력화: 지역 이동에서는 저장소를 유지 */
+  const baseChangeZone=window.changeZone;
+  window.changeZone=function(key){
+    if(!gameStarted || gameOver || !ZONES?.[key]) return;
+    absorb();
+    const before=game.currentZone;
+    const result=typeof baseChangeZone==='function' ? baseChangeZone.apply(this,arguments) : undefined;
+    if(before!==game.currentZone){
+      /* 기존 코드가 game.monsters=[] 했어도 world는 살아 있음 */
+      exposeAll();
+    }
+    return result;
+  };
+
+  /* ---------------------------------------------------------
+     몬스터 스폰: 반드시 해당 지역 안 + 해당 지역 cap 이하
+  --------------------------------------------------------- */
+  const baseSpawn=window.spawnMonster;
+  window.spawnMonster=function(){
+    if(!gameStarted || gameOver || isPaused) return null;
+    const region=game.currentZone||'town';
+    const zone=ZONES?.[region];
+    if(!zone || region==='town' || !zone.spawns?.length) return null;
+    absorb();
+    if(countRegion(region,world)>=capFor(region)) return null;
+
+    /* 기존 스폰 함수는 위치/몬스터 타입을 잘 알고 있으므로 먼저 실행하되,
+       생성된 객체가 다른 지역이면 즉시 폐기하고 이 패치에서 다시 생성하지 않는다. */
+    const before=new Set(game.monsters||[]);
+    const ret=typeof baseSpawn==='function' ? baseSpawn.apply(this,arguments) : null;
+    const created=[...(game.monsters||[])].filter(m=>!before.has(m));
+    let m=created[created.length-1] || (ret && !before.has(ret)?ret:null);
+
+    if(m){
+      const actual=getRegion(m.x,m.y);
+      if(actual!==region || Math.hypot(m.x-zone.x,m.y-zone.y)<(zone.safeRadius||0)){
+        m._dead=true;
+        try{ if(typeof game.monsters.indexOf==='function'){const i=game.monsters.indexOf(m);if(i>=0)game.monsters.splice(i,1);} }catch(e){}
+        return null;
+      }
+      m.region=region;
+      m.homeX=m.homeX??m.x; m.homeY=m.homeY??m.y;
+      m.baseSpeed=Math.min(m.baseSpeed??m.speed??1,1.35);
+      m.speed=m.baseSpeed;
+      m.state='patrol';
+      m.patrolAngle=m.patrolAngle??Math.random()*Math.PI*2;
+      m.nextPatrolTurn=m.nextPatrolTurn??performance.now()+700+Math.random()*1200;
+      world.add(m);
+      return m;
+    }
+    return null;
+  };
+
+  /* ---------------------------------------------------------
+     killMonster: 죽은 몬스터만 영구 저장소에서 제거
+  --------------------------------------------------------- */
+  const baseKill=window.killMonster;
+  window.killMonster=function(monster){
+    if(monster) monster._dead=true;
+    if(monster) world.delete(monster);
+    return typeof baseKill==='function' ? baseKill.apply(this,arguments) : undefined;
+  };
+
+  /* ---------------------------------------------------------
+     몬스터 AI: 모든 지역을 동시에 순찰.
+     플레이어 추적/공격은 같은 지역일 때만.
+  --------------------------------------------------------- */
+  window.updateMonsters=function(){
+    if(!gameStarted || gameOver || isPaused) return;
+    absorb();
+    prune();
+    const now=performance.now();
+    const playerRegion=game.currentZone||getRegion(game.player.x,game.player.y);
+
+    for(const m of world){
+      if(!m || m._dead) continue;
+      const r=zoneOfMonster(m);
+      m.region=r;
+      const z=ZONES?.[r];
+      const sameRegion=(r===playerRegion);
+      const speed=Math.min(m.baseSpeed??m.speed??1,1.35);
+      m.baseSpeed=speed;
+
+      /* 몬스터가 자기 지역 밖으로 절대 넘어가지 않게 함 */
+      if(getRegion(m.x,m.y)!==r){
+        const c=regionCenters[r] || [m.homeX??m.x,m.homeY??m.y];
+        m.x=c[0]; m.y=c[1];
+        m.homeX=m.x;m.homeY=m.y;
+      }
+
+      const safeRadius=z?.safeRadius||0;
+      const inSafe=Math.hypot(m.x-(z?.x??0),m.y-(z?.y??0))<safeRadius;
+      if(inSafe && r!=='town'){
+        const dx=m.x-z.x,dy=m.y-z.y,len=Math.hypot(dx,dy)||1;
+        m.x=z.x+dx/len*(safeRadius+70);
+        m.y=z.y+dy/len*(safeRadius+70);
+      }
+
+      let canChase=false;
+      if(sameRegion && r!=='town'){
+        const d=Math.hypot(game.player.x-m.x,game.player.y-m.y);
+        const playerSafe=Math.hypot(game.player.x-(z?.x??0),game.player.y-(z?.y??0))<(z?.safeRadius||0);
+        canChase=!playerSafe && d<=(m.vision||500);
+        if(canChase){
+          m.state='chase'; m.target=game.player;
+          m.lastSeenX=game.player.x;m.lastSeenY=game.player.y;
+          if(d>(m.attackRange||35)+game.player.radius){
+            const dx=game.player.x-m.x,dy=game.player.y-m.y,len=Math.hypot(dx,dy)||1;
+            m.x+=dx/len*speed;m.y+=dy/len*speed;
+          }
+        }
+      }
+
+      if(!canChase){
+        m.state='patrol';m.target=null;
+        if(now>=(m.nextPatrolTurn||0)){
+          m.patrolAngle=(m.patrolAngle||0)+(Math.random()-.5)*1.5;
+          m.nextPatrolTurn=now+900+Math.random()*1500;
+        }
+        const homeX=m.homeX??m.x,homeY=m.homeY??m.y;
+        const radius=85;
+        const tx=homeX+Math.cos(m.patrolAngle||0)*radius;
+        const ty=homeY+Math.sin(m.patrolAngle||0)*radius;
+        const dx=tx-m.x,dy=ty-m.y,len=Math.hypot(dx,dy)||1;
+        m.x+=dx/len*speed*.42;m.y+=dy/len*speed*.42;
+      }
+
+      /* 순찰 후 다시 지역 내부로 보정 */
+      if(getRegion(m.x,m.y)!==r){
+        const c=regionCenters[r]||[m.homeX??m.x,m.homeY??m.y];
+        m.x=c[0];m.y=c[1];m.homeX=c[0];m.homeY=c[1];
+      }
+      m._persistentX=m.x;m._persistentY=m.y;
+
+      /* 공격은 같은 지역에서만 */
+      if(sameRegion && !canChase && m.target===game.player) m.target=null;
+      if(sameRegion && r!=='town'){
+        const d=Math.hypot(game.player.x-m.x,game.player.y-m.y);
+        if(d<=(m.attackRange||35)+game.player.radius && now-(m.lastAttack||0)>=(m.attackCooldown||1000)){
+          m.lastAttack=now;
+          if(typeof damagePlayer==='function') damagePlayer(m.damage||1);
+        }
+      }
+    }
+    exposeAll();
+  };
+
+  /* ---------------------------------------------------------
+     updateLogic: 모든 지역 몬스터를 다시 노출시켜 drawMonsters가 그리게 함
+  --------------------------------------------------------- */
+  const baseUpdateLogic=window.updateLogic;
+  window.updateLogic=function(){
+    if(!gameStarted || gameOver || isPaused){
+      if(typeof baseUpdateLogic==='function') return baseUpdateLogic.apply(this,arguments);
+      return;
+    }
+    absorb();
+    if(typeof baseUpdateLogic==='function') baseUpdateLogic.apply(this,arguments);
+    absorb();
+    exposeAll();
+  };
+
+  /* 지역 이동 직후에도 즉시 전체 몬스터 표시 */
+  const baseUpdatePlayer=window.updatePlayer;
+  if(typeof baseUpdatePlayer==='function'){
+    window.updatePlayer=function(){
+      absorb();
+      const result=baseUpdatePlayer.apply(this,arguments);
+      absorb();exposeAll();
+      return result;
+    };
+  }
+
+  /* ---------------------------------------------------------
+     지역별 스폰 보충: 현재 지역 cap까지만 생성
+  --------------------------------------------------------- */
+  let lastFill=0;
+  setInterval(function(){
+    if(!gameStarted || gameOver || isPaused) return;
+    const region=game.currentZone||'town';
+    if(region==='town' || !ZONES?.[region]?.spawns?.length) return;
+    absorb();
+    const cap=capFor(region),n=countRegion(region,world);
+    if(n>=cap)return;
+    const now=performance.now();
+    if(now-lastFill<500)return;
+    lastFill=now;
+    /* 한 번에 1마리씩: 지역별 cap을 절대 넘기지 않음 */
+    window.spawnMonster();
+  },500);
+
+  /* ---------------------------------------------------------
+     이동 조이스틱 재구현
+  --------------------------------------------------------- */
+  const moveJoy=document.getElementById('joystick');
+  const moveKnob=document.getElementById('joystick-knob');
+  if(moveJoy && moveKnob){
+    let active=false,pid=null;
+    function resetMove(){
+      active=false;pid=null;
+      ['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].forEach(k=>game.keys[k]=false);
+      moveKnob.style.left='37px';moveKnob.style.top='37px';
+    }
+    function moveInput(e){
+      const r=moveJoy.getBoundingClientRect();
+      const p=e.touches?.[0]||e;
+      let dx=p.clientX-(r.left+r.width/2),dy=p.clientY-(r.top+r.height/2);
+      const max=42,len=Math.hypot(dx,dy)||1;
+      if(len>max){dx=dx/len*max;dy=dy/len*max;}
+      moveKnob.style.left=(37+dx)+'px';moveKnob.style.top=(37+dy)+'px';
+      game.keys.w=dy<-10;game.keys.s=dy>10;game.keys.a=dx<-10;game.keys.d=dx>10;
+    }
+    moveJoy.onpointerdown=function(e){
+      if(localStorage.getItem('rpg_control')!=='joystick')return;
+      active=true;pid=e.pointerId;moveJoy.setPointerCapture?.(pid);moveInput(e);e.preventDefault();
+    };
+    moveJoy.onpointermove=function(e){if(active&&e.pointerId===pid){moveInput(e);e.preventDefault();}};
+    moveJoy.onpointerup=resetMove;moveJoy.onpointercancel=resetMove;moveJoy.onlostpointercapture=resetMove;
+  }
+
+  /* ---------------------------------------------------------
+     공격 조이스틱: 오른쪽 방향으로 조준하고 누르고 있는 동안 공격
+  --------------------------------------------------------- */
+  let attackJoy=document.getElementById('attack-joystick');
+  if(!attackJoy){
+    attackJoy=document.createElement('div');
+    attackJoy.id='attack-joystick';
+    attackJoy.innerHTML='<div id="attack-joystick-label">⚔️ 공격</div><div id="attack-joystick-knob"></div>';
+    document.body.appendChild(attackJoy);
+  }
+  const attackKnob=document.getElementById('attack-joystick-knob');
+  let attackActive=false,attackPid=null,lastJoyAttack=0;
+  function resetAttack(){
+    attackActive=false;attackPid=null;
+    if(attackKnob){attackKnob.style.left='37px';attackKnob.style.top='37px';}
+  }
+  function attackInput(e){
+    const r=attackJoy.getBoundingClientRect();
+    const p=e.touches?.[0]||e;
+    let dx=p.clientX-(r.left+r.width/2),dy=p.clientY-(r.top+r.height/2);
+    const max=42,len=Math.hypot(dx,dy)||1;
+    if(len>max){dx=dx/len*max;dy=dy/len*max;}
+    if(attackKnob){attackKnob.style.left=(37+dx)+'px';attackKnob.style.top=(37+dy)+'px';}
+    if(len>7){
+      game.player.facingAngle=Math.atan2(dy,dx);
+      const now=performance.now();
+      if(now-lastJoyAttack>35){lastJoyAttack=now; if(typeof playerAttack==='function')playerAttack();}
+    }
+  }
+  attackJoy.onpointerdown=function(e){
+    if(localStorage.getItem('rpg_control')!=='joystick')return;
+    attackActive=true;attackPid=e.pointerId;attackJoy.setPointerCapture?.(attackPid);attackInput(e);e.preventDefault();
+  };
+  attackJoy.onpointermove=function(e){if(attackActive&&e.pointerId===attackPid){attackInput(e);e.preventDefault();}};
+  attackJoy.onpointerup=resetAttack;attackJoy.onpointercancel=resetAttack;attackJoy.onlostpointercapture=resetAttack;
+
+  function applyMobileControls(){
+    const joystickMode=localStorage.getItem('rpg_control')==='joystick';
+    const visible=joystickMode && gameStarted && !gameOver;
+    moveJoy.style.display=visible?'block':'none';
+    attackJoy.style.display=visible?'block':'none';
+    if(!visible){resetAttack();}
+  }
+
+  /* 기존 설정 버튼과 연결 */
+  const controlButton=document.getElementById('control-joystick');
+  if(controlButton){
+    const old=controlButton.onclick;
+    controlButton.onclick=function(e){
+      if(typeof old==='function')old.call(this,e);
+      localStorage.setItem('rpg_control','joystick');
+      applyMobileControls();
+    };
+  }
+  const keyButton=document.getElementById('control-keyboard');
+  if(keyButton){
+    const old=keyButton.onclick;
+    keyButton.onclick=function(e){
+      if(typeof old==='function')old.call(this,e);
+      localStorage.setItem('rpg_control','keyboard');
+      applyMobileControls();
+    };
+  }
+
+  const oldStart=window.startGame;
+  window.startGame=function(){
+    const r=typeof oldStart==='function'?oldStart.apply(this,arguments):undefined;
+    setTimeout(applyMobileControls,50);setTimeout(applyMobileControls,250);
+    return r;
+  };
+  const oldRestart=window.restartGame;
+  window.restartGame=function(){
+    const r=typeof oldRestart==='function'?oldRestart.apply(this,arguments):undefined;
+    setTimeout(applyMobileControls,50);setTimeout(applyMobileControls,250);
+    return r;
+  };
+  const oldMenu=window.goToMenu;
+  window.goToMenu=function(){
+    const r=typeof oldMenu==='function'?oldMenu.apply(this,arguments):undefined;
+    resetAttack();applyMobileControls();return r;
+  };
+
+  /* 게임 루프가 어느 시점에서 배열을 비워도 다음 프레임에 복구 */
+  setInterval(function(){
+    if(gameStarted && !gameOver){absorb();exposeAll();applyMobileControls();}
+  },120);
+
+  absorb();
+  applyMobileControls();
+})();
+</script>
+
+
+<style>
+/* ===== FINAL INPUT / MONSTER FIX ===== */
+#rpg-move-joystick,#rpg-attack-joystick{
+  position:fixed;width:128px;height:128px;border-radius:50%;
+  touch-action:none;user-select:none;-webkit-user-select:none;
+  z-index:2147483000;display:none;box-sizing:border-box;
+}
+#rpg-move-joystick{left:22px;bottom:92px;background:rgba(0,0,0,.38);border:3px solid rgba(255,255,255,.38)}
+#rpg-attack-joystick{right:22px;bottom:92px;background:rgba(255,71,87,.20);border:3px solid rgba(255,120,130,.72)}
+.rpg-joy-knob{position:absolute;left:37px;top:37px;width:50px;height:50px;border-radius:50%;box-sizing:border-box}
+#rpg-move-knob{background:rgba(0,245,255,.72);border:2px solid #00f5ff;box-shadow:0 0 12px rgba(0,245,255,.35)}
+#rpg-attack-knob{background:rgba(255,71,87,.78);border:2px solid #ff4757;box-shadow:0 0 12px rgba(255,71,87,.45)}
+.rpg-joy-label{position:absolute;left:0;right:0;top:-25px;text-align:center;color:#fff;font:bold 12px sans-serif;text-shadow:0 1px 3px #000;pointer-events:none}
+@media(max-width:700px){
+ #rpg-move-joystick{left:16px;bottom:118px}
+ #rpg-attack-joystick{right:16px;bottom:118px}
+}
+</style>
+<script>
+/* FINAL INPUT / MONSTER FIX 3
+   - window.game가 아닌 실제 lexical game을 사용
+   - 이동 조이스틱 + 공격 조이스틱을 직접 생성
+   - 두 조이스틱 동시 사용 가능
+   - 지역별 몬스터 최대치
+   - 생성 지역 밖 스폰 금지
+   - 지역 이동/경계 이동에도 기존 몬스터 보존
+   - 모든 지역 몬스터가 자기 지역에서 계속 순찰
+*/
+(function(){
+  'use strict';
+  if(typeof game==='undefined') return;
+
+  /* ---------- 조이스틱 DOM ---------- */
+  let move=document.getElementById('rpg-move-joystick');
+  if(!move){
+    move=document.createElement('div'); move.id='rpg-move-joystick';
+    move.innerHTML='<div class="rpg-joy-label">🕹️ 이동</div><div id="rpg-move-knob" class="rpg-joy-knob"></div>';
+    document.body.appendChild(move);
+  }
+  let attack=document.getElementById('rpg-attack-joystick');
+  if(!attack){
+    attack=document.createElement('div'); attack.id='rpg-attack-joystick';
+    attack.innerHTML='<div class="rpg-joy-label">⚔️ 공격</div><div id="rpg-attack-knob" class="rpg-joy-knob"></div>';
+    document.body.appendChild(attack);
+  }
+  const moveKnob=document.getElementById('rpg-move-knob');
+  const attackKnob=document.getElementById('rpg-attack-knob');
+
+  function joystickEnabled(){return localStorage.getItem('rpg_control')==='joystick';}
+  function showJoysticks(){
+    const v=!!(joystickEnabled()&&gameStarted&&!gameOver);
+    move.style.display=v?'block':'none';
+    attack.style.display=v?'block':'none';
+    if(!v){resetMove();resetAttack();}
+  }
+
+  let moveActive=false,movePid=null;
+  function resetMove(){
+    moveActive=false;movePid=null;
+    ['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].forEach(k=>game.keys[k]=false);
+    if(moveKnob){moveKnob.style.left='37px';moveKnob.style.top='37px';}
+  }
+  function movePoint(e){
+    const r=move.getBoundingClientRect();
+    const x=e.clientX-(r.left+r.width/2),y=e.clientY-(r.top+r.height/2);
+    const max=42,len=Math.hypot(x,y)||1;
+    const dx=len>max?x/len*max:x,dy=len>max?y/len*max:y;
+    moveKnob.style.left=(37+dx)+'px';moveKnob.style.top=(37+dy)+'px';
+    game.keys.w=dy<-9;game.keys.s=dy>9;game.keys.a=dx<-9;game.keys.d=dx>9;
+  }
+  move.addEventListener('pointerdown',e=>{
+    if(!joystickEnabled())return;
+    e.preventDefault();moveActive=true;movePid=e.pointerId;move.setPointerCapture?.(e.pointerId);movePoint(e);
+  });
+  move.addEventListener('pointermove',e=>{if(moveActive&&e.pointerId===movePid){e.preventDefault();movePoint(e);}});
+  move.addEventListener('pointerup',e=>{if(e.pointerId===movePid)resetMove();});
+  move.addEventListener('pointercancel',resetMove);move.addEventListener('lostpointercapture',resetMove);
+
+  let attackActive=false,attackPid=null,lastAttack=0;
+  function resetAttack(){
+    attackActive=false;attackPid=null;
+    if(attackKnob){attackKnob.style.left='37px';attackKnob.style.top='37px';}
+  }
+  function attackPoint(e){
+    const r=attack.getBoundingClientRect();
+    const x=e.clientX-(r.left+r.width/2),y=e.clientY-(r.top+r.height/2);
+    const max=42,len=Math.hypot(x,y)||1;
+    const dx=len>max?x/len*max:x,dy=len>max?y/len*max:y;
+    attackKnob.style.left=(37+dx)+'px';attackKnob.style.top=(37+dy)+'px';
+    if(len>7){
+      game.player.facingAngle=Math.atan2(dy,dx);
+      const now=performance.now();
+      if(now-lastAttack>=35){lastAttack=now;playerAttack();}
+    }
+  }
+  attack.addEventListener('pointerdown',e=>{
+    if(!joystickEnabled())return;
+    e.preventDefault();attackActive=true;attackPid=e.pointerId;attack.setPointerCapture?.(e.pointerId);attackPoint(e);
+  });
+  attack.addEventListener('pointermove',e=>{if(attackActive&&e.pointerId===attackPid){e.preventDefault();attackPoint(e);}});
+  attack.addEventListener('pointerup',e=>{if(e.pointerId===attackPid)resetAttack();});
+  attack.addEventListener('pointercancel',resetAttack);attack.addEventListener('lostpointercapture',resetAttack);
+
+  /* 설정 버튼과 직접 연결 */
+  const kb=document.getElementById('control-keyboard'),js=document.getElementById('control-joystick');
+  if(kb)kb.addEventListener('click',()=>{localStorage.setItem('rpg_control','keyboard');showJoysticks();});
+  if(js)js.addEventListener('click',()=>{localStorage.setItem('rpg_control','joystick');showJoysticks();});
+
+  /* 시작/메뉴 변화에도 조이스틱 상태 갱신 */
+  const oldStart3=startGame,oldRestart3=restartGame,oldMenu3=goToMenu;
+  startGame=function(){const r=oldStart3.apply(this,arguments);setTimeout(showJoysticks,30);return r;};
+  restartGame=function(){const r=oldRestart3.apply(this,arguments);setTimeout(showJoysticks,30);return r;};
+  goToMenu=function(){const r=oldMenu3.apply(this,arguments);showJoysticks();return r;};
+  setInterval(showJoysticks,250);
+
+  /* ---------- 지역별 몬스터 영구 저장 ---------- */
+  const world=window.__RPG_MONSTER_WORLD_V3||(window.__RPG_MONSTER_WORLD_V3=new Set());
+  const CAPS={town:0};
+  for(const k of Object.keys(ZONES||{})) CAPS[k]=(ZONES[k].maxMonsters||25);
+  function regionOf(x,y){
+    if(typeof authoritativeRegion==='function') return authoritativeRegion(x,y);
+    let best=game.currentZone||'town',bd=Infinity;
+    for(const k of Object.keys(ZONES||{})){
+      const z=ZONES[k],d=Math.hypot(x-(z.x||0),y-(z.y||0));
+      if(d<bd){bd=d;best=k;}
+    }
+    return best;
+  }
+  function capture(){
+    for(const m of (game.monsters||[])){
+      if(!m||m._dead)continue;
+      if(!m.region)m.region=regionOf(m.x,m.y)||game.currentZone||'town';
+      m.homeX=m.homeX??m.x;m.homeY=m.homeY??m.y;
+      m.patrolAngle=m.patrolAngle??Math.random()*Math.PI*2;
+      m.nextPatrolTurn=m.nextPatrolTurn??performance.now()+700+Math.random()*1200;
+      m.baseSpeed=Math.min(m.baseSpeed??m.speed??1,1.35);m.speed=m.baseSpeed;
+      world.add(m);
+    }
+  }
+  function restore(){
+    const arr=[];for(const m of world)if(m&&!m._dead)arr.push(m);
+    game.monsters=arr;
+  }
+  function countRegion(r){let n=0;for(const m of world)if(m&&!m._dead&&m.region===r)n++;return n;}
+  function removeDead(){for(const m of [...world])if(!m||m._dead||m.hp<=0)world.delete(m);}
+  capture();
+
+  /* 지역 이동 함수가 배열을 비워도 world에서 즉시 복구 */
+  const oldChange3=changeZone;
+  changeZone=function(key){
+    capture();
+    const r=oldChange3.apply(this,arguments);
+    capture();restore();
+    return r;
+  };
+
+  /* 걷기로 지역을 넘을 때도 기존 몬스터 유지 */
+  const oldPlayer3=updatePlayer;
+  updatePlayer=function(){
+    capture();
+    const r=oldPlayer3.apply(this,arguments);
+    capture();restore();
+    return r;
+  };
+
+  /* 스폰은 현재 지역 cap까지만, 실제 좌표도 현재 지역인지 재검증 */
+  const oldSpawn3=spawnMonster;
+  spawnMonster=function(){
+    if(!gameStarted||gameOver||isPaused)return null;
+    capture();removeDead();
+    const r=game.currentZone||'town',z=ZONES[r];
+    if(!z||r==='town'||!z.spawns?.length)return null;
+    if(countRegion(r)>=CAPS[r])return null;
+    const before=new Set(game.monsters);
+    const keep=game.monsters;
+    game.monsters=[...world].filter(m=>m&&!m._dead&&m.region===r);
+    const beforeLen=game.monsters.length;
+    let ret=oldSpawn3.apply(this,arguments);
+    const created=game.monsters.slice(beforeLen).filter(m=>!before.has(m));
+    let m=created[created.length-1]||null;
+    game.monsters=keep;
+    if(m){
+      const actual=regionOf(m.x,m.y);
+      const safe=Math.hypot(m.x-(z.x||0),m.y-(z.y||0))<(z.safeRadius||0);
+      if(actual!==r||safe){m._dead=true;return null;}
+      m.region=r;m.homeX=m.x;m.homeY=m.y;m.baseSpeed=Math.min(m.baseSpeed??m.speed??1,1.35);m.speed=m.baseSpeed;
+      m.state='patrol';world.add(m);restore();return m;
+    }
+    restore();return ret;
+  };
+
+  /* 기존 updateMonsters를 완전히 대체: 모든 지역 순찰 + 같은 지역만 추적 */
+  updateMonsters=function(){
+    if(!gameStarted||gameOver||isPaused)return;
+    capture();removeDead();
+    const now=performance.now(),pr=game.currentZone||regionOf(game.player.x,game.player.y);
+    for(const m of world){
+      if(!m||m._dead||m.hp<=0)continue;
+      const r=m.region||regionOf(m.x,m.y);m.region=r;
+      const z=ZONES[r];
+      if(!z)continue;
+      const speed=Math.min(m.baseSpeed??m.speed??1,1.35);m.baseSpeed=speed;m.speed=speed;
+      /* 생성 지역 밖으로 절대 이탈하지 않음 */
+      const actual=regionOf(m.x,m.y);
+      if(actual!==r){m.x=m.homeX??z.x;m.y=m.homeY??z.y;}
+      const safeRadius=z.safeRadius||0;
+      const sd=Math.hypot(m.x-(z.x||0),m.y-(z.y||0));
+      if(r!=='town'&&sd<safeRadius){
+        const dx=m.x-(z.x||0),dy=m.y-(z.y||0),len=Math.hypot(dx,dy)||1;
+        m.x=(z.x||0)+dx/len*(safeRadius+60);m.y=(z.y||0)+dy/len*(safeRadius+60);
+      }
+      let chasing=false;
+      if(r===pr&&r!=='town'){
+        const d=Math.hypot(game.player.x-m.x,game.player.y-m.y);
+        const playerSafe=Math.hypot(game.player.x-(z.x||0),game.player.y-(z.y||0))<safeRadius;
+        if(!playerSafe&&d<=(m.vision||500)){
+          chasing=true;m.state='chase';m.target=game.player;
+          if(d>(m.attackRange||35)+game.player.radius){
+            const dx=game.player.x-m.x,dy=game.player.y-m.y,len=Math.hypot(dx,dy)||1;
+            m.x+=dx/len*speed;m.y+=dy/len*speed;
+          }
+        }
+      }
+      if(!chasing){
+        m.state='patrol';m.target=null;
+        if(now>=(m.nextPatrolTurn||0)){
+          m.patrolAngle=(m.patrolAngle||0)+(Math.random()-.5)*1.8;
+          m.nextPatrolTurn=now+800+Math.random()*1600;
+        }
+        const hx=m.homeX??m.x,hy=m.homeY??m.y,rad=100;
+        const tx=hx+Math.cos(m.patrolAngle||0)*rad,ty=hy+Math.sin(m.patrolAngle||0)*rad;
+        const dx=tx-m.x,dy=ty-m.y,len=Math.hypot(dx,dy)||1;
+        m.x+=dx/len*speed*.45;m.y+=dy/len*speed*.45;
+      }
+      if(regionOf(m.x,m.y)!==r){m.x=m.homeX??z.x;m.y=m.homeY??z.y;}
+      m._persistentX=m.x;m._persistentY=m.y;
+      /* 같은 지역에서만 몬스터 공격 */
+      if(r===pr&&r!=='town'){
+        const d=Math.hypot(game.player.x-m.x,game.player.y-m.y);
+        if(d<=(m.attackRange||35)+game.player.radius&&now-(m.lastAttack||0)>=(m.attackCooldown||1000)){
+          m.lastAttack=now;if(typeof damagePlayer==='function')damagePlayer(m.damage||1);
+        }
+      }
+    }
+    restore();
+  };
+
+  /* 죽은 몬스터만 영구 저장소에서 제거 */
+  const oldKill3=killMonster;
+  killMonster=function(m){if(m){m._dead=true;world.delete(m);}return oldKill3.apply(this,arguments);};
+
+  /* 지역별 cap까지 보충. 한 지역이 cap이면 더 이상 생성하지 않음. */
+  let fillClock=0;
+  setInterval(()=>{
+    if(!gameStarted||gameOver||isPaused)return;
+    capture();removeDead();
+    const r=game.currentZone||'town';
+    if(r==='town'||!ZONES[r]?.spawns?.length)return;
+    if(countRegion(r)>=CAPS[r])return;
+    const now=performance.now();if(now-fillClock<550)return;fillClock=now;
+    spawnMonster();
+  },550);
+
+  restore();showJoysticks();
+})();
+</script>
+<style id="final-joystick-control-v4">
+/* 중복으로 생성된 구형 조이스틱 완전 비활성화 */
+#joystick, #attack-joystick { display:none !important; pointer-events:none !important; }
+#rpg-move-joystick, #rpg-attack-joystick{
+  position:fixed !important;
+  width:128px !important;
+  height:128px !important;
+  border-radius:50% !important;
+  touch-action:none !important;
+  user-select:none !important;
+  -webkit-user-select:none !important;
+  box-sizing:border-box !important;
+  z-index:2147483000 !important;
+  margin:0 !important;
+}
+#rpg-move-joystick{
+  left:22px !important;
+  right:auto !important;
+  bottom:92px !important;
+  background:rgba(0,0,0,.38) !important;
+  border:3px solid rgba(255,255,255,.38) !important;
+}
+#rpg-attack-joystick{
+  left:auto !important;
+  right:22px !important;
+  bottom:92px !important;
+  background:rgba(255,71,87,.18) !important;
+  border:3px solid rgba(255,120,130,.72) !important;
+}
+#rpg-move-knob, #rpg-attack-knob{
+  position:absolute !important;
+  left:37px !important;
+  top:37px !important;
+  width:50px !important;
+  height:50px !important;
+  margin:0 !important;
+  transform:none !important;
+  border-radius:50% !important;
+  box-sizing:border-box !important;
+}
+.rpg-joy-label{
+  position:absolute !important;
+  left:0 !important;
+  right:0 !important;
+  top:-25px !important;
+  margin:0 !important;
+  text-align:center !important;
+  pointer-events:none !important;
+  color:#fff !important;
+  font:bold 12px Arial,sans-serif !important;
+  text-shadow:0 1px 3px #000 !important;
+}
+@media(max-width:700px){
+  #rpg-move-joystick{left:16px !important;bottom:118px !important;}
+  #rpg-attack-joystick{right:16px !important;bottom:118px !important;}
+}
+</style>
+<script>
+/* FINAL JOYSTICK CONTROL V4
+   - 구형 조이스틱 제거
+   - 이동/공격 조이스틱 단일화
+   - 조이스틱 모드에서 마우스/클릭 공격 차단
+   - 공격 조이스틱: 조준 중 범위 표시, 손을 떼는 순간 1회 공격
+   - 이동/공격 동시 입력 지원
+*/
+(function(){
+  'use strict';
+  if(typeof game === 'undefined') return;
+
+  const move=document.getElementById('rpg-move-joystick');
+  const moveKnob=document.getElementById('rpg-move-knob');
+  const attack=document.getElementById('rpg-attack-joystick');
+  const attackKnob=document.getElementById('rpg-attack-knob');
+  if(!move||!moveKnob||!attack||!attackKnob) return;
+
+  const DEAD=0.16;
+  const MAX=42;
+  let moveActive=false, movePid=null;
+  let attackActive=false, attackPid=null;
+  let attackDX=0, attackDY=0, attackLen=0, attackAngle=0;
+
+  function isJoystickMode(){ return localStorage.getItem('rpg_control')==='joystick'; }
+  function running(){ return !!(gameStarted && !gameOver && !isPaused); }
+
+  function resetMove(){
+    moveActive=false; movePid=null;
+    if(game.keys){
+      game.keys.w=false;game.keys.a=false;game.keys.s=false;game.keys.d=false;
+      game.keys.arrowup=false;game.keys.arrowdown=false;game.keys.arrowleft=false;game.keys.arrowright=false;
+    }
+    moveKnob.style.left='37px';moveKnob.style.top='37px';
+  }
+
+  function movePoint(e){
+    const r=move.getBoundingClientRect();
+    let dx=e.clientX-(r.left+r.width/2), dy=e.clientY-(r.top+r.height/2);
+    const len=Math.hypot(dx,dy)||1;
+    if(len>MAX){dx=dx/len*MAX;dy=dy/len*MAX;}
+    moveKnob.style.left=(37+dx)+'px';
+    moveKnob.style.top=(37+dy)+'px';
+    const nx=dx/MAX, ny=dy/MAX;
+    const ax=Math.abs(nx)<DEAD?0:nx;
+    const ay=Math.abs(ny)<DEAD?0:ny;
+    game.keys.w=ay<0; game.keys.s=ay>0; game.keys.a=ax<0; game.keys.d=ax>0;
+  }
+
+  function resetAttack(){
+    attackActive=false;attackPid=null;attackDX=0;attackDY=0;attackLen=0;
+    attackKnob.style.left='37px';attackKnob.style.top='37px';
+  }
+
+  function attackPoint(e){
+    const r=attack.getBoundingClientRect();
+    let dx=e.clientX-(r.left+r.width/2), dy=e.clientY-(r.top+r.height/2);
+    const len=Math.hypot(dx,dy)||1;
+    if(len>MAX){dx=dx/len*MAX;dy=dy/len*MAX;}
+    attackKnob.style.left=(37+dx)+'px';
+    attackKnob.style.top=(37+dy)+'px';
+    attackDX=dx; attackDY=dy; attackLen=Math.hypot(dx,dy);
+    if(attackLen>MAX*DEAD){
+      attackAngle=Math.atan2(dy,dx);
+      game.player.facingAngle=attackAngle;
+    }
+  }
+
+  move.onpointerdown=function(e){
+    if(!isJoystickMode()||!running()) return;
+    e.preventDefault(); e.stopPropagation();
+    moveActive=true;movePid=e.pointerId;
+    move.setPointerCapture?.(e.pointerId);
+    movePoint(e);
+  };
+  move.onpointermove=function(e){
+    if(moveActive&&e.pointerId===movePid){e.preventDefault();e.stopPropagation();movePoint(e);}
+  };
+  move.onpointerup=function(e){if(e.pointerId===movePid){e.preventDefault();e.stopPropagation();resetMove();}};
+  move.onpointercancel=function(){resetMove();};
+  move.onlostpointercapture=function(){if(moveActive)resetMove();};
+
+  attack.onpointerdown=function(e){
+    if(!isJoystickMode()||!running()) return;
+    e.preventDefault(); e.stopPropagation();
+    attackActive=true;attackPid=e.pointerId;
+    attack.setPointerCapture?.(e.pointerId);
+    attackPoint(e);
+    drawAimPreview();
+  };
+  attack.onpointermove=function(e){
+    if(attackActive&&e.pointerId===attackPid){e.preventDefault();e.stopPropagation();attackPoint(e);drawAimPreview();}
+  };
+  attack.onpointerup=function(e){
+    if(e.pointerId!==attackPid)return;
+    e.preventDefault();e.stopPropagation();
+    const shouldAttack=attackLen>MAX*DEAD;
+    const finalAngle=attackAngle;
+    resetAttack();
+    clearAimPreview();
+    if(shouldAttack && isJoystickMode() && running()){
+      game.player.facingAngle=finalAngle;
+      if(typeof playerAttack==='function') playerAttack();
+    }
+  };
+  attack.onpointercancel=function(){resetAttack();clearAimPreview();};
+  attack.onlostpointercapture=function(){
+    if(attackActive){
+      const shouldAttack=attackLen>MAX*DEAD, finalAngle=attackAngle;
+      resetAttack();clearAimPreview();
+      if(shouldAttack&&isJoystickMode()&&running()){
+        game.player.facingAngle=finalAngle;
+        if(typeof playerAttack==='function')playerAttack();
+      }
+    }
+  };
+
+  /* 조이스틱 모드에서는 캔버스 클릭으로 공격하지 않음 */
+  const canvasEl=document.getElementById('gameCanvas');
+  if(canvasEl){
+    const blockPointerAttack=function(e){
+      if(isJoystickMode()){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
+    };
+    canvasEl.addEventListener('mousedown',blockPointerAttack,true);
+    canvasEl.addEventListener('click',blockPointerAttack,true);
+  }
+
+  function getAttackInfo(){
+    let range=55, arc=Math.PI, melee=true;
+    try{
+      const weapon=typeof getEquippedWeapon==='function'?getEquippedWeapon():null;
+      if(weapon){
+        if(Number.isFinite(weapon.range)) range=weapon.range;
+        if(Number.isFinite(weapon.arc)) arc=weapon.arc;
+        melee=weapon.attackType==='melee';
+      }
+    }catch(_e){}
+    return {range,arc,melee};
+  }
+
+  function drawAimPreview(){
+    if(!attackActive||attackLen<=MAX*DEAD||!isJoystickMode()||!running()) return;
+    const info=getAttackInfo();
+    const cam=game.camera||{x:0,y:0};
+    const p=game.player;
+    ctx.save();
+    ctx.translate(-cam.x,-cam.y);
+    ctx.globalAlpha=0.22;
+    ctx.fillStyle='#ff4757';
+    if(info.melee){
+      ctx.beginPath();
+      ctx.moveTo(p.x,p.y);
+      ctx.arc(p.x,p.y,info.range,attackAngle-info.arc/2,attackAngle+info.arc/2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha=0.55;
+      ctx.strokeStyle='#ff6b81';ctx.lineWidth=2;
+      ctx.stroke();
+    }else{
+      ctx.beginPath();ctx.arc(p.x,p.y,info.range,0,Math.PI*2);ctx.fill();
+      ctx.globalAlpha=0.55;ctx.strokeStyle='#ff6b81';ctx.lineWidth=2;ctx.stroke();
+      ctx.globalAlpha=0.75;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x+Math.cos(attackAngle)*info.range,p.y+Math.sin(attackAngle)*info.range);ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function clearAimPreview(){
+    /* drawGame가 매 프레임 다시 그리므로 별도 지우기는 필요 없음 */
+  }
+
+  /* 렌더 마지막에 조준 범위를 표시 */
+  if(typeof drawGame==='function'){
+    const baseDrawGame=drawGame;
+    drawGame=function(){
+      baseDrawGame();
+      drawAimPreview();
+    };
+  }
+
+  function show(){
+    const v=isJoystickMode()&&gameStarted&&!gameOver;
+    move.style.display=v?'block':'none';
+    attack.style.display=v?'block':'none';
+    if(!v){resetMove();resetAttack();}
+  }
+
+  /* 기존 주기적 showJoysticks가 구형 요소를 건드려도 V4가 다시 고정 */
+  const oldSetInterval=setInterval;
+  show();
+  if(typeof setControl==='function'){
+    const oldSetControl=setControl;
+    setControl=function(v){oldSetControl(v);show();};
+  }
+  setInterval(show,250);
+
+  const oldStart=window.startGame;
+  if(typeof oldStart==='function'){
+    window.startGame=function(){const r=oldStart.apply(this,arguments);setTimeout(show,50);return r;};
+  }
+  const oldRestart=window.restartGame;
+  if(typeof oldRestart==='function'){
+    window.restartGame=function(){const r=oldRestart.apply(this,arguments);setTimeout(show,50);return r;};
+  }
+  const oldMenu=window.goToMenu;
+  if(typeof oldMenu==='function'){
+    window.goToMenu=function(){const r=oldMenu.apply(this,arguments);show();return r;};
+  }
+})();
+</script>
+
+
+<style id="joystick-final-hard-fix">
+/* ===== JOYSTICK HARD FIX ===== */
+#joystick,#attack-joystick,#rpg-move-joystick,#rpg-attack-joystick{display:none!important;pointer-events:none!important}
+#final-move-joystick,#final-attack-joystick{
+  position:fixed!important;
+  width:138px!important;height:138px!important;
+  border-radius:50%!important;
+  box-sizing:border-box!important;
+  touch-action:none!important;
+  user-select:none!important;-webkit-user-select:none!important;
+  z-index:2147483647!important;
+  display:none;
+  transform:none!important;
+  margin:0!important;
+  pointer-events:auto!important;
+}
+#final-move-joystick{
+  left:24px!important;right:auto!important;bottom:28px!important;
+  background:rgba(0,0,0,.28)!important;
+  border:3px solid rgba(255,255,255,.52)!important;
+}
+#final-attack-joystick{
+  left:auto!important;right:24px!important;bottom:28px!important;
+  background:rgba(130,25,35,.20)!important;
+  border:3px solid rgba(255,105,120,.72)!important;
+}
+.final-joy-knob{
+  position:absolute!important;left:41px!important;top:41px!important;
+  width:50px!important;height:50px!important;
+  border-radius:50%!important;box-sizing:border-box!important;
+  transform:none!important;margin:0!important;pointer-events:none!important;
+}
+#final-move-knob{background:rgba(0,245,255,.78)!important;border:2px solid #00f5ff!important;box-shadow:0 0 14px rgba(0,245,255,.42)!important}
+#final-attack-knob{background:rgba(255,71,87,.82)!important;border:2px solid #ff4757!important;box-shadow:0 0 14px rgba(255,71,87,.48)!important}
+.final-joy-label{
+  position:absolute!important;left:0!important;right:0!important;top:-24px!important;
+  text-align:center!important;color:#fff!important;font:bold 12px Arial,sans-serif!important;
+  text-shadow:0 1px 4px #000!important;pointer-events:none!important;
+}
+@media(max-width:700px){
+  #final-move-joystick{left:16px!important;bottom:22px!important}
+  #final-attack-joystick{right:16px!important;bottom:22px!important}
+}
+</style>
+<script>
+/* ===== JOYSTICK FINAL HARD FIX =====
+   - 구형 조이스틱 전부 숨김
+   - 좌측 이동 / 우측 공격을 별도 DOM으로 재생성
+   - 이동+공격 동시 사용
+   - 공격은 조준 중 범위를 표시하고 손을 뗄 때 1회만 발사
+   - 실제 공격 판정과 동일한 범위/각도를 사용
+   - 조이스틱 모드에서 캔버스 클릭/터치 공격 차단
+*/
+(function(){
+  'use strict';
+  if(typeof game==='undefined') return;
+
+  const oldIds=['joystick','attack-joystick','rpg-move-joystick','rpg-attack-joystick'];
+  oldIds.forEach(id=>{const el=document.getElementById(id);if(el){el.style.display='none';el.style.pointerEvents='none';}});
+
+  function makeJoystick(id,knobId,label){
+    let el=document.getElementById(id);
+    if(!el){
+      el=document.createElement('div');
+      el.id=id;
+      el.innerHTML='<div class="final-joy-label">'+label+'</div><div id="'+knobId+'" class="final-joy-knob"></div>';
+      document.body.appendChild(el);
+    }
+    return el;
+  }
+  const move=makeJoystick('final-move-joystick','final-move-knob','🕹️ 이동');
+  const attack=makeJoystick('final-attack-joystick','final-attack-knob','⚔️ 공격');
+  const moveKnob=document.getElementById('final-move-knob');
+  const attackKnob=document.getElementById('final-attack-knob');
+  if(!move||!attack||!moveKnob||!attackKnob) return;
+
+  const MAX=44, DEAD=0.18, KNOB=44, CENTER=44;
+  let moveActive=false,movePid=null;
+  let attackActive=false,attackPid=null;
+  let attackAngle=game.player.facingAngle||0,attackLen=0;
+  let aimPreview=false;
+
+  const joystickMode=()=>localStorage.getItem('rpg_control')==='joystick';
+  const running=()=>!!(gameStarted&&!gameOver&&!isPaused);
+
+  function resetMove(){
+    moveActive=false;movePid=null;
+    if(game.keys){
+      ['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].forEach(k=>game.keys[k]=false);
+    }
+    moveKnob.style.left=CENTER+'px';moveKnob.style.top=CENTER+'px';
+  }
+  function setMove(e){
+    const r=move.getBoundingClientRect();
+    let dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2);
+    const len=Math.hypot(dx,dy)||1;
+    if(len>MAX){dx=dx/len*MAX;dy=dy/len*MAX;}
+    moveKnob.style.left=(CENTER+dx)+'px';moveKnob.style.top=(CENTER+dy)+'px';
+    const threshold=MAX*DEAD;
+    if(game.keys){
+      game.keys.w=dy<-threshold;game.keys.s=dy>threshold;
+      game.keys.a=dx<-threshold;game.keys.d=dx>threshold;
+    }
+  }
+
+  function weaponInfo(){
+    let weapon=null;
+    try{weapon=typeof getEquippedWeapon==='function'?getEquippedWeapon():null;}catch(_e){}
+    if(!weapon) return {type:'melee',range:55,arc:Math.PI};
+    return {
+      type:weapon.attackType||'melee',
+      range:Number.isFinite(weapon.range)?weapon.range:55,
+      arc:Number.isFinite(weapon.arc)?weapon.arc:Math.PI
+    };
+  }
+  function resetAttack(){
+    attackActive=false;attackPid=null;attackLen=0;aimPreview=false;
+    attackKnob.style.left=CENTER+'px';attackKnob.style.top=CENTER+'px';
+  }
+  function setAttack(e){
+    const r=attack.getBoundingClientRect();
+    let dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2);
+    const raw=Math.hypot(dx,dy)||1;
+    if(raw>MAX){dx=dx/raw*MAX;dy=dy/raw*MAX;}
+    attackLen=Math.hypot(dx,dy);
+    attackKnob.style.left=(CENTER+dx)+'px';attackKnob.style.top=(CENTER+dy)+'px';
+    if(attackLen>MAX*DEAD){
+      attackAngle=Math.atan2(dy,dx);
+      game.player.facingAngle=attackAngle;
+      aimPreview=true;
+    }else{
+      aimPreview=false;
+    }
+  }
+
+  move.onpointerdown=e=>{
+    if(!joystickMode()||!running())return;
+    e.preventDefault();e.stopPropagation();
+    moveActive=true;movePid=e.pointerId;
+    try{move.setPointerCapture(e.pointerId)}catch(_e){}
+    setMove(e);
+  };
+  move.onpointermove=e=>{
+    if(moveActive&&e.pointerId===movePid){e.preventDefault();e.stopPropagation();setMove(e);}
+  };
+  move.onpointerup=e=>{if(e.pointerId===movePid){e.preventDefault();e.stopPropagation();resetMove();}};
+  move.onpointercancel=resetMove;
+  move.onlostpointercapture=()=>{if(moveActive)resetMove();};
+
+  attack.onpointerdown=e=>{
+    if(!joystickMode()||!running())return;
+    e.preventDefault();e.stopPropagation();
+    attackActive=true;attackPid=e.pointerId;
+    try{attack.setPointerCapture(e.pointerId)}catch(_e){}
+    setAttack(e);
+  };
+  attack.onpointermove=e=>{
+    if(attackActive&&e.pointerId===attackPid){e.preventDefault();e.stopPropagation();setAttack(e);}
+  };
+  function releaseAttack(e){
+    if(attackPid!==null && e.pointerId!==undefined && e.pointerId!==attackPid)return;
+    e.preventDefault?.();e.stopPropagation?.();
+    const doAttack=attackLen>MAX*DEAD && joystickMode() && running();
+    const angle=attackAngle;
+    resetAttack();
+    if(doAttack){
+      game.player.facingAngle=angle;
+      if(typeof playerAttack==='function')playerAttack();
+    }
+  }
+  attack.onpointerup=releaseAttack;
+  attack.onpointercancel=resetAttack;
+  attack.onlostpointercapture=()=>{if(attackActive)releaseAttack({pointerId:attackPid,preventDefault(){},stopPropagation(){}});};
+
+  /* 조이스틱 모드에서는 캔버스 클릭/터치 공격 완전 차단 */
+  const canvas=document.getElementById('gameCanvas');
+  if(canvas){
+    const block=e=>{
+      if(joystickMode()){
+        e.preventDefault();e.stopImmediatePropagation();
+      }
+    };
+    ['pointerdown','pointerup','pointermove','mousedown','mouseup','click','touchstart','touchend'].forEach(t=>canvas.addEventListener(t,block,true));
+  }
+
+  function drawAim(){
+    if(!aimPreview||!attackActive||!joystickMode()||!running())return;
+    const info=weaponInfo(),p=game.player,cam=game.camera||{x:0,y:0};
+    const maxTargetRadius=30;
+    const visualRange=info.type==='melee' ? info.range+maxTargetRadius : info.range;
+    ctx.save();
+    ctx.translate(-cam.x,-cam.y);
+    ctx.fillStyle='#ff4757';ctx.strokeStyle='#ff7180';ctx.lineWidth=2;
+    ctx.globalAlpha=.20;
+    if(info.type==='melee'){
+      ctx.beginPath();
+      ctx.moveTo(p.x,p.y);
+      ctx.arc(p.x,p.y,visualRange,attackAngle-info.arc/2,attackAngle+info.arc/2);
+      ctx.closePath();ctx.fill();
+      ctx.globalAlpha=.62;ctx.stroke();
+      /* 무기 자체 사거리 표시 */
+      ctx.globalAlpha=.30;ctx.setLineDash([5,5]);
+      ctx.beginPath();ctx.arc(p.x,p.y,info.range,attackAngle-info.arc/2,attackAngle+info.arc/2);ctx.stroke();ctx.setLineDash([]);
+    }else{
+      ctx.beginPath();ctx.arc(p.x,p.y,visualRange,0,Math.PI*2);ctx.fill();
+      ctx.globalAlpha=.62;ctx.stroke();
+      ctx.globalAlpha=.78;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x+Math.cos(attackAngle)*visualRange,p.y+Math.sin(attackAngle)*visualRange);ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /* 최신 drawGame 뒤에 조준 범위를 그린다. */
+  const baseDraw=window.drawGame;
+  if(typeof baseDraw==='function' && !baseDraw.__finalJoystickAim){
+    const wrapped=function(){baseDraw.apply(this,arguments);drawAim();};
+    wrapped.__finalJoystickAim=true;
+    window.drawGame=wrapped;
+  }
+
+  function syncVisibility(){
+    const on=joystickMode()&&gameStarted&&!gameOver;
+    move.style.display=on?'block':'none';
+    attack.style.display=on?'block':'none';
+    if(!on){resetMove();resetAttack();}
+  }
+  syncVisibility();
+  setInterval(syncVisibility,120);
+
+  const start=window.startGame;
+  if(typeof start==='function' && !start.__finalJoystickStart){
+    const w=function(){const r=start.apply(this,arguments);setTimeout(syncVisibility,50);return r;};
+    w.__finalJoystickStart=true;window.startGame=w;
+  }
+  const restart=window.restartGame;
+  if(typeof restart==='function' && !restart.__finalJoystickRestart){
+    const w=function(){const r=restart.apply(this,arguments);setTimeout(syncVisibility,50);return r;};
+    w.__finalJoystickRestart=true;window.restartGame=w;
+  }
+  const menu=window.goToMenu;
+  if(typeof menu==='function' && !menu.__finalJoystickMenu){
+    const w=function(){const r=menu.apply(this,arguments);syncVisibility();return r;};
+    w.__finalJoystickMenu=true;window.goToMenu=w;
+  }
+})();
+</script>
+
+<style id="ultimate-joystick-fix">
+/* FINAL ULTIMATE JOYSTICK */
+#joystick,#attack-joystick,#rpg-move-joystick,#rpg-attack-joystick,
+#final-move-joystick,#final-attack-joystick{display:none!important;pointer-events:none!important;}
+#ultimate-move,#ultimate-attack{
+  position:fixed!important;width:144px!important;height:144px!important;border-radius:50%!important;
+  box-sizing:border-box!important;touch-action:none!important;user-select:none!important;-webkit-user-select:none!important;
+  z-index:2147483647!important;pointer-events:auto!important;display:none;transform:none!important;margin:0!important;
+}
+#ultimate-move{left:18px!important;bottom:22px!important;background:rgba(0,0,0,.34)!important;border:3px solid rgba(255,255,255,.42)!important;}
+#ultimate-attack{right:18px!important;bottom:22px!important;background:rgba(120,20,30,.18)!important;border:3px solid rgba(255,105,120,.68)!important;}
+.ultimate-knob{position:absolute!important;left:47px!important;top:47px!important;width:50px!important;height:50px!important;border-radius:50%!important;pointer-events:none!important;transform:none!important;}
+#ultimate-move-knob{background:rgba(0,245,255,.78)!important;border:2px solid #00f5ff!important;box-shadow:0 0 14px rgba(0,245,255,.45)!important;}
+#ultimate-attack-knob{background:rgba(255,71,87,.84)!important;border:2px solid #ff4757!important;box-shadow:0 0 14px rgba(255,71,87,.48)!important;}
+.ultimate-label{position:absolute!important;left:0!important;right:0!important;top:-22px!important;text-align:center!important;color:#fff!important;font:bold 12px Arial!important;text-shadow:0 1px 4px #000!important;pointer-events:none!important;}
+@media(max-width:700px){#ultimate-move{left:12px!important;bottom:16px!important}#ultimate-attack{right:12px!important;bottom:16px!important}}
+</style>
+<script>
+(function(){
+  'use strict';
+  if(typeof game==='undefined') return;
+  ['joystick','attack-joystick','rpg-move-joystick','rpg-attack-joystick','final-move-joystick','final-attack-joystick'].forEach(id=>{const e=document.getElementById(id);if(e)e.remove();});
+  const make=(id,knob,label)=>{let e=document.getElementById(id);if(e)e.remove();e=document.createElement('div');e.id=id;e.innerHTML='<div class="ultimate-label">'+label+'</div><div id="'+knob+'" class="ultimate-knob"></div>';document.body.appendChild(e);return e;};
+  const move=make('ultimate-move','ultimate-move-knob','🕹️ 이동');
+  const attack=make('ultimate-attack','ultimate-attack-knob','⚔️ 공격');
+  const mk=document.getElementById('ultimate-move-knob'), ak=document.getElementById('ultimate-attack-knob');
+  const MAX=46, DEAD=.18, C=72, K=47;
+  let movePid=null, attackPid=null, moveOn=false, attackOn=false, attackLen=0, attackAngle=game.player.facingAngle||0;
+  let preview=false;
+  const mode=()=>localStorage.getItem('rpg_control')==='joystick';
+  const running=()=>!!(gameStarted&&!gameOver&&!isPaused);
+  function resetMove(){moveOn=false;movePid=null;if(game.keys){['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].forEach(k=>game.keys[k]=false);}mk.style.left=K+'px';mk.style.top=K+'px';}
+  function updateMove(e){const r=move.getBoundingClientRect();let dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),l=Math.hypot(dx,dy)||1;if(l>MAX){dx=dx/l*MAX;dy=dy/l*MAX;}mk.style.left=(C-K+dx)+'px';mk.style.top=(C-K+dy)+'px';const nx=dx/MAX,ny=dy/MAX;if(game.keys){game.keys.w=ny<-DEAD;game.keys.s=ny>DEAD;game.keys.a=nx<-DEAD;game.keys.d=nx>DEAD;}}
+  function getInfo(){let w=null;try{w=typeof getEquippedWeapon==='function'?getEquippedWeapon():null;}catch(_){} if(!w)return {melee:true,range:55,arc:Math.PI};return {melee:w.attackType==='melee',range:Number.isFinite(w.range)?w.range:55,arc:Number.isFinite(w.arc)?w.arc:Math.PI};}
+  function resetAttack(){attackOn=false;attackPid=null;attackLen=0;preview=false;ak.style.left=K+'px';ak.style.top=K+'px';}
+  function updateAttack(e){const r=attack.getBoundingClientRect();let dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),l=Math.hypot(dx,dy)||1;if(l>MAX){dx=dx/l*MAX;dy=dy/l*MAX;}attackLen=Math.hypot(dx,dy);ak.style.left=(C-K+dx)+'px';ak.style.top=(C-K+dy)+'px';if(attackLen>MAX*DEAD){attackAngle=Math.atan2(dy,dx);game.player.facingAngle=attackAngle;preview=true;}else preview=false;}
+  move.onpointerdown=e=>{if(!mode()||!running())return;e.preventDefault();e.stopPropagation();moveOn=true;movePid=e.pointerId;move.setPointerCapture?.(e.pointerId);updateMove(e);};
+  move.onpointermove=e=>{if(moveOn&&e.pointerId===movePid){e.preventDefault();e.stopPropagation();updateMove(e);}};
+  move.onpointerup=e=>{if(e.pointerId===movePid){e.preventDefault();e.stopPropagation();resetMove();}};
+  move.onpointercancel=resetMove;
+  attack.onpointerdown=e=>{if(!mode()||!running())return;e.preventDefault();e.stopPropagation();attackOn=true;attackPid=e.pointerId;attack.setPointerCapture?.(e.pointerId);updateAttack(e);};
+  attack.onpointermove=e=>{if(attackOn&&e.pointerId===attackPid){e.preventDefault();e.stopPropagation();updateAttack(e);}};
+  function releaseAttack(e){if(attackPid!==null&&e.pointerId!==attackPid)return;e.preventDefault?.();e.stopPropagation?.();const fire=attackLen>MAX*DEAD&&mode()&&running(),a=attackAngle;resetAttack();if(fire){game.player.facingAngle=a;if(typeof playerAttack==='function')playerAttack();}}
+  attack.onpointerup=releaseAttack;attack.onpointercancel=()=>resetAttack();
+  const canvas=document.getElementById('gameCanvas');
+  if(canvas){const block=e=>{if(mode()){e.preventDefault();e.stopImmediatePropagation();}};['pointerdown','pointerup','mousedown','mouseup','click','touchstart','touchend'].forEach(t=>canvas.addEventListener(t,block,true));}
+  function drawPreview(){if(!preview||!attackOn||!mode()||!running())return;const inf=getInfo(),p=game.player,cam=game.camera||{x:0,y:0};let range=inf.range;if(inf.melee)range+=30;ctx.save();ctx.translate(-cam.x,-cam.y);ctx.fillStyle='#ff4757';ctx.strokeStyle='#ff7180';ctx.lineWidth=2;ctx.globalAlpha=.20;if(inf.melee){ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.arc(p.x,p.y,range,attackAngle-inf.arc/2,attackAngle+inf.arc/2);ctx.closePath();ctx.fill();ctx.globalAlpha=.65;ctx.stroke();}else{ctx.globalAlpha=.16;ctx.beginPath();ctx.arc(p.x,p.y,range,0,Math.PI*2);ctx.fill();ctx.globalAlpha=.7;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x+Math.cos(attackAngle)*inf.range,p.y+Math.sin(attackAngle)*inf.range);ctx.stroke();}ctx.restore();}
+  const drawBase=window.drawGame;if(typeof drawBase==='function'&&!drawBase.__ultimateJoy){const w=function(){drawBase.apply(this,arguments);drawPreview();};w.__ultimateJoy=true;window.drawGame=w;}
+  function sync(){const on=mode()&&gameStarted&&!gameOver;move.style.display=on?'block':'none';attack.style.display=on?'block':'none';if(!on){resetMove();resetAttack();}}
+  sync();setInterval(sync,120);
+  const kb=document.getElementById('control-keyboard'),js=document.getElementById('control-joystick');
+  if(kb)kb.onclick=()=>{localStorage.setItem('rpg_control','keyboard');sync();};
+  if(js)js.onclick=()=>{localStorage.setItem('rpg_control','joystick');sync();};
+})();
+</script>
+
+<script>
+(function(){
+  if(!localStorage.getItem('rpg_bgm')) localStorage.setItem('rpg_bgm','on');
+  function silenceBgm(){
+    localStorage.setItem('rpg_bgm','off');
+    document.querySelectorAll('#audio-toggle').forEach(b=>{if(b.textContent.includes('켜짐')||b.textContent.includes('음악')){b.textContent='🔇 음악';}});
+  }
+  function enableBgm(){localStorage.setItem('rpg_bgm','on');}
+  const on=document.getElementById('bgm-on'),off=document.getElementById('bgm-off');
+  if(on)on.onclick=function(){enableBgm(); if(typeof window.playGameMusic==='function')window.playGameMusic();};
+  if(off)off.onclick=function(){silenceBgm();};
+  window.__bgmOff=silenceBgm; window.__bgmOn=enableBgm;
+})();
+</script>
+
+<style id="stable-controls-final">
+#stable-move-joystick,#stable-attack-joystick{position:fixed!important;width:144px!important;height:144px!important;border-radius:50%!important;box-sizing:border-box!important;touch-action:none!important;user-select:none!important;-webkit-user-select:none!important;display:none;pointer-events:auto!important;z-index:2147483646!important;transform:none!important;margin:0!important}
+#stable-move-joystick{left:18px!important;bottom:24px!important;background:rgba(0,0,0,.34)!important;border:3px solid rgba(255,255,255,.48)!important}
+#stable-attack-joystick{right:18px!important;bottom:24px!important;background:rgba(130,25,35,.18)!important;border:3px solid rgba(255,105,120,.70)!important}
+.stable-stick-knob{position:absolute!important;left:47px!important;top:47px!important;width:50px!important;height:50px!important;border-radius:50%!important;pointer-events:none!important;box-sizing:border-box!important;transform:none!important;margin:0!important}
+#stable-move-knob{background:rgba(0,245,255,.80)!important;border:2px solid #00f5ff!important;box-shadow:0 0 14px rgba(0,245,255,.45)!important}
+#stable-attack-knob{background:rgba(255,71,87,.84)!important;border:2px solid #ff4757!important;box-shadow:0 0 14px rgba(255,71,87,.50)!important}
+.stable-joy-label{position:absolute!important;left:0!important;right:0!important;top:-24px!important;text-align:center!important;color:#fff!important;font:bold 12px Arial,sans-serif!important;text-shadow:0 1px 4px #000!important;pointer-events:none!important}
+#stable-aim-range{position:fixed!important;left:0!important;top:0!important;width:0!important;height:0!important;pointer-events:none!important;z-index:2147483645!important}
+@media(max-width:700px){#stable-move-joystick{left:12px!important;bottom:18px!important}#stable-attack-joystick{right:12px!important;bottom:18px!important}}
+</style>
+<script>
+(function(){
+'use strict';
+if(typeof game==='undefined') return;
+/* remove every previous joystick implementation so controls cannot overlap */
+['joystick','attack-joystick','rpg-move-joystick','rpg-attack-joystick','final-move-joystick','final-attack-joystick','ultimate-move','ultimate-attack'].forEach(function(id){var e=document.getElementById(id);if(e)e.remove();});
+function make(id,knob,label){var e=document.getElementById(id);if(!e){e=document.createElement('div');e.id=id;e.innerHTML='<div class="stable-joy-label">'+label+'</div><div id="'+knob+'" class="stable-stick-knob"></div>';document.body.appendChild(e);}return e;}
+var move=make('stable-move-joystick','stable-move-knob','🕹️ 이동');
+var attack=make('stable-attack-joystick','stable-attack-knob','⚔️ 공격');
+var mk=document.getElementById('stable-move-knob'), ak=document.getElementById('stable-attack-knob');
+var MAX=46,CENTER=47,DEAD=.16;
+var moveOn=false,movePid=null,attackOn=false,attackPid=null,attackLen=0,attackAngle=game.player.facingAngle||0,aim=false;
+function mode(){return (localStorage.getItem('rpg_control')||'keyboard')==='joystick';}
+function running(){return !!(gameStarted&&!gameOver&&!isPaused);}
+function resetMove(){moveOn=false;movePid=null;if(game.keys){['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].forEach(function(k){game.keys[k]=false;});}mk.style.left=CENTER+'px';mk.style.top=CENTER+'px';}
+function moveUpdate(e){var r=move.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),len=Math.hypot(dx,dy)||1;if(len>MAX){dx=dx/len*MAX;dy=dy/len*MAX;}mk.style.left=(CENTER+dx)+'px';mk.style.top=(CENTER+dy)+'px';if(game.keys){var tx=MAX*DEAD;game.keys.w=dy<-tx;game.keys.s=dy>tx;game.keys.a=dx<-tx;game.keys.d=dx>tx;}}
+function weaponInfo(){var w=null;try{if(typeof getEquippedWeapon==='function')w=getEquippedWeapon();}catch(e){}if(!w)return {kind:'melee',range:55,arc:Math.PI};return {kind:w.attackType||'melee',range:Number.isFinite(w.range)?w.range:55,arc:Number.isFinite(w.arc)?w.arc:Math.PI};}
+function resetAttack(){attackOn=false;attackPid=null;attackLen=0;aim=false;ak.style.left=CENTER+'px';ak.style.top=CENTER+'px';}
+function attackUpdate(e){var r=attack.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),len=Math.hypot(dx,dy)||1;if(len>MAX){dx=dx/len*MAX;dy=dy/len*MAX;}attackLen=Math.hypot(dx,dy);ak.style.left=(CENTER+dx)+'px';ak.style.top=(CENTER+dy)+'px';if(attackLen>MAX*DEAD){attackAngle=Math.atan2(dy,dx);game.player.facingAngle=attackAngle;aim=true;}else aim=false;}
+move.onpointerdown=function(e){if(!mode()||!running())return;e.preventDefault();e.stopPropagation();moveOn=true;movePid=e.pointerId;try{move.setPointerCapture(e.pointerId)}catch(_){ }moveUpdate(e);};
+move.onpointermove=function(e){if(moveOn&&e.pointerId===movePid){e.preventDefault();e.stopPropagation();moveUpdate(e);}};
+move.onpointerup=function(e){if(e.pointerId===movePid){e.preventDefault();e.stopPropagation();resetMove();}};move.onpointercancel=resetMove;move.onlostpointercapture=function(){if(moveOn)resetMove();};
+attack.onpointerdown=function(e){if(!mode()||!running())return;e.preventDefault();e.stopPropagation();attackOn=true;attackPid=e.pointerId;try{attack.setPointerCapture(e.pointerId)}catch(_){ }attackUpdate(e);};
+attack.onpointermove=function(e){if(attackOn&&e.pointerId===attackPid){e.preventDefault();e.stopPropagation();attackUpdate(e);}};
+function release(e){if(attackPid!==null&&e.pointerId!==undefined&&e.pointerId!==attackPid)return;e.preventDefault&&e.preventDefault();e.stopPropagation&&e.stopPropagation();var fire=attackOn&&attackLen>MAX*DEAD&&mode()&&running(),a=attackAngle;resetAttack();if(fire){game.player.facingAngle=a;if(typeof playerAttack==='function')playerAttack();}}
+attack.onpointerup=release;attack.onpointercancel=resetAttack;attack.onlostpointercapture=function(){if(attackOn)release({pointerId:attackPid,preventDefault:function(){},stopPropagation:function(){}});};
+var canvas=document.getElementById('gameCanvas');if(canvas){var block=function(e){if(mode()){e.preventDefault();e.stopImmediatePropagation();}};['pointerdown','pointerup','mousedown','mouseup','click','touchstart','touchend'].forEach(function(t){canvas.addEventListener(t,block,true);});}
+/* exact visual range: melee mirrors performMeleeAttack() including monster radius; ranged/magic use weapon.range */
+function drawAim(){if(!aim||!attackOn||!mode()||!running())return;var info=weaponInfo(),p=game.player,cam=game.camera||{x:0,y:0},r=info.kind==='melee'?info.range+22:info.range;ctx.save();ctx.translate(-cam.x,-cam.y);ctx.fillStyle='#ff4757';ctx.strokeStyle='#ff8a96';ctx.lineWidth=2;ctx.globalAlpha=.18;if(info.kind==='melee'){ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.arc(p.x,p.y,r,attackAngle-info.arc/2,attackAngle+info.arc/2);ctx.closePath();ctx.fill();ctx.globalAlpha=.72;ctx.stroke();}else{ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fill();ctx.globalAlpha=.72;ctx.stroke();}ctx.restore();}
+var oldDraw=window.drawGame;if(typeof oldDraw==='function'&&!oldDraw.__stableJoy){var wrap=function(){oldDraw.apply(this,arguments);drawAim();};wrap.__stableJoy=true;window.drawGame=wrap;}
+function sync(){var on=mode()&&gameStarted&&!gameOver;move.style.display=on?'block':'none';attack.style.display=on?'block':'none';if(!on){resetMove();resetAttack();}}
+sync();setInterval(sync,100);
+/* settings: rebuild one reliable button/panel */
+var oldPanel=document.getElementById('settings-panel');if(oldPanel)oldPanel.remove();
+var oldToggle=document.getElementById('settings-toggle');if(oldToggle)oldToggle.remove();
+var menu=document.getElementById('main-menu');
+var toggle=document.createElement('button');toggle.id='stable-settings-toggle';toggle.textContent='⚙️ 설정';toggle.style.cssText='position:absolute;left:20px;top:20px;z-index:3000;padding:12px 24px;font-size:18px;font-weight:bold;background:#444;color:#fff;border:1px solid #777;border-radius:7px;cursor:pointer;';(menu||document.body).appendChild(toggle);
+var panel=document.createElement('div');panel.id='stable-settings-panel';panel.style.cssText='position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(390px,92vw);background:rgba(0,0,0,.97);border:2px solid #00f5ff;border-radius:10px;padding:16px;z-index:2147483647;display:none;color:#fff;font-family:Arial,sans-serif;';panel.innerHTML='<div style="color:#00f5ff;font-size:20px;font-weight:bold;text-align:center;margin-bottom:14px">⚙️ 게임 설정</div><div style="background:#191919;border:1px solid #444;border-radius:7px;padding:11px;margin:8px 0"><b style="color:#ffa502;display:block;margin-bottom:7px">🎮 조작 방식</b><button id="stable-kb" style="width:48%;padding:9px;cursor:pointer">⌨️ 키보드</button><button id="stable-js" style="width:48%;padding:9px;cursor:pointer">🕹️ 조이스틱</button></div><div style="background:#191919;border:1px solid #444;border-radius:7px;padding:11px;margin:8px 0"><b style="color:#ffa502;display:block;margin-bottom:7px">🎵 배경음악</b><button id="stable-bgm-on" style="width:48%;padding:9px;cursor:pointer">🔊 켜짐</button><button id="stable-bgm-off" style="width:48%;padding:9px;cursor:pointer">🔇 꺼짐</button></div><button id="stable-close" style="width:100%;padding:10px;cursor:pointer">닫기</button>';document.body.appendChild(panel);
+function setClass(id,on){var e=document.getElementById(id);if(e){e.style.background=on?'#00f5ff':'#222';e.style.color=on?'#000':'#fff';e.style.fontWeight=on?'bold':'normal';}}
+function bgmOn(){localStorage.setItem('rpg_bgm','on');setClass('stable-bgm-on',true);setClass('stable-bgm-off',false);try{if(typeof window.playGameMusic==='function')window.playGameMusic();}catch(e){}}
+function bgmOff(){localStorage.setItem('rpg_bgm','off');setClass('stable-bgm-on',false);setClass('stable-bgm-off',true);}
+function setControl(v){localStorage.setItem('rpg_control',v);setClass('stable-kb',v==='keyboard');setClass('stable-js',v==='joystick');sync();}
+if(!localStorage.getItem('rpg_control'))localStorage.setItem('rpg_control','keyboard');if(!localStorage.getItem('rpg_bgm'))localStorage.setItem('rpg_bgm','on');
+toggle.onclick=function(e){e.stopPropagation();panel.style.display='block';setClass('stable-kb',(localStorage.getItem('rpg_control')||'keyboard')==='keyboard');setClass('stable-js',localStorage.getItem('rpg_control')==='joystick');setClass('stable-bgm-on',localStorage.getItem('rpg_bgm')!=='off');setClass('stable-bgm-off',localStorage.getItem('rpg_bgm')==='off');};
+document.getElementById('stable-kb').onclick=function(){setControl('keyboard');};document.getElementById('stable-js').onclick=function(){setControl('joystick');};document.getElementById('stable-bgm-on').onclick=function(){bgmOn();};document.getElementById('stable-bgm-off').onclick=function(){bgmOff();};document.getElementById('stable-close').onclick=function(){panel.style.display='none';};
+/* survive late start/menu wrappers */
+var os=window.startGame,or=window.restartGame,om=window.goToMenu;if(typeof os==='function'){window.startGame=function(){var r=os.apply(this,arguments);setTimeout(sync,80);return r;};}if(typeof or==='function'){window.restartGame=function(){var r=or.apply(this,arguments);setTimeout(sync,80);return r;};}if(typeof om==='function'){window.goToMenu=function(){var r=om.apply(this,arguments);panel.style.display='none';sync();return r;};}
+/* force BGM gate in case another older patch tries to start it */
+var oldMusic=window.playGameMusic;if(typeof oldMusic==='function'&&!oldMusic.__stableGate){var gated=function(){if(localStorage.getItem('rpg_bgm')==='off')return;return oldMusic.apply(this,arguments);};gated.__stableGate=true;window.playGameMusic=gated;}
+})();
+</script>
+
+<style id="ultimate-final-fix-v5">
+/* ===== ULTIMATE FINAL FIX V5 ===== */
+#stable-move-joystick,#stable-attack-joystick,
+#joystick,#attack-joystick,#rpg-move-joystick,#rpg-attack-joystick,
+#final-move-joystick,#final-attack-joystick,#ultimate-move,#ultimate-attack{box-sizing:border-box!important;}
+#stable-move-joystick,#stable-attack-joystick{position:fixed!important;width:150px!important;height:150px!important;border-radius:50%!important;touch-action:none!important;user-select:none!important;-webkit-user-select:none!important;pointer-events:auto!important;z-index:2147483000!important;transform:none!important;margin:0!important;overflow:visible!important;}
+#stable-move-joystick{left:18px!important;bottom:24px!important;background:rgba(0,0,0,.32)!important;border:3px solid rgba(255,255,255,.48)!important;}
+#stable-attack-joystick{right:18px!important;bottom:24px!important;background:rgba(130,25,35,.16)!important;border:3px solid rgba(255,105,120,.72)!important;}
+.stable-joy-label{position:absolute!important;left:0!important;right:0!important;top:-25px!important;text-align:center!important;font:bold 12px Arial,sans-serif!important;color:#fff!important;text-shadow:0 1px 4px #000!important;pointer-events:none!important;}
+.stable-stick-knob{position:absolute!important;left:50%!important;top:50%!important;width:52px!important;height:52px!important;border-radius:50%!important;box-sizing:border-box!important;transform:translate(-50%,-50%)!important;margin:0!important;pointer-events:none!important;will-change:left,top!important;}
+#stable-move-knob{background:rgba(0,245,255,.82)!important;border:2px solid #00f5ff!important;box-shadow:0 0 14px rgba(0,245,255,.42)!important;}
+#stable-attack-knob{background:rgba(255,71,87,.84)!important;border:2px solid #ff4757!important;box-shadow:0 0 14px rgba(255,71,87,.5)!important;}
+#stable-settings-toggle{pointer-events:auto!important;}
+#cheat-console{font-family:monospace!important;}
+@media(max-width:700px){
+ #stable-move-joystick{left:12px!important;bottom:18px!important}
+ #stable-attack-joystick{right:12px!important;bottom:18px!important}
+}
+</style>
+<script id="ultimate-final-fix-v5-js">
+(function(){
+'use strict';
+if(typeof game==='undefined') return;
+
+/* ---------- 1. One joystick system only ---------- */
+['joystick','attack-joystick','rpg-move-joystick','rpg-attack-joystick','final-move-joystick','final-attack-joystick','ultimate-move','ultimate-attack'].forEach(function(id){var e=document.getElementById(id);if(e)e.remove();});
+function ensureJoy(id,knobId,label){
+  var e=document.getElementById(id);
+  if(!e){e=document.createElement('div');e.id=id;document.body.appendChild(e);}
+  e.innerHTML='<div class="stable-joy-label">'+label+'</div><div id="'+knobId+'" class="stable-stick-knob"></div>';
+  return e;
+}
+var move=ensureJoy('stable-move-joystick','stable-move-knob','🕹️ 이동');
+var attack=ensureJoy('stable-attack-joystick','stable-attack-knob','⚔️ 공격');
+var mk=document.getElementById('stable-move-knob'), ak=document.getElementById('stable-attack-knob');
+var MAX=48, DEAD=.15;
+var moveActive=false,movePid=null,attackActive=false,attackPid=null,attackLen=0,attackAngle=game.player.facingAngle||0;
+var aimPreview=false;
+function isJoyMode(){return (localStorage.getItem('rpg_control')||'keyboard')==='joystick';}
+function running(){return !!(gameStarted&&!gameOver&&!isPaused);}
+function centerKnob(k){k.style.left='50%';k.style.top='50%';k.style.transform='translate(-50%,-50%)';}
+function resetMove(){moveActive=false;movePid=null;var ks=['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'];if(game.keys)ks.forEach(function(k){game.keys[k]=false;});centerKnob(mk);}
+function moveSet(e){var r=move.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy,len=Math.hypot(dx,dy)||1;if(len>MAX){dx=dx/len*MAX;dy=dy/len*MAX;}mk.style.left='calc(50% + '+dx+'px)';mk.style.top='calc(50% + '+dy+'px)';mk.style.transform='translate(-50%,-50%)';if(game.keys){var t=MAX*DEAD;game.keys.w=dy<-t;game.keys.s=dy>t;game.keys.a=dx<-t;game.keys.d=dx>t;}}
+function resetAttack(){attackActive=false;attackPid=null;attackLen=0;aimPreview=false;centerKnob(ak);}
+function attackSet(e){var r=attack.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy,len=Math.hypot(dx,dy)||1;if(len>MAX){dx=dx/len*MAX;dy=dy/len*MAX;}attackLen=Math.hypot(dx,dy);ak.style.left='calc(50% + '+dx+'px)';ak.style.top='calc(50% + '+dy+'px)';ak.style.transform='translate(-50%,-50%)';if(attackLen>MAX*DEAD){attackAngle=Math.atan2(dy,dx);game.player.facingAngle=attackAngle;aimPreview=true;}else{aimPreview=false;}}
+function bindJoy(el,isMove){
+  el.addEventListener('pointerdown',function(e){if(!isJoyMode()||!running())return;e.preventDefault();e.stopPropagation();try{el.setPointerCapture(e.pointerId);}catch(_){}if(isMove){moveActive=true;movePid=e.pointerId;moveSet(e);}else{attackActive=true;attackPid=e.pointerId;attackSet(e);}} ,true);
+  el.addEventListener('pointermove',function(e){if(isMove){if(!moveActive||e.pointerId!==movePid)return;}else{if(!attackActive||e.pointerId!==attackPid)return;}e.preventDefault();e.stopPropagation();isMove?moveSet(e):attackSet(e);},true);
+  el.addEventListener('pointerup',function(e){e.preventDefault();e.stopPropagation();if(isMove){if(e.pointerId===movePid)resetMove();return;}if(e.pointerId!==attackPid)return;var fire=attackActive&&attackLen>MAX*DEAD&&isJoyMode()&&running(),a=attackAngle;resetAttack();if(fire){game.player.facingAngle=a;if(typeof playerAttack==='function')playerAttack();}},true);
+  el.addEventListener('pointercancel',function(e){e.preventDefault();e.stopPropagation();isMove?resetMove():resetAttack();},true);
+}
+bindJoy(move,true);bindJoy(attack,false);
+window.addEventListener('pointerup',function(e){if(moveActive&&e.pointerId===movePid)resetMove();if(attackActive&&e.pointerId===attackPid){var fire=attackLen>MAX*DEAD&&isJoyMode()&&running(),a=attackAngle;resetAttack();if(fire&&typeof playerAttack==='function'){game.player.facingAngle=a;playerAttack();}}},true);
+
+/* click/touch attack is disabled only in joystick mode */
+var cvs=document.getElementById('gameCanvas');
+if(cvs){['mousedown','click','touchstart','pointerdown'].forEach(function(t){cvs.addEventListener(t,function(e){if(isJoyMode()){e.preventDefault();e.stopImmediatePropagation();}},true);});}
+
+/* ---------- 2. Exact attack geometry shared by aim + motion ---------- */
+function getAttackGeometry(){
+  var w=null;try{w=typeof getEquippedWeapon==='function'?getEquippedWeapon():null;}catch(_){ }
+  if(!w)return {type:'melee',range:55,arc:1.2,damageRange:85};
+  var type=w.attackType||'melee',range=Number.isFinite(w.range)?w.range:55,arc=Number.isFinite(w.arc)?w.arc:1.2;
+  return {type:type,range:range,arc:arc,damageRange:type==='melee'?range+30:range};
+}
+function drawExactAim(){
+  if(!aimPreview||!attackActive||!isJoyMode()||!running())return;
+  var g=getAttackGeometry(),p=game.player,cam=game.camera||{x:0,y:0},r=g.damageRange;
+  ctx.save();ctx.translate(-cam.x,-cam.y);ctx.lineWidth=3;ctx.fillStyle='#ff4757';ctx.strokeStyle='#ff8a96';ctx.globalAlpha=.20;
+  if(g.type==='melee'){
+    ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.arc(p.x,p.y,r,attackAngle-g.arc/2,attackAngle+g.arc/2);ctx.closePath();ctx.fill();ctx.globalAlpha=.75;ctx.stroke();
+  }else{
+    ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fill();ctx.globalAlpha=.75;ctx.stroke();ctx.globalAlpha=.65;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x+Math.cos(attackAngle)*r,p.y+Math.sin(attackAngle)*r);ctx.stroke();
+  }
+  ctx.restore();
+}
+var prevDraw=window.drawGame;
+if(typeof prevDraw==='function'&&!prevDraw.__exactAimV5){var dwrap=function(){prevDraw.apply(this,arguments);drawExactAim();};dwrap.__exactAimV5=true;window.drawGame=dwrap;}
+
+/* Make attack motion use exactly the same sector/radius as the preview. */
+var prevAnim=window.drawAttackAnimation;
+if(typeof prevAnim==='function'&&!prevAnim.__exactAnimV5){
+  var awrap=function(){
+    var a=game.player&&game.player.attackAnimation;
+    if(a&&a.type&&a.start){
+      var g=getAttackGeometry(),pr=Math.max(0,Math.min(1,(performance.now()-a.start)/(a.duration||250)));
+      if(g.type==='melee'){
+        ctx.save();ctx.translate(game.player.x,game.player.y);ctx.globalAlpha=(1-pr)*.72;ctx.strokeStyle='#ffd166';ctx.lineWidth=10;ctx.lineCap='round';
+        var sweep=g.arc*Math.max(.12,Math.sin(pr*Math.PI));
+        var center=a.angle==null?(game.player.facingAngle||0):a.angle;
+        var start=center-sweep/2;
+        ctx.beginPath();ctx.arc(0,0,g.damageRange,start,start+sweep);ctx.stroke();ctx.restore();
+      }
+    }
+    prevAnim.apply(this,arguments);
+  };
+  awrap.__exactAnimV5=true;window.drawAttackAnimation=awrap;
+}
+
+/* ---------- 3. Snowfield/large-world movement + camera authority ---------- */
+var WORLD_V5=12000;
+function enforceWorld(){currentWorldSize=WORLD_V5;}
+var oldCam=window.updateCamera;
+window.updateCamera=function(){enforceWorld();if(typeof oldCam==='function')return oldCam.apply(this,arguments);};
+var oldUpd=window.updatePlayer;
+if(typeof oldUpd==='function'&&!oldUpd.__worldV5){
+  var uw=function(){var bx=game.player.x,by=game.player.y;enforceWorld();oldUpd.apply(this,arguments);game.player.x=clamp(game.player.x,game.player.radius,WORLD_V5-game.player.radius);game.player.y=clamp(game.player.y,game.player.radius,WORLD_V5-game.player.radius);enforceWorld();};
+  uw.__worldV5=true;window.updatePlayer=uw;
+}
+if(typeof ZONES!=='undefined'&&ZONES.snowfield){ZONES.snowfield.minLevel=18;ZONES.snowfield.worldSize=WORLD_V5;ZONES.snowfield.x=8700;ZONES.snowfield.y=2700;}
+
+/* ---------- 4. Region-safe spawning / per-zone cap / persistent patrol ---------- */
+var zoneCaps={town:0,meadow:25,forest:25,deepforest:25,mountain:25,dungeon:25,snowfield:25,cave:25,ruins:25,coast:25,swamp:25,desert:25,wasteland:25,ancient:25,volcano:25,abyss:25};
+function regionOf(x,y){if(typeof authoritativeRegion==='function')return authoritativeRegion(x,y);return game.currentZone||'town';}
+function countRegion(r){var n=0;for(var i=0;i<game.monsters.length;i++)if((game.monsters[i].region||regionOf(game.monsters[i].x,game.monsters[i].y))===r)n++;return n;}
+function spawnV5(){
+  if(!gameStarted||gameOver||isPaused)return;
+  var r=game.currentZone||'town',z=ZONES[r],cap=zoneCaps[r]??25;
+  if(!z||r==='town'||!Array.isArray(z.spawns)||!z.spawns.length||countRegion(r)>=cap)return;
+  var type=z.spawns[Math.floor(Math.random()*z.spawns.length)]; if(!MONSTERS[type])return;
+  var data=MONSTERS[type],safe=z.safeRadius||420;
+  for(var t=0;t<30;t++){
+    var ang=Math.random()*Math.PI*2,dist=700+Math.random()*500,x=clamp(game.player.x+Math.cos(ang)*dist,50,WORLD_V5-50),y=clamp(game.player.y+Math.sin(ang)*dist,50,WORLD_V5-50);
+    if(regionOf(x,y)!==r)continue;
+    if(Math.hypot(x-z.x,y-z.y)<safe)continue;
+    game.monsters.push({type:type,x:x,y:y,radius:data.isElite?30:22,hp:data.hp,maxHp:data.hp,damage:data.damage,speed:data.speed,exp:data.exp,color:data.color,emoji:data.emoji,vision:data.vision,attackRange:data.attackRange,lastAttack:0,attackCooldown:1200,isElite:!!data.isElite,loot:data.loot,region:r,homeX:x,homeY:y,patrolAngle:Math.random()*Math.PI*2,nextPatrolTurn:performance.now()+800,state:'patrol'});
+    return;
+  }
+}
+window.spawnMonsterV5=spawnV5;
+/* prevent any other spawn implementation from exceeding per-region cap */
+var spawnTimer=0;setInterval(function(){if(!gameStarted||gameOver||isPaused)return;var r=game.currentZone||'town';if(r==='town')return;if(countRegion(r)<(zoneCaps[r]??25))spawnV5();},850);
+/* Persist old monsters and let them patrol in their own region while player is elsewhere. */
+var monsterWorldState=new Map();
+var prevMonsterUpdate=window.updateMonsters;
+window.updateMonsters=function(){
+  if(!game.monsters)return;
+  for(var i=0;i<game.monsters.length;i++){
+    var m=game.monsters[i];if(!m.region)m.region=regionOf(m.x,m.y);if(!m.homeX)m.homeX=m.x;if(!m.homeY)m.homeY=m.y;monsterWorldState.set(m,{x:m.x,y:m.y,angle:m.patrolAngle||0});
+  }
+  if(typeof prevMonsterUpdate==='function'&&game.currentZone){/* only run base AI on current-region monsters */
+    var original=game.monsters;game.monsters=original.filter(function(m){return (m.region||game.currentZone)===(game.currentZone);});prevMonsterUpdate.apply(this,arguments);var acted=game.monsters;var actedSet=new Set(acted);game.monsters=original;
+    for(var j=0;j<game.monsters.length;j++){var mm=game.monsters[j],st=monsterWorldState.get(mm);if(actedSet.has(mm)){monsterWorldState.set(mm,{x:mm.x,y:mm.y,angle:mm.patrolAngle||0});}else if(st&&mm.region!==game.currentZone){var homeX=mm.homeX??mm.x,homeY=mm.homeY??mm.y;mm.patrolAngle=(mm.patrolAngle||0)+0.015;var tx=homeX+Math.cos(mm.patrolAngle)*80,ty=homeY+Math.sin(mm.patrolAngle)*80,dx=tx-mm.x,dy=ty-mm.y,d=Math.hypot(dx,dy)||1,sp=(mm.speed||1)*0.32;mm.x+=dx/d*sp;mm.y+=dy/d*sp;mm.x=clamp(mm.x,30,WORLD_V5-30);mm.y=clamp(mm.y,30,WORLD_V5-30);}}
+  }
+};
+/* Per-region cap pruning is only a safety net; it never deletes a different region's monsters. */
+setInterval(function(){if(!game.monsters)return;var counts={};for(var i=game.monsters.length-1;i>=0;i--){var m=game.monsters[i],r=m.region||regionOf(m.x,m.y),cap=zoneCaps[r]??25;counts[r]=(counts[r]||0)+1;if(counts[r]>cap){game.monsters.splice(i,1);}}},2000);
+
+/* ---------- 5. Cheat console ---------- */
+function buildCheat(){
+  if(document.getElementById('cheat-console'))return;
+  var box=document.createElement('div');box.id='cheat-console';box.style.cssText='display:none;position:fixed;left:50%;top:14%;transform:translateX(-50%);width:min(620px,92vw);background:rgba(0,0,0,.96);border:2px solid #00f5ff;border-radius:10px;padding:12px;z-index:2147483647;color:#fff;box-shadow:0 0 25px rgba(0,245,255,.25);';
+  box.innerHTML='<div style="font-weight:bold;color:#00f5ff;margin-bottom:8px">⌘ 치트 콘솔 <span style="font-size:11px;color:#888">(F2 또는 `)</span></div><div id="cheat-log" style="height:190px;overflow:auto;background:#090909;border:1px solid #333;padding:8px;font-size:12px;white-space:pre-wrap"></div><input id="cheat-input" autocomplete="off" placeholder="help / lv 50 / gold 99999 / tp snowfield / spawn ice_wolf 5" style="margin-top:8px;width:100%;padding:9px;background:#111;color:#fff;border:1px solid #555;border-radius:5px;font-family:monospace;outline:none;">';
+  document.body.appendChild(box);
+  var input=box.querySelector('#cheat-input'),log=box.querySelector('#cheat-log');
+  function out(t){log.textContent+=t+'\n';log.scrollTop=log.scrollHeight;}
+  function exec(cmd){
+    var a=cmd.trim().split(/\s+/),c=(a.shift()||'').toLowerCase();
+    if(!c)return;
+    if(c==='help'){out('lv N | exp N | gold N | heal | mana | god on/off | speed N | tp ZONE | spawn TYPE N | killall | clear');return;}
+    if(c==='lv'){var n=Math.max(1,parseInt(a[0]||'1',10));if(Number.isFinite(n)){game.player.level=n;game.player.maxExp=Math.max(100,game.player.maxExp);game.player.exp=0;updateUI&&updateUI();out('LV '+n);return;}}
+    if(c==='exp'){var n=parseInt(a[0]||'0',10);if(Number.isFinite(n)){game.player.exp=Math.max(0,n);updateUI&&updateUI();out('EXP '+game.player.exp);return;}}
+    if(c==='gold'){var n=parseInt(a[0]||'0',10);if(Number.isFinite(n)){game.player.gold=Math.max(0,n);updateUI&&updateUI();out('GOLD '+game.player.gold);return;}}
+    if(c==='heal'){game.player.hp=game.player.maxHp;updateUI&&updateUI();out('HP MAX');return;}
+    if(c==='mana'){game.player.mana=game.player.maxMana;updateUI&&updateUI();out('MP MAX');return;}
+    if(c==='god'){game._cheatGod=(a[0]||'on')!=='off';game.player.invincibleUntil=game._cheatGod?Infinity:0;out('GOD '+(game._cheatGod?'ON':'OFF'));return;}
+    if(c==='speed'){var n=parseFloat(a[0]||'1');if(Number.isFinite(n)){game._cheatSpeed=Math.max(.1,Math.min(5,n));out('SPEED '+game._cheatSpeed);return;}}
+    if(c==='tp'){var z=a[0];if(ZONES[z]&&((game.player.level||1)>=(ZONES[z].minLevel||1))){game.currentZone=z;currentWorldSize=WORLD_V5;game.player.x=ZONES[z].x;game.player.y=ZONES[z].y;updateCamera();initZoneSelect();updateUI();out('TP '+z);return;}out('LOCKED/UNKNOWN ZONE');return;}
+    if(c==='spawn'){var type=a[0],n=Math.max(1,Math.min(25,parseInt(a[1]||'1',10)));if(MONSTERS[type]){var saved=game.currentZone;for(var i=0;i<n;i++)spawnV5();out('SPAWN '+type+' x'+n+' in '+saved);return;}out('UNKNOWN MONSTER');return;}
+    if(c==='killall'){for(var i=game.monsters.length-1;i>=0;i--){if((game.monsters[i].region||regionOf(game.monsters[i].x,game.monsters[i].y))===game.currentZone)game.monsters.splice(i,1);}out('CURRENT REGION CLEARED');return;}
+    if(c==='clear'){log.textContent='';return;}
+    out('UNKNOWN COMMAND: '+c);
+  }
+  input.addEventListener('keydown',function(e){if(e.key==='Enter'){exec(input.value);input.value='';}if(e.key==='Escape'){box.style.display='none';input.blur();}});
+  window.cheat=exec;
+  window.toggleCheatConsole=function(){var on=box.style.display==='block';box.style.display=on?'none':'block';if(!on){out('help를 입력하세요.');input.focus();}};
+}
+buildCheat();
+document.addEventListener('keydown',function(e){if(e.key==='F2'||e.key==='`'){if(!e.ctrlKey&&!e.metaKey&&!e.altKey){e.preventDefault();window.toggleCheatConsole();}}},true);
+
+/* Speed cheat is applied to the existing movement function without changing normal speed. */
+var moveBefore=window.updatePlayer;
+if(typeof moveBefore==='function'&&!moveBefore.__speedV5){var mv=function(){var old=game.player.speed;var mult=game._cheatSpeed||1;if(mult!==1)game.player.speed=old*mult;try{return moveBefore.apply(this,arguments);}finally{game.player.speed=old;}};mv.__speedV5=true;window.updatePlayer=mv;}
+
+/* Final visibility sync */
+function sync(){var on=isJoyMode()&&gameStarted&&!gameOver;move.style.display=on?'block':'none';attack.style.display=on?'block':'none';if(!on){resetMove();resetAttack();}}
+sync();setInterval(sync,100);
+})();
+</script>
+\n<style id="ultimate-v6">
+.stable-stick-knob{left:50%;top:50%;}
+</style>
+<script id="ultimate-v6-js">
+(function(){
+'use strict';
+if(typeof game==='undefined') return;
+
+/* 1) Fix the joystick knob: CSS !important used to pin it to the center. */
+var mv=document.getElementById('stable-move-joystick'),akj=document.getElementById('stable-attack-joystick');
+var mk=document.getElementById('stable-move-knob'),ak=document.getElementById('stable-attack-knob');
+var MAX=48,DEAD=.15;
+function setCenter(k){if(!k)return;k.style.setProperty('left','50%','important');k.style.setProperty('top','50%','important');k.style.setProperty('transform','translate(-50%,-50%)','important');}
+function setOffset(k,dx,dy){if(!k)return;k.style.setProperty('left','calc(50% + '+dx+'px)','important');k.style.setProperty('top','calc(50% + '+dy+'px)','important');k.style.setProperty('transform','translate(-50%,-50%)','important');}
+var moveActive=false,movePid=null,attackActive=false,attackPid=null,attackLen=0,attackAngle=game.player.facingAngle||0,aimPreview=false;
+function joyMode(){return (localStorage.getItem('rpg_control')||'keyboard')==='joystick';}
+function running(){return !!(gameStarted&&!gameOver&&!isPaused);}
+function moveSet(e){var r=mv.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),n=Math.hypot(dx,dy)||1;if(n>MAX){dx=dx/n*MAX;dy=dy/n*MAX;}setOffset(mk,dx,dy);if(game.keys){var t=MAX*DEAD;game.keys.w=dy<-t;game.keys.s=dy>t;game.keys.a=dx<-t;game.keys.d=dx>t;}}
+function resetMove(){moveActive=false;movePid=null;if(game.keys)['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].forEach(function(k){game.keys[k]=false;});setCenter(mk);}
+function attackSet(e){var r=akj.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),n=Math.hypot(dx,dy)||1;if(n>MAX){dx=dx/n*MAX;dy=dy/n*MAX;}attackLen=Math.hypot(dx,dy);setOffset(ak,dx,dy);if(attackLen>MAX*DEAD){attackAngle=Math.atan2(dy,dx);game.player.facingAngle=attackAngle;aimPreview=true;}else aimPreview=false;}
+function resetAttack(){attackActive=false;attackPid=null;attackLen=0;aimPreview=false;setCenter(ak);}
+function bindMove(){mv.addEventListener('pointerdown',function(e){if(!joyMode()||!running())return;e.preventDefault();e.stopPropagation();moveActive=true;movePid=e.pointerId;try{mv.setPointerCapture(e.pointerId);}catch(_){}moveSet(e);},true);mv.addEventListener('pointermove',function(e){if(moveActive&&e.pointerId===movePid){e.preventDefault();e.stopPropagation();moveSet(e);}},true);mv.addEventListener('pointerup',function(e){if(e.pointerId===movePid){e.preventDefault();e.stopPropagation();resetMove();}},true);mv.addEventListener('pointercancel',resetMove,true);}
+function bindAttack(){akj.addEventListener('pointerdown',function(e){if(!joyMode()||!running())return;e.preventDefault();e.stopPropagation();attackActive=true;attackPid=e.pointerId;try{akj.setPointerCapture(e.pointerId);}catch(_){}attackSet(e);},true);akj.addEventListener('pointermove',function(e){if(attackActive&&e.pointerId===attackPid){e.preventDefault();e.stopPropagation();attackSet(e);}},true);function release(e){if(e.pointerId!==undefined&&e.pointerId!==attackPid)return;e.preventDefault();e.stopPropagation();var fire=attackActive&&attackLen>MAX*DEAD&&joyMode()&&running(),a=attackAngle;resetAttack();if(fire&&typeof playerAttack==='function'){game.player.facingAngle=a;playerAttack();}}akj.addEventListener('pointerup',release,true);akj.addEventListener('pointercancel',resetAttack,true);}
+if(mv&&mk)bindMove();if(akj&&ak)bindAttack();
+
+/* 2) Exact shared attack geometry. Preview and final attack motion use the same values. */
+function geometry(){var w=null;try{w=typeof getEquippedWeapon==='function'?getEquippedWeapon():null;}catch(_){}if(!w)return {type:'melee',range:55,arc:1.2,hit:85};var type=w.attackType||'melee',range=Number.isFinite(w.range)?w.range:55,arc=Number.isFinite(w.arc)?w.arc:1.2;return {type:type,range:range,arc:arc,hit:type==='melee'?range+30:range};}
+function drawExactAttackSector(){
+  var a=game.player&&game.player.attackAnimation;if(!a||!a.type||!a.start)return;
+  var g=geometry(),p=game.player,cam=game.camera||{x:0,y:0},pr=Math.max(0,Math.min(1,(performance.now()-a.start)/(a.duration||250)));if(g.type!=='melee')return;
+  ctx.save();ctx.translate(-cam.x,-cam.y);ctx.globalAlpha=(1-pr)*.78;ctx.strokeStyle='#ffd166';ctx.lineWidth=11;ctx.lineCap='round';
+  var sweep=g.arc*Math.max(.12,Math.sin(pr*Math.PI));ctx.beginPath();ctx.arc(p.x,p.y,g.hit,a.angle-g.arc/2,a.angle-g.arc/2+sweep);ctx.stroke();ctx.restore();
+}
+var dg=window.drawGame;if(typeof dg==='function'&&!dg.__v6Aim){var dw=function(){dg.apply(this,arguments);if(joyMode()&&running()&&aimPreview){var g=geometry(),p=game.player,cam=game.camera||{x:0,y:0},r=g.hit;ctx.save();ctx.translate(-cam.x,-cam.y);ctx.globalAlpha=.20;ctx.fillStyle='#ff4757';ctx.strokeStyle='#ff8a96';ctx.lineWidth=3;if(g.type==='melee'){ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.arc(p.x,p.y,r,attackAngle-g.arc/2,attackAngle+g.arc/2);ctx.closePath();ctx.fill();ctx.globalAlpha=.75;ctx.stroke();}else{ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fill();ctx.globalAlpha=.75;ctx.stroke();}ctx.restore();}};dw.__v6Aim=true;window.drawGame=dw;}
+/* Put the matching motion after every existing attack drawing, so it is the visible final layer. */
+var oldAnimDraw=window.drawGame;if(typeof oldAnimDraw==='function'&&!oldAnimDraw.__v6AttackMotion){var aw=function(){oldAnimDraw.apply(this,arguments);drawExactAttackSector();};aw.__v6AttackMotion=true;window.drawGame=aw;}
+
+/* 3) Hard-authoritative 12000x12000 movement/camera. This prevents the old 7200-world clamp from blocking the snowfield. */
+var WORLD=12000;
+var oldCam=window.updateCamera;window.updateCamera=function(){currentWorldSize=WORLD;game.camera.x=clamp(game.player.x-canvas.width/2,0,Math.max(0,WORLD-canvas.width));game.camera.y=clamp(game.player.y-canvas.height/2,0,Math.max(0,WORLD-canvas.height));};
+var currentUpdate=window.updatePlayer;
+window.updatePlayer=function(){
+  currentWorldSize=WORLD;
+  var bx=game.player.x,by=game.player.y,bz=game.currentZone||'town',dx=0,dy=0,k=game.keys||{};
+  if(k.w||k.arrowup)dy--;if(k.s||k.arrowdown)dy++;if(k.a||k.arrowleft)dx--;if(k.d||k.arrowright)dx++;
+  if(dx||dy){if(typeof returnChannelStart!=='undefined'&&returnChannelStart&&typeof cancelReturnChannel==='function')cancelReturnChannel();var len=Math.hypot(dx,dy)||1,mult=game._cheatSpeed||1,sp=(game.player.speed||2.4)*mult;game.player.x+=dx/len*sp;game.player.y+=dy/len*sp;game.player.movementAnimation=(game.player.movementAnimation||0)+Math.hypot(dx/len*sp,dy/len*sp)*.025;}
+  game.player.x=clamp(game.player.x,game.player.radius,WORLD-game.player.radius);game.player.y=clamp(game.player.y,game.player.radius,WORLD-game.player.radius);
+  if(typeof authoritativeRegion==='function'){
+    var next=authoritativeRegion(game.player.x,game.player.y),z=ZONES[next];
+    if(z&&(game.player.level||1)<(z.minLevel||1)){game.player.x=bx;game.player.y=by;game.currentZone=bz;return;}
+    if(next!==bz){game.currentZone=next;if(game.effects)game.effects.push({type:'zoneSpawn',x:game.player.x,y:game.player.y,start:performance.now(),duration:850});if(typeof initZoneSelect==='function')initZoneSelect();}
+    else game.currentZone=next;
+  }
+};
+/* Map/quick travel can always reach an unlocked snowfield. */
+var zc=window.changeZone;window.changeZone=function(key){var z=ZONES[key];if(!z||!gameStarted||gameOver)return;if((game.player.level||1)<(z.minLevel||1)){if(typeof showDropNotification==='function')showDropNotification('🔒 '+z.name+'은(는) Lv.'+z.minLevel+'부터 이동할 수 있습니다.');return;}if(key==='town'&&typeof startReturnToTown==='function'){startReturnToTown();return;}game.currentZone=key;currentWorldSize=WORLD;game.player.x=clamp(z.x,game.player.radius,WORLD-game.player.radius);game.player.y=clamp(z.y,game.player.radius,WORLD-game.player.radius);updateCamera();if(typeof initZoneSelect==='function')initZoneSelect();if(typeof updateUI==='function')updateUI();};
+if(ZONES.snowfield){ZONES.snowfield.minLevel=18;ZONES.snowfield.worldSize=WORLD;ZONES.snowfield.x=8700;ZONES.snowfield.y=2700;}
+
+/* 4) Region-limited spawning, 25 per region, never create a monster in a different region. */
+var caps={town:0};Object.keys(ZONES).forEach(function(k){if(caps[k]===undefined)caps[k]=25;});
+function reg(x,y){return typeof authoritativeRegion==='function'?authoritativeRegion(x,y):game.currentZone||'town';}
+function cnt(r){var n=0;for(var i=0;i<game.monsters.length;i++)if((game.monsters[i].region||reg(game.monsters[i].x,game.monsters[i].y))===r)n++;return n;}
+var spawnV6=function(){var r=game.currentZone||'town',z=ZONES[r],cap=caps[r]??25;if(!gameStarted||gameOver||isPaused||r==='town'||!z||!z.spawns||!z.spawns.length||cnt(r)>=cap)return;var type=z.spawns[Math.floor(Math.random()*z.spawns.length)];if(!MONSTERS[type])return;var d=MONSTERS[type];for(var q=0;q<40;q++){var an=Math.random()*Math.PI*2,dist=650+Math.random()*650,x=clamp(game.player.x+Math.cos(an)*dist,50,WORLD-50),y=clamp(game.player.y+Math.sin(an)*dist,50,WORLD-50);if(reg(x,y)!==r)continue;if(Math.hypot(x-z.x,y-z.y)<(z.safeRadius||420))continue;game.monsters.push({type:type,x:x,y:y,radius:d.isElite?30:22,hp:d.hp,maxHp:d.hp,damage:d.damage,speed:d.speed,exp:d.exp,color:d.color,emoji:d.emoji,vision:d.vision,attackRange:d.attackRange,lastAttack:0,attackCooldown:1200,isElite:!!d.isElite,loot:d.loot,region:r,homeX:x,homeY:y,patrolAngle:Math.random()*Math.PI*2,nextPatrolTurn:performance.now()+900,state:'patrol'});return;}};
+window.spawnMonster=spawnV6;setInterval(function(){if(gameStarted&&!gameOver&&!isPaused&&game.currentZone!=='town'&&cnt(game.currentZone)<(caps[game.currentZone]??25))spawnV6();},900);
+
+/* 5) Ensure old monsters remain visible and patrol in their own region. */
+var baseAI=window.updateMonsters;window.updateMonsters=function(){var current=game.currentZone||'town',all=game.monsters||[];for(var i=0;i<all.length;i++){var m=all[i];if(!m.region)m.region=reg(m.x,m.y);if(m.homeX==null)m.homeX=m.x;if(m.homeY==null)m.homeY=m.y;if(m.region!==current){m.vision=0;m.target=null;if(performance.now()>=(m.nextPatrolTurn||0)){m.patrolAngle=(m.patrolAngle||0)+(.25*(Math.random()-.5));m.nextPatrolTurn=performance.now()+700+Math.random()*900;}var tx=m.homeX+Math.cos(m.patrolAngle)*90,ty=m.homeY+Math.sin(m.patrolAngle)*90,dx=tx-m.x,dy=ty-m.y,len=Math.hypot(dx,dy)||1,sp=(m.speed||1)*.22;m.x+=dx/len*sp;m.y+=dy/len*sp;m.x=clamp(m.x,30,WORLD-30);m.y=clamp(m.y,30,WORLD-30);}}
+  if(typeof baseAI==='function'){var subset=all.filter(function(m){return (m.region||current)===current;});game.monsters=subset;baseAI.apply(this,arguments);var acted=game.monsters;var set=new Set(acted);game.monsters=all;for(var j=0;j<all.length;j++)if(set.has(all[j])){} }
+};
+/* Never let cleanup delete unrelated-region monsters. */
+setInterval(function(){if(!game.monsters)return;var seen={};for(var i=game.monsters.length-1;i>=0;i--){var r=game.monsters[i].region||reg(game.monsters[i].x,game.monsters[i].y),cap=caps[r]??25;seen[r]=(seen[r]||0)+1;if(seen[r]>cap)game.monsters.splice(i,1);}},2200);
+
+/* 6) Console cheats: F2 or backtick. */
+if(!document.getElementById('cheat-console-v6')){
+ var box=document.createElement('div');box.id='cheat-console-v6';box.style.cssText='display:none;position:fixed;left:50%;top:10%;transform:translateX(-50%);width:min(650px,94vw);background:rgba(0,0,0,.97);border:2px solid #00f5ff;border-radius:10px;padding:12px;z-index:2147483647;color:#fff;font-family:monospace';box.innerHTML='<b style="color:#00f5ff">⌘ 치트 콘솔</b><div id="cheat-log-v6" style="height:180px;overflow:auto;background:#080808;margin-top:8px;padding:8px;white-space:pre-wrap"></div><input id="cheat-input-v6" placeholder="help" style="width:100%;margin-top:8px;padding:9px;background:#111;color:#fff;border:1px solid #555">';document.body.appendChild(box);
+ var inp=box.querySelector('#cheat-input-v6'),log=box.querySelector('#cheat-log-v6');
+ function logx(t){log.textContent+=t+'\n';log.scrollTop=log.scrollHeight;}
+ function run(cmd){var a=cmd.trim().split(/\s+/),c=(a.shift()||'').toLowerCase(),n;switch(c){case'help':logx('lv N | gold N | exp N | heal | mana | god on/off | speed N | tp ZONE | spawn TYPE N | killall');break;case'lv':n=parseInt(a[0]);if(Number.isFinite(n)){game.player.level=Math.max(1,n);updateUI();logx('LV '+game.player.level)}break;case'gold':n=parseInt(a[0]);if(Number.isFinite(n)){game.player.gold=Math.max(0,n);updateUI();logx('GOLD '+game.player.gold)}break;case'exp':n=parseInt(a[0]);if(Number.isFinite(n)){game.player.exp=Math.max(0,n);updateUI();logx('EXP '+game.player.exp)}break;case'heal':game.player.hp=game.player.maxHp;updateUI();logx('HP MAX');break;case'mana':game.player.mana=game.player.maxMana;updateUI();logx('MP MAX');break;case'god':game._cheatGod=(a[0]||'on')!=='off';game.player.invincibleUntil=game._cheatGod?Infinity:0;logx('GOD '+(game._cheatGod?'ON':'OFF'));break;case'speed':n=parseFloat(a[0]);if(Number.isFinite(n)){game._cheatSpeed=Math.max(.1,Math.min(5,n));logx('SPEED '+game._cheatSpeed)}break;case'tp':if(ZONES[a[0]]){var z=ZONES[a[0]];if(game.player.level>=z.minLevel){game.currentZone=a[0];game.player.x=z.x;game.player.y=z.y;currentWorldSize=WORLD;updateCamera();updateUI();logx('TP '+a[0])}else logx('LOCKED LV '+z.minLevel)}break;case'spawn':if(MONSTERS[a[0]]){n=Math.max(1,Math.min(25,parseInt(a[1]||1)));for(var i=0;i<n;i++)spawnV6();logx('SPAWN x'+n)}break;case'killall':for(var i=game.monsters.length-1;i>=0;i--)if((game.monsters[i].region||reg(game.monsters[i].x,game.monsters[i].y))===game.currentZone)game.monsters.splice(i,1);logx('CURRENT REGION CLEARED');break;case'clear':log.textContent='';break;default:logx('UNKNOWN: '+c);}}
+ inp.addEventListener('keydown',function(e){if(e.key==='Enter'){run(inp.value);inp.value='';}if(e.key==='Escape'){box.style.display='none';}});window.cheatV6=run;window.toggleCheatV6=function(){box.style.display=box.style.display==='block'?'none':'block';if(box.style.display==='block'){logx('help를 입력하세요.');inp.focus();}};
+ document.addEventListener('keydown',function(e){if(e.key==='F2'||e.key==='`'){if(!e.ctrlKey&&!e.metaKey&&!e.altKey){e.preventDefault();window.toggleCheatV6();}}},true);
+}
+
+/* final joystick visibility */
+function sync(){var on=joyMode()&&gameStarted&&!gameOver;mv.style.display=on?'block':'none';akj.style.display=on?'block':'none';if(!on){setCenter(mk);setCenter(ak);}}
+sync();setInterval(sync,100);
+})();
+</script>
+
+<style id="final-weapon-motion-fix-css">
+/* FINAL WEAPON/MOTION FIX */
+</style>
+<script id="final-weapon-motion-fix-js">
+(function(){
+'use strict';
+if(typeof game==='undefined') return;
+
+/* 1) Basic wooden-club attacks are NOT slash attacks.
+   The club itself supplies the motion; only the heavy-hit skill draws a slash effect. */
+var previousAttackAnimation = window.drawAttackAnimation;
+if(typeof previousAttackAnimation==='function'){
+  window.drawAttackAnimation=function(){
+    var a=game.player&&game.player.attackAnimation;
+    if(a && a.type==='wood_club') return;
+    return previousAttackAnimation.apply(this,arguments);
+  };
+}
+
+/* 2) Give the wooden club its own physical swing instead of the heavy slash arc.
+   It rotates around the player's hand and uses the actual club direction. */
+var previousWeaponDraw = window.drawWeapon;
+if(typeof previousWeaponDraw==='function'){
+  window.drawWeapon=function(){
+    var p=game.player, a=p&&p.attackAnimation, id=game.equipment&&game.equipment.weapon;
+    if(!p || id!=='wood_club' || !a || a.type!=='wood_club' || !a.start){
+      return previousWeaponDraw.apply(this,arguments);
+    }
+    var now=performance.now();
+    var pr=Math.max(0,Math.min(1,(now-a.start)/(a.duration||250)));
+    var base=p.facingAngle||0;
+    var swing=-0.82 + Math.sin(pr*Math.PI)*1.64;
+    p.facingAngle=(a.angle==null?base:a.angle)+swing;
+    try { return previousWeaponDraw.apply(this,arguments); }
+    finally { p.facingAngle=base; }
+  };
+}
+
+/* 3) Exact heavy-slash visual: same range/arc as the actual weapon-based skill. */
+var previousDrawGame = window.drawGame;
+if(typeof previousDrawGame==='function'){
+  window.drawGame=function(){
+    previousDrawGame.apply(this,arguments);
+    if(!gameStarted || gameOver || isPaused) return;
+    var a=game.player&&game.player.attackAnimation;
+    if(!a || a.type!=='slash' || !a.start) return;
+    var w=null;
+    try{ w=typeof getEquippedWeapon==='function' ? getEquippedWeapon() : null; }catch(e){}
+    var range=(w && Number.isFinite(w.range))?w.range:72;
+    var arc=(w && Number.isFinite(w.arc))?w.arc:1.35;
+    var now=performance.now();
+    var pr=Math.max(0,Math.min(1,(now-a.start)/(a.duration||250)));
+    var radius=range;
+    var sweep=arc*(0.25+0.75*Math.sin(pr*Math.PI));
+    var start=(a.angle||0)-arc/2;
+    ctx.save();
+    ctx.translate(-(game.camera?.x||0),-(game.camera?.y||0));
+    ctx.globalAlpha=(1-pr)*0.9;
+    ctx.strokeStyle='#ffd166';
+    ctx.lineWidth=8;
+    ctx.lineCap='round';
+    ctx.beginPath();
+    ctx.arc(game.player.x,game.player.y,radius,start,start+sweep);
+    ctx.stroke();
+    ctx.restore();
+  };
+}
+})();
+</script>
+
+
+<!-- FINAL KEYBOARD + WOOD CLUB RESTORE -->
+<style id="final-keyboard-wood-restore-css">
+#stable-move-joystick,#stable-attack-joystick{touch-action:none;-webkit-user-select:none;user-select:none;}
+</style>
+<script id="final-keyboard-wood-restore-js">
+(function(){
+'use strict';
+if(typeof game==='undefined') return;
+
+/* 1. Keyboard movement must never be cleared by joystick visibility syncing. */
+var movementKeys=['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'];
+function joyModeFinal(){return (localStorage.getItem('rpg_control')||'keyboard')==='joystick';}
+function syncJoysticksFinal(){
+  var m=document.getElementById('stable-move-joystick');
+  var a=document.getElementById('stable-attack-joystick');
+  var on=joyModeFinal()&&!!gameStarted&&!gameOver;
+  if(m){m.style.display=on?'block':'none';}
+  if(a){a.style.display=on?'block':'none';}
+  /* IMPORTANT: do not clear game.keys in keyboard mode. */
+}
+window.syncJoysticksFinal=syncJoysticksFinal;
+syncJoysticksFinal();
+setInterval(syncJoysticksFinal,150);
+
+/* 2. Robust keyboard state: keydown keeps a key held until keyup/blur. */
+function keyName(e){
+  var map={ArrowUp:'arrowup',ArrowDown:'arrowdown',ArrowLeft:'arrowleft',ArrowRight:'arrowright',KeyW:'w',KeyA:'a',KeyS:'s',KeyD:'d'};
+  return map[e.code] || (typeof e.key==='string'?e.key.toLowerCase():'');
+}
+document.addEventListener('keydown',function(e){
+  if(joyModeFinal()) return;
+  var k=keyName(e);
+  if(movementKeys.indexOf(k)!==-1){
+    game.keys[k]=true;
+    e.preventDefault();
+  }
+},true);
+document.addEventListener('keyup',function(e){
+  var k=keyName(e);
+  if(movementKeys.indexOf(k)!==-1){
+    game.keys[k]=false;
+    e.preventDefault();
+  }
+},true);
+window.addEventListener('blur',function(){
+  if(!game.keys)return;
+  movementKeys.forEach(function(k){game.keys[k]=false;});
+});
+
+/* 3. Restore the original/basic wooden-club presentation.
+      The club uses the original idle sway only; it does not imitate Heavy Strike. */
+var clubBaseDraw=window.drawWeapon;
+if(typeof clubBaseDraw==='function' && !clubBaseDraw.__woodOriginalRestore){
+  var restoredClub=function(){
+    var p=game.player;
+    var id=game.equipment&&game.equipment.weapon;
+    if(!p || id!=='wood_club') return clubBaseDraw.apply(this,arguments);
+
+    var saved=p.facingAngle;
+    /* Original first-version style: tiny idle sway, no attack-sized swing. */
+    var level=(typeof getWeaponUpgradeLevel==='function'?getWeaponUpgradeLevel():0);
+    var idleSwing=Math.sin(performance.now()/110)*(0.035+level*0.002);
+    p.facingAngle=saved+idleSwing;
+    try{
+      return clubBaseDraw.apply(this,arguments);
+    }finally{
+      p.facingAngle=saved;
+    }
+  };
+  restoredClub.__woodOriginalRestore=true;
+  window.drawWeapon=restoredClub;
+}
+
+/* 4. Do not allow a generic attack-animation arc to draw for the wooden club. */
+var oldAttackDraw=window.drawAttackAnimation;
+if(typeof oldAttackDraw==='function' && !oldAttackDraw.__noWoodClubArc){
+  var noWood=function(){
+    var a=game.player&&game.player.attackAnimation;
+    if(a&&a.type==='wood_club') return;
+    return oldAttackDraw.apply(this,arguments);
+  };
+  noWood.__noWoodClubArc=true;
+  window.drawAttackAnimation=noWood;
+}
+
+/* 5. Make normal keyboard attacks still use the current facing direction. */
+var oldPlayerAttack=window.playerAttack;
+if(typeof oldPlayerAttack==='function' && !oldPlayerAttack.__keyboardStable){
+  var pa=function(){
+    if(!joyModeFinal()) return oldPlayerAttack.apply(this,arguments);
+    return oldPlayerAttack.apply(this,arguments);
+  };
+  pa.__keyboardStable=true;
+  window.playerAttack=pa;
+}
+})();
+</script>
+
+</body>
+</html>
+<script>
+/* FINAL KEYBOARD MOVEMENT FIX
+   Keyboard movement owns its own held-key state so browser repeat/click handlers
+   cannot turn movement into one-step bursts. Joystick movement keeps using game.keys.
+*/
+(function(){
+  const held=Object.create(null);
+  const codeMap={KeyW:'w',KeyA:'a',KeyS:'s',KeyD:'d',ArrowUp:'arrowup',ArrowDown:'arrowdown',ArrowLeft:'arrowleft',ArrowRight:'arrowright'};
+  function keyboardMode(){ return (localStorage.getItem('rpg_control')||'keyboard') !== 'joystick'; }
+  function set(e,v){ const k=codeMap[e.code]; if(k){held[k]=v; if(game.keys) game.keys[k]=v; e.preventDefault();} }
+  document.addEventListener('keydown',e=>{if(keyboardMode())set(e,true)},true);
+  document.addEventListener('keyup',e=>{if(keyboardMode())set(e,false)},true);
+  window.addEventListener('blur',()=>{for(const k in held)held[k]=false; for(const k of Object.values(codeMap))if(game.keys)game.keys[k]=false;},true);
+
+  const oldUpdate=updatePlayer;
+  updatePlayer=function(){
+    if(!gameStarted||gameOver||isPaused){return;}
+    if(!keyboardMode()){ oldUpdate(); return; }
+    let dx=(held.d||held.arrowright?1:0)-(held.a||held.arrowleft?1:0);
+    let dy=(held.s||held.arrowdown?1:0)-(held.w||held.arrowup?1:0);
+    if(dx||dy){
+      if(returnChannelStart) cancelReturnChannel();
+      const len=Math.hypot(dx,dy); dx/=len; dy/=len;
+      const ox=game.player.x,oy=game.player.y;
+      game.player.x+=dx*game.player.speed;
+      game.player.y+=dy*game.player.speed;
+      game.player.movementAnimation=(game.player.movementAnimation||0)+Math.hypot(game.player.x-ox,game.player.y-oy)*0.055;
+    }
+    game.player.x=clamp(game.player.x,game.player.radius,currentWorldSize-game.player.radius);
+    game.player.y=clamp(game.player.y,game.player.radius,currentWorldSize-game.player.radius);
+    updateCamera();
+  };
+})();
+</script>
+
+<script>
+/* FINAL REGION MONSTER WORLD FIX
+   - 숲 원래 몬스터: goblin / wolf / deer
+   - 모든 지역이 플레이어 위치와 무관하게 독립적으로 스폰
+   - 지역별 최대 25마리
+   - 각 몬스터는 자신의 지역에서만 생성/순찰
+   - 지역 이동으로 game.monsters 배열이 비워져도 월드 풀은 유지
+*/
+(function(){
+  if(!window.game || !window.ZONES) return;
+
+  // 예전 숲 구성 복구
+  if(ZONES.forest){
+    ZONES.forest.spawns=['goblin','wolf','deer'];
+    ZONES.forest.maxMonsters=25;
+  }
+  // 모든 사냥 지역은 지역별 25마리 상한
+  Object.keys(ZONES).forEach(function(k){
+    ZONES[k].maxMonsters=(k==='town'?0:25);
+  });
+
+  var world=window.__RPG_REGION_WORLD_FINAL||(window.__RPG_REGION_WORLD_FINAL=new Set());
+  var lastSpawnByRegion=Object.create(null);
+  var spawnInterval=700;
+
+  function regionAt(x,y){
+    if(typeof authoritativeRegion==='function') return authoritativeRegion(x,y);
+    var best='town',bd=Infinity;
+    Object.keys(ZONES).forEach(function(k){
+      var z=ZONES[k];
+      if(!z)return;
+      var d=Math.hypot(x-(z.x||0),y-(z.y||0));
+      if(d<bd){bd=d;best=k;}
+    });
+    return best;
+  }
+
+  function cleanWorld(){
+    world.forEach(function(m){
+      if(!m || m._dead || m.hp<=0) world.delete(m);
+    });
+  }
+
+  function capture(){
+    (game.monsters||[]).forEach(function(m){
+      if(!m || m._dead || m.hp<=0) return;
+      if(!m.region) m.region=regionAt(m.x,m.y)||game.currentZone||'town';
+      if(!m.homeX && m.homeX!==0) m.homeX=m.x;
+      if(!m.homeY && m.homeY!==0) m.homeY=m.y;
+      if(m.patrolAngle==null) m.patrolAngle=Math.random()*Math.PI*2;
+      world.add(m);
+    });
+  }
+
+  function count(r){
+    var n=0;
+    world.forEach(function(m){if(m && !m._dead && m.hp>0 && m.region===r)n++;});
+    return n;
+  }
+
+  function restore(){
+    var arr=[];
+    world.forEach(function(m){if(m && !m._dead && m.hp>0)arr.push(m);});
+    game.monsters=arr;
+  }
+
+  function makeMonster(r){
+    var z=ZONES[r], cap=z&&z.maxMonsters!=null?z.maxMonsters:(r==='town'?0:25);
+    if(!z||r==='town'||!Array.isArray(z.spawns)||!z.spawns.length||count(r)>=cap) return null;
+    var type=z.spawns[Math.floor(Math.random()*z.spawns.length)],data=MONSTERS[type];
+    if(!data) return null;
+    var safe=z.safeRadius||220;
+    for(var tries=0;tries<60;tries++){
+      // 플레이어를 기준으로 만들지 않고 지역 중심을 기준으로 생성
+      var a=Math.random()*Math.PI*2;
+      var dist=500+Math.random()*1000;
+      var x=clamp((z.x||0)+Math.cos(a)*dist,40,12000-40);
+      var y=clamp((z.y||0)+Math.sin(a)*dist,40,12000-40);
+      if(regionAt(x,y)!==r) continue;
+      if(Math.hypot(x-(z.x||0),y-(z.y||0))<safe) continue;
+      var m={type:type,x:x,y:y,radius:data.isElite?30:22,hp:data.hp,maxHp:data.hp,
+        damage:data.damage,speed:data.speed,exp:data.exp,color:data.color,emoji:data.emoji,
+        vision:data.vision,attackRange:data.attackRange,lastAttack:0,attackCooldown:1200,
+        isElite:!!data.isElite,loot:data.loot,region:r,homeX:x,homeY:y,
+        patrolAngle:Math.random()*Math.PI*2,nextPatrolTurn:performance.now()+700+Math.random()*1200,state:'patrol'};
+      world.add(m);
+      return m;
+    }
+    return null;
+  }
+
+  // 시작 시 존재하는 몬스터도 월드 풀로 편입
+  capture();
+
+  // 지역 이동/업데이트가 배열을 비워도 복구
+  var oldUpdatePlayer=window.updatePlayer;
+  window.updatePlayer=function(){
+    capture();
+    var r=oldUpdatePlayer&&oldUpdatePlayer.apply(this,arguments);
+    capture(); restore();
+    return r;
+  };
+
+  var oldChangeZone=window.changeZone;
+  if(typeof oldChangeZone==='function'){
+    window.changeZone=function(){
+      capture();
+      var r=oldChangeZone.apply(this,arguments);
+      capture(); restore();
+      return r;
+    };
+  }
+
+  // 어떤 기존 spawnMonster가 호출되어도 현재 지역 cap을 넘지 않게 함
+  window.spawnMonster=function(){
+    var r=game.currentZone||'town';
+    return makeMonster(r);
+  };
+
+  // 기존 AI를 대신해 모든 지역을 계속 순찰. 플레이어를 쫓는 것은 같은 지역뿐.
+  window.updateMonsters=function(){
+    if(!gameStarted||gameOver||isPaused) return;
+    capture(); cleanWorld();
+    var now=performance.now(),playerRegion=game.currentZone||regionAt(game.player.x,game.player.y);
+    world.forEach(function(m){
+      if(!m || m._dead || m.hp<=0) return;
+      var r=m.region||regionAt(m.x,m.y)||'town',z=ZONES[r];
+      if(!z) return;
+      m.region=r;
+      var rr=regionAt(m.x,m.y);
+      if(rr!==r){m.x=m.homeX;m.y=m.homeY;}
+
+      var isCurrent=(r===playerRegion);
+      var d=Math.hypot(game.player.x-m.x,game.player.y-m.y);
+      var safe=z.safeRadius||0;
+      var playerSafe=Math.hypot(game.player.x-(z.x||0),game.player.y-(z.y||0))<safe;
+
+      if(isCurrent && !playerSafe && d<=(m.vision||500)){
+        m.state='chase';m.target=game.player;
+        var len=d||1;
+        if(d>(m.attackRange||35)+game.player.radius){
+          m.x+=(game.player.x-m.x)/len*(Math.min(m.speed||1,1.35));
+          m.y+=(game.player.y-m.y)/len*(Math.min(m.speed||1,1.35));
+        }
+      }else{
+        m.state='patrol';m.target=null;
+        if(now>=(m.nextPatrolTurn||0)){
+          m.patrolAngle=(m.patrolAngle||0)+(Math.random()-.5)*1.6;
+          m.nextPatrolTurn=now+750+Math.random()*1400;
+        }
+        var hx=m.homeX,hy=m.homeY,rad=100;
+        var tx=hx+Math.cos(m.patrolAngle||0)*rad,ty=hy+Math.sin(m.patrolAngle||0)*rad;
+        var dx=tx-m.x,dy=ty-m.y,plen=Math.hypot(dx,dy)||1,ps=Math.min(m.speed||1,1.35)*.42;
+        m.x+=dx/plen*ps;m.y+=dy/plen*ps;
+      }
+
+      if(regionAt(m.x,m.y)!==r){m.x=m.homeX;m.y=m.homeY;}
+      if(isCurrent && !playerSafe && d<=(m.attackRange||35)+game.player.radius && now-(m.lastAttack||0)>=(m.attackCooldown||1200)){
+        m.lastAttack=now;
+        if(typeof damagePlayer==='function') damagePlayer(m.damage||1);
+      }
+    });
+    restore();
+  };
+
+  // 핵심: 플레이어가 어느 지역에 있든 모든 지역을 독립적으로 보충
+  setInterval(function(){
+    if(!gameStarted||gameOver||isPaused) return;
+    capture();cleanWorld();
+    var now=performance.now();
+    Object.keys(ZONES).forEach(function(r){
+      var z=ZONES[r];
+      if(!z||r==='town'||!Array.isArray(z.spawns)||!z.spawns.length) return;
+      var cap=z.maxMonsters==null?25:z.maxMonsters;
+      if(count(r)>=cap) return;
+      if(now-(lastSpawnByRegion[r]||0)<spawnInterval) return;
+      lastSpawnByRegion[r]=now;
+      makeMonster(r);
+    });
+    restore();
+  },180);
+
+  // 지역별 최대치 초과만 정리하며 다른 지역 몬스터는 절대 삭제하지 않음
+  setInterval(function(){
+    if(!game.monsters) return;
+    capture();cleanWorld();
+    Object.keys(ZONES).forEach(function(r){
+      var cap=ZONES[r]&&ZONES[r].maxMonsters!=null?ZONES[r].maxMonsters:(r==='town'?0:25);
+      var list=[];world.forEach(function(m){if(m&&m.region===r&&!m._dead&&m.hp>0)list.push(m);});
+      while(list.length>cap){var m=list.pop();m._dead=true;world.delete(m);}
+    });
+    restore();
+  },1500);
+
+  restore();
 })();
 </script>
