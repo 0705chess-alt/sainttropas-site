@@ -1,4 +1,11 @@
 <!DOCTYPE html>
+<script>
+  /* 호스트/삽입 스크립트가 참조할 수 있는 전역 네임스페이스를 먼저 준비합니다. */
+  var __lp1 = window.__lp1 || {};
+  var __lp2 = window.__lp2 || {};
+  window.__lp1 = __lp1;
+  window.__lp2 = __lp2;
+</script>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1232,6 +1239,85 @@ canvas {
  #stats-toggle{top:130px!important;left:10px!important;}
 }
 </style>
+<script>
+var __lp1 = window.__lp1 || {};
+window.__lp1 = __lp1;
+
+window.addEventListener('load', function(){
+  setTimeout(function(){
+    if(typeof game === 'undefined') return;
+    const WORLD = 30000;
+    const held = Object.create(null);
+    const keyMap = {KeyW:'w',KeyA:'a',KeyS:'s',KeyD:'d',ArrowUp:'arrowup',ArrowDown:'arrowdown',ArrowLeft:'arrowleft',ArrowRight:'arrowright'};
+    const keys = ['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'];
+    const regionOf = (x,y) => {
+      if(typeof authoritativeRegion === 'function') return authoritativeRegion(x,y);
+      let best=game.currentZone || 'town', bd=Infinity;
+      for(const [id,z] of Object.entries(ZONES)) { const d=(x-z.x)**2+(y-z.y)**2; if(d<bd){bd=d;best=id;} }
+      return best;
+    };
+
+    window.addEventListener('keydown', e => {
+      if(localStorage.getItem('rpg_control') === 'joystick') return;
+      const k=keyMap[e.code]; if(k){held[k]=true; e.preventDefault();}
+    }, true);
+    window.addEventListener('keyup', e => { const k=keyMap[e.code]; if(k) held[k]=false; }, true);
+    window.addEventListener('blur', () => keys.forEach(k => held[k]=false));
+
+    /* 키보드 이동은 마우스 조준각을 절대 변경하지 않습니다. */
+    window.updatePlayer = function(){
+      if(!gameStarted || gameOver || isPaused || returnChannelStart) return;
+      const source = localStorage.getItem('rpg_control') === 'joystick' ? game.keys : held;
+      let dx=(source.d||source.arrowright?1:0)-(source.a||source.arrowleft?1:0);
+      let dy=(source.s||source.arrowdown?1:0)-(source.w||source.arrowup?1:0);
+      if(!dx && !dy) return;
+      const len=Math.hypot(dx,dy), speed=(game.player.speed||2.4)*(game._cheatSpeed||1);
+      const ox=game.player.x, oy=game.player.y;
+      const nx=clamp(ox+dx/len*speed,game.player.radius,WORLD-game.player.radius);
+      const ny=clamp(oy+dy/len*speed,game.player.radius,WORLD-game.player.radius);
+      const from=game.currentZone||regionOf(ox,oy), to=regionOf(nx,ny), z=ZONES[to];
+      if(z && to!==from && game.player.level < (z.minLevel||1)){
+        const now=performance.now();
+        if(now>(game._finalLockNotice||0)){game._finalLockNotice=now+900;showDropNotification(`🚧 ${z.name}은(는) Lv.${z.minLevel}부터 입장할 수 있습니다.`);}
+        return;
+      }
+      game.player.x=nx; game.player.y=ny; game.currentZone=to; currentWorldSize=WORLD;
+      game.player.movementAnimation=(game.player.movementAnimation||0)+Math.hypot(nx-ox,ny-oy)*.055;
+      /* facingAngle은 여기서 건드리지 않음: canvas mousemove가 공격 방향을 결정 */
+      if(to!==from){nearbyStructure=null;initZoneSelect?.();}
+    };
+
+    /* 지역별 월드 몬스터: 현재 지역과 무관하게 순찰, 같은 지역에서만 공격 */
+    const world=window.__finalPatrolWorldFixed||(window.__finalPatrolWorldFixed=new Set());
+    const valid=m=>m&&!m._dead&&m.hp>0&&Number.isFinite(m.x)&&Number.isFinite(m.y);
+    const absorb=()=>{for(const m of game.monsters||[]){if(!valid(m))continue;m.region??=game.currentZone||regionOf(m.x,m.y);m.homeX??=m.x;m.homeY??=m.y;m.patrolAngle??=Math.random()*Math.PI*2;m.nextPatrol??=performance.now()+700;world.add(m);}for(const m of [...world])if(!valid(m))world.delete(m);};
+    const spawn=(r)=>{const z=ZONES[r];if(!z||r==='town'||!z.spawns?.length)return;let n=0;for(const m of world)if(valid(m)&&m.region===r)n++;if(n>=25)return;const type=z.spawns[Math.floor(Math.random()*z.spawns.length)],d=MONSTERS[type];if(!d)return;for(let i=0;i<40;i++){const a=Math.random()*Math.PI*2,dist=(z.safeRadius||300)+350+Math.random()*900,x=clamp(z.x+Math.cos(a)*dist,40,WORLD-40),y=clamp(z.y+Math.sin(a)*dist,40,WORLD-40);if(regionOf(x,y)!==r)continue;world.add({type,x,y,region:r,radius:d.isElite?30:22,hp:d.hp,maxHp:d.hp,damage:d.damage,speed:Math.min(d.speed||1,1.35),exp:d.exp,color:d.color,emoji:d.emoji,vision:d.vision,attackRange:d.attackRange,loot:d.loot,isElite:!!d.isElite,lastAttack:0,attackCooldown:650,homeX:x,homeY:y,patrolAngle:a,nextPatrol:performance.now()+700});return;}};
+    window.updateMonsters=function(){
+      if(!gameStarted||gameOver||isPaused)return; absorb(); const now=performance.now(), pr=game.currentZone;
+      for(const m of world){if(!valid(m))continue;const z=ZONES[m.region];if(!z)continue;const same=m.region===pr,dist=Math.hypot(game.player.x-m.x,game.player.y-m.y),safe=same&&Math.hypot(game.player.x-z.x,game.player.y-z.y)<(z.safeRadius||0),chase=same&&!safe&&dist<=(m.vision||500);
+        if(chase&&dist>(m.attackRange||45)+game.player.radius){m.x+=(game.player.x-m.x)/(dist||1)*m.speed;m.y+=(game.player.y-m.y)/(dist||1)*m.speed;}
+        else {if(now>=m.nextPatrol){m.patrolAngle+=(Math.random()-.5)*1.4;m.nextPatrol=now+700+Math.random()*1400;}const tx=m.homeX+Math.cos(m.patrolAngle)*120,ty=m.homeY+Math.sin(m.patrolAngle)*120,dx=tx-m.x,dy=ty-m.y,l=Math.hypot(dx,dy)||1;m.x+=dx/l*m.speed*.42;m.y+=dy/l*m.speed*.42;}
+        if(regionOf(m.x,m.y)!==m.region){m.x=m.homeX;m.y=m.homeY;}
+        if(same&&!safe&&dist<=(m.attackRange||45)+game.player.radius&&now-m.lastAttack>=(m.attackCooldown||650)){m.lastAttack=now;if(typeof damagePlayer==='function')damagePlayer(m.damage||1);}
+      }
+      game.monsters=[...world].filter(valid);
+    };
+    window.spawnMonster=()=>{spawn(game.currentZone);game.monsters=[...world].filter(valid);};
+    setInterval(()=>{if(gameStarted&&!gameOver&&!isPaused)Object.keys(ZONES).forEach(spawn);},650);
+    absorb();
+
+    /* 빨간 경계선은 제거하고 현재 지역 하늘색 경계만 표시 */
+    const previousDrawWorld=window.drawWorld;
+    window.drawWorld=function(){
+      previousDrawWorld();
+      if(!gameStarted||gameOver)return;
+      const z=ZONES[game.currentZone];if(!z)return;
+      let radius=1800;for(const [id,o] of Object.entries(ZONES))if(id!==game.currentZone)radius=Math.min(radius,Math.hypot(z.x-o.x,z.y-o.y)/2);
+      ctx.save();ctx.translate(-game.camera.x,-game.camera.y);ctx.strokeStyle='#00f5ff';ctx.globalAlpha=.9;ctx.lineWidth=4;ctx.setLineDash([18,12]);ctx.beginPath();ctx.arc(z.x,z.y,radius,0,Math.PI*2);ctx.stroke();ctx.restore();
+    };
+  }, 0);
+});
+</script>
 </head>
 
 <body>
@@ -16344,8 +16430,250 @@ if(typeof oldPlayerAttack==='function' && !oldPlayerAttack.__keyboardStable){
 })();
 </script>
 
-</body>
-</html>
+
+<script id="final-world-expansion-wall-fix">
+(function(){
+  'use strict';
+  if(typeof window.game==='undefined' || typeof window.ZONES==='undefined') return;
+
+  /* =========================================================
+     FINAL WORLD EXPANSION / INVISIBLE WALL FIX
+     - all playable regions share one large world boundary
+     - old per-zone 4000x4000 limits can no longer trap player
+     - camera follows the expanded world
+     - unlocked regions remain walkable after reaching their level
+  ========================================================= */
+  var BIG_WORLD = 18000;
+  window.__RPG_BIG_WORLD = BIG_WORLD;
+
+  /* Force one continuous world size. Town remains visually/NPClogically a safe area,
+     but it no longer shrinks the movement/camera boundary. */
+  try { currentWorldSize = BIG_WORLD; } catch(e) {}
+  Object.keys(ZONES).forEach(function(k){
+    if(ZONES[k]) ZONES[k].worldSize = BIG_WORLD;
+  });
+
+  function setBigWorld(){
+    try { currentWorldSize = BIG_WORLD; } catch(e) {}
+  }
+
+  /* Any old wrapper that changes currentWorldSize is immediately followed by this fix. */
+  var oldChangeZoneWallFix = window.changeZone;
+  if(typeof oldChangeZoneWallFix === 'function' && !oldChangeZoneWallFix.__bigWorldWallFix){
+    var changeZoneFixed = function(){
+      var r = oldChangeZoneWallFix.apply(this, arguments);
+      setBigWorld();
+      return r;
+    };
+    changeZoneFixed.__bigWorldWallFix = true;
+    window.changeZone = changeZoneFixed;
+  }
+
+  /* Preserve player movement at the full world boundary.  We intentionally do not
+     rewrite region level logic here; existing level-lock wrappers remain authoritative. */
+  var oldUpdatePlayerWallFix = window.updatePlayer;
+  if(typeof oldUpdatePlayerWallFix === 'function' && !oldUpdatePlayerWallFix.__bigWorldWallFix){
+    var updatePlayerFixed = function(){
+      setBigWorld();
+      var r = oldUpdatePlayerWallFix.apply(this, arguments);
+      setBigWorld();
+      if(game && game.player){
+        var rad = game.player.radius || 24;
+        game.player.x = Math.max(rad, Math.min(BIG_WORLD-rad, game.player.x));
+        game.player.y = Math.max(rad, Math.min(BIG_WORLD-rad, game.player.y));
+      }
+      return r;
+    };
+    updatePlayerFixed.__bigWorldWallFix = true;
+    window.updatePlayer = updatePlayerFixed;
+  }
+
+  /* Camera: keep following the player anywhere in the expanded map and prevent
+     stale small-world clamps from reappearing. */
+  var oldUpdateCameraWallFix = window.updateCamera;
+  if(typeof oldUpdateCameraWallFix === 'function' && !oldUpdateCameraWallFix.__bigWorldWallFix){
+    var updateCameraFixed = function(){
+      setBigWorld();
+      var r = oldUpdateCameraWallFix.apply(this, arguments);
+      var cw = canvas ? canvas.width : 0, ch = canvas ? canvas.height : 0;
+      if(game && game.camera){
+        game.camera.x = Math.max(0, Math.min(BIG_WORLD-Math.min(cw,BIG_WORLD), game.camera.x));
+        game.camera.y = Math.max(0, Math.min(BIG_WORLD-Math.min(ch,BIG_WORLD), game.camera.y));
+      }
+      return r;
+    };
+    updateCameraFixed.__bigWorldWallFix = true;
+    window.updateCamera = updateCameraFixed;
+  }
+
+  /* Quick travel also uses the single world boundary. */
+  var oldManual = window.manualZoneRequest;
+  if(typeof oldManual === 'function' && !oldManual.__bigWorldWallFix){
+    var manualFixed = function(){
+      var r = oldManual.apply(this, arguments);
+      setBigWorld();
+      if(typeof updateCamera==='function') updateCamera();
+      return r;
+    };
+    manualFixed.__bigWorldWallFix = true;
+    window.manualZoneRequest = manualFixed;
+  }
+
+  /* Existing code may call reset/game start repeatedly. Keep the larger world. */
+  var oldStartWallFix = window.startGame;
+  if(typeof oldStartWallFix === 'function' && !oldStartWallFix.__bigWorldWallFix){
+    var startFixed = function(){
+      var r = oldStartWallFix.apply(this, arguments);
+      setBigWorld();
+      if(typeof updateCamera==='function') updateCamera();
+      return r;
+    };
+    startFixed.__bigWorldWallFix = true;
+    window.startGame = startFixed;
+  }
+
+  /* A final maintenance pass prevents legacy patches from restoring the 1500/4000
+     boundary after zone changes. */
+  setInterval(function(){
+    if(!game) return;
+    setBigWorld();
+    if(typeof updateCamera==='function' && gameStarted && !gameOver) updateCamera();
+  }, 250);
+})();
+</script>
+
+
+<script id="final-world-24000-motion-fix">
+(function(){
+  'use strict';
+  if(!window.game || !window.ZONES) return;
+
+  /* =========================================================
+     FINAL FIX: 24,000 x 24,000 continuous world
+     - overrides the old 12,000 rectangular boundary
+     - keeps level-gated regions, but removes accidental square walls
+     - camera can follow anywhere in the expanded world
+     - attack animation is faster
+  ========================================================= */
+  var BIG_WORLD = 24000;
+  window.__RPG_BIG_WORLD_FINAL = BIG_WORLD;
+  try { currentWorldSize = BIG_WORLD; } catch(e) {}
+  Object.keys(ZONES).forEach(function(k){ if(ZONES[k]) ZONES[k].worldSize = BIG_WORLD; });
+
+  function clampWorld(v,r){ return Math.max(r, Math.min(BIG_WORLD-r, v)); }
+
+  /* Replace the last movement wrapper so no old 12000/7200 clamp can win. */
+  var lastUpdate = window.updatePlayer;
+  window.updatePlayer = function(){
+    if(!gameStarted || gameOver || isPaused) return;
+    var dx=0,dy=0;
+    var joy = localStorage.getItem('rpg_control') === 'joystick';
+    if(joy){
+      if(window.__rpgJoystickMove && (Math.abs(window.__rpgJoystickMove.x)>0 || Math.abs(window.__rpgJoystickMove.y)>0)){
+        dx=window.__rpgJoystickMove.x; dy=window.__rpgJoystickMove.y;
+      } else {
+        if(game.keys && (game.keys.w||game.keys.arrowup))dy--;
+        if(game.keys && (game.keys.s||game.keys.arrowdown))dy++;
+        if(game.keys && (game.keys.a||game.keys.arrowleft))dx--;
+        if(game.keys && (game.keys.d||game.keys.arrowright))dx++;
+      }
+    } else {
+      if(game.keys && (game.keys.w||game.keys.arrowup))dy--;
+      if(game.keys && (game.keys.s||game.keys.arrowdown))dy++;
+      if(game.keys && (game.keys.a||game.keys.arrowleft))dx--;
+      if(game.keys && (game.keys.d||game.keys.arrowright))dx++;
+    }
+    if(dx || dy){
+      if(typeof returnChannelStart!=='undefined' && returnChannelStart && typeof cancelReturnChannel==='function') cancelReturnChannel();
+      var len=Math.hypot(dx,dy)||1; dx/=len; dy/=len;
+      var sp=game.player.speed||0;
+      var ox=game.player.x,oy=game.player.y;
+      var tx=clampWorld(game.player.x+dx*sp, game.player.radius||24);
+      var ty=clampWorld(game.player.y+dy*sp, game.player.radius||24);
+
+      /* Level-gated zone crossing only. No square/world wall is used. */
+      var current=(typeof authoritativeRegion==='function') ? authoritativeRegion(ox,oy) : game.currentZone;
+      var target=(typeof authoritativeRegion==='function') ? authoritativeRegion(tx,ty) : current;
+      var targetZone=ZONES[target];
+      if(target!==current && targetZone && (game.player.level||1)<(targetZone.minLevel||1)){
+        if(typeof showDropNotification==='function'){
+          var now=performance.now();
+          if(now>(game._zoneLockNoticeUntil||0)){
+            game._zoneLockNoticeUntil=now+900;
+            showDropNotification('🔒 '+targetZone.name+'은(는) Lv.'+targetZone.minLevel+'부터 이동할 수 있습니다.');
+          }
+        }
+      } else {
+        game.player.x=tx; game.player.y=ty;
+        if(target && target!==game.currentZone) game.currentZone=target;
+      }
+      game.player.movementAnimation=(game.player.movementAnimation||0)+Math.hypot(game.player.x-ox,game.player.y-oy)*0.055;
+    }
+    currentWorldSize=BIG_WORLD;
+  };
+
+  var lastCamera = window.updateCamera;
+  window.updateCamera = function(){
+    currentWorldSize=BIG_WORLD;
+    var cw=canvas?canvas.width:0, ch=canvas?canvas.height:0;
+    if(game && game.camera){
+      game.camera.x=Math.max(0,Math.min(BIG_WORLD-cw,game.player.x-cw/2));
+      game.camera.y=Math.max(0,Math.min(BIG_WORLD-ch,game.player.y-ch/2));
+    } else if(typeof lastCamera==='function') lastCamera.apply(this,arguments);
+  };
+
+  /* Keep explicit region travel inside the same large world. */
+  var oldChange=window.changeZone;
+  if(typeof oldChange==='function'){
+    window.changeZone=function(key){
+      var z=ZONES[key];
+      if(!z || !gameStarted || gameOver) return;
+      if((game.player.level||1)<(z.minLevel||1)){
+        if(typeof showDropNotification==='function') showDropNotification('🔒 '+z.name+'은(는) Lv.'+z.minLevel+'부터 이동할 수 있습니다.');
+        return;
+      }
+      if(key==='town' && typeof startReturnToTown==='function'){ startReturnToTown(); return; }
+      game.currentZone=key;
+      currentWorldSize=BIG_WORLD;
+      game.player.x=clampWorld(z.x,game.player.radius||24);
+      game.player.y=clampWorld(z.y,game.player.radius||24);
+      if(typeof updateCamera==='function') updateCamera();
+      if(typeof initZoneSelect==='function') initZoneSelect();
+      if(typeof updateUI==='function') updateUI();
+    };
+  }
+
+  /* Make attack animation visibly faster without changing attack cooldown/damage. */
+  var oldPlayerAttack=window.playerAttack;
+  if(typeof oldPlayerAttack==='function' && !oldPlayerAttack.__fastMotionFinal){
+    var pa=function(){
+      var before=game.player.attackAnimation;
+      var r=oldPlayerAttack.apply(this,arguments);
+      var a=game.player.attackAnimation;
+      if(a && a.start){
+        a.duration=Math.max(100,Math.round((a.duration||250)*0.58));
+      }
+      return r;
+    };
+    pa.__fastMotionFinal=true;
+    window.playerAttack=pa;
+  }
+
+  /* Existing weapon renderer uses progress from attackAnimation.duration, so no
+     separate motion speed constant is needed. */
+  setInterval(function(){
+    if(!game) return;
+    currentWorldSize=BIG_WORLD;
+    if(game.player){
+      var r=game.player.radius||24;
+      game.player.x=clampWorld(game.player.x,r);
+      game.player.y=clampWorld(game.player.y,r);
+    }
+  },250);
+})();
+</script>
+
+
 <script>
 /* FINAL KEYBOARD MOVEMENT FIX
    Keyboard movement owns its own held-key state so browser repeat/click handlers
@@ -16578,3 +16906,2508 @@ if(typeof oldPlayerAttack==='function' && !oldPlayerAttack.__keyboardStable){
   restore();
 })();
 </script>
+
+<script id="FINAL_TRAVEL_AUTHORITY_V2">
+(function(){
+  'use strict';
+  if(typeof game==='undefined' || typeof canvas==='undefined') return;
+
+  /* One final authority: remove every legacy 1500/4000/7200/12000/18000 wall. */
+  var WORLD_FINAL=30000;
+  window.__RPG_WORLD_FINAL_V2=WORLD_FINAL;
+  var centersFinal={
+    town:[6000,6000],meadow:[3300,6000],forest:[4200,4200],deepforest:[2100,3000],
+    mountain:[6000,3300],dungeon:[6000,4500],snowfield:[8700,2700],ruins:[9300,4500],
+    coast:[9300,7000],desert:[8700,9300],volcano:[6000,9300],wasteland:[3300,9000],
+    swamp:[2100,7200],cave:[4000,7200],ancient:[7200,7200],abyss:[6000,10800]
+  };
+  function nearestZone(x,y){
+    var best='town',bd=Infinity;
+    Object.keys(centersFinal).forEach(function(k){var c=centersFinal[k],dx=x-c[0],dy=y-c[1],d=dx*dx+dy*dy;if(d<bd){bd=d;best=k;}});
+    return best;
+  }
+  function cw(v,r){return Math.max(r,Math.min(WORLD_FINAL-r,v));}
+  function gateTarget(current,target){
+    var z=typeof ZONES!=='undefined'?ZONES[target]:null;
+    return !z || target===current || (game.player.level||1)>=(z.minLevel||1);
+  }
+
+  /* Rewrite region helpers used by legacy movement/spawn code to use the same infinite-grid rule. */
+  window.authoritativeRegion=function(x,y){return nearestZone(x,y);};
+  window.regionAt=function(x,y){return nearestZone(x,y);};
+
+  /* Final keyboard/joystick movement. No zone-size clamp, no Voronoi-cell wall. */
+  window.updatePlayer=function(){
+    if(!gameStarted || gameOver || isPaused) return;
+    var dx=0,dy=0;
+    var joy=(localStorage.getItem('rpg_control')||'keyboard')==='joystick';
+    var jm=window.__rpgJoystickMove;
+    if(joy && jm && (Math.abs(jm.x)>0.001 || Math.abs(jm.y)>0.001)){
+      dx=jm.x;dy=jm.y;
+    }else if(game.keys){
+      if(game.keys.w||game.keys.arrowup)dy--;
+      if(game.keys.s||game.keys.arrowdown)dy++;
+      if(game.keys.a||game.keys.arrowleft)dx--;
+      if(game.keys.d||game.keys.arrowright)dx++;
+    }
+    if(dx||dy){
+      if(typeof returnChannelStart!=='undefined' && returnChannelStart && typeof cancelReturnChannel==='function') cancelReturnChannel();
+      var len=Math.hypot(dx,dy)||1;dx/=len;dy/=len;
+      var sp=(game.player.speed||2.4)*(game._cheatSpeed||1);
+      var ox=game.player.x,oy=game.player.y;
+      var tx=cw(ox+dx*sp,game.player.radius||24),ty=cw(oy+dy*sp,game.player.radius||24);
+      var cur=game.currentZone||nearestZone(ox,oy),tar=nearestZone(tx,ty);
+      if(gateTarget(cur,tar)){
+        game.player.x=tx;game.player.y=ty;
+        game.currentZone=tar;
+      }
+      game.player.movementAnimation=(game.player.movementAnimation||0)+Math.hypot(game.player.x-ox,game.player.y-oy)*0.055;
+    }
+    currentWorldSize=WORLD_FINAL;
+  };
+
+  /* Camera never consults a smaller zone world size. */
+  window.updateCamera=function(){
+    currentWorldSize=WORLD_FINAL;
+    if(!game.camera) return;
+    var cwv=canvas.width||0,chv=canvas.height||0;
+    game.camera.x=Math.max(0,Math.min(Math.max(0,WORLD_FINAL-cwv),game.player.x-cwv/2));
+    game.camera.y=Math.max(0,Math.min(Math.max(0,WORLD_FINAL-chv),game.player.y-chv/2));
+  };
+
+  /* Explicit travel also uses only the final world boundary. */
+  window.changeZone=function(key){
+    var z=typeof ZONES!=='undefined'?ZONES[key]:null;
+    if(!z || !gameStarted || gameOver) return;
+    if((game.player.level||1)<(z.minLevel||1)){
+      if(typeof showDropNotification==='function')showDropNotification('🔒 '+z.name+'은(는) Lv.'+z.minLevel+'부터 이동할 수 있습니다.');
+      return;
+    }
+    if(key==='town' && typeof startReturnToTown==='function'){startReturnToTown();return;}
+    game.currentZone=key;
+    currentWorldSize=WORLD_FINAL;
+    game.player.x=cw(z.x,game.player.radius||24);
+    game.player.y=cw(z.y,game.player.radius||24);
+    updateCamera();
+    if(typeof initZoneSelect==='function')initZoneSelect();
+    if(typeof updateUI==='function')updateUI();
+  };
+
+  /* Stop old zone-size values from affecting zone metadata itself. */
+  if(typeof ZONES!=='undefined')Object.keys(ZONES).forEach(function(k){if(ZONES[k])ZONES[k].worldSize=WORLD_FINAL;});
+  currentWorldSize=WORLD_FINAL;
+  updateCamera();
+
+  /* Keep the authoritative size after legacy maintenance timers run. */
+  setInterval(function(){
+    if(typeof game==='undefined')return;
+    currentWorldSize=WORLD_FINAL;
+    if(gameStarted&&!gameOver)updateCamera();
+  },50);
+})();
+</script>
+
+<script>
+/* 키보드 입력 보호: 치트 입력 중에는 게임 조작으로 전달하지 않습니다. */
+(() => {
+    if (window.__cheatInputGuardInstalled) return;
+    window.__cheatInputGuardInstalled = true;
+
+    const blockedKeys = new Set([
+        "w", "a", "s", "d", "1", "2", "3", "4", "5"
+    ]);
+
+    document.addEventListener("keydown", (event) => {
+        const target = event.target;
+        const isTyping = target && (
+            target.matches("input, textarea, [contenteditable='true']")
+        );
+
+        if (isTyping && blockedKeys.has(event.key.toLowerCase())) {
+            event.stopImmediatePropagation();
+        }
+    }, true);
+
+    /* 키를 꾹 눌렀을 때 치트창이 두 번 열리지 않도록 반복 입력을 무시합니다. */
+    const stopGameInputWhileTyping = (event) => {
+        const target = event.target;
+        const isTyping = target && target.matches && target.matches(
+            "input, textarea, [contenteditable='true']"
+        );
+
+        if (isTyping && blockedKeys.has(event.key.toLowerCase())) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+        }
+    };
+
+    document.addEventListener("keyup", stopGameInputWhileTyping, true);
+
+    document.addEventListener("keydown", (event) => {
+        if ((event.key === "F2" || event.key === "`") && event.repeat) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+        }
+    }, true);
+
+    /* 같은 치트창이 여러 번 삽입되는 경우 첫 번째 창만 유지합니다. */
+    const removeDuplicateCheatWindows = () => {
+        const candidates = [...document.querySelectorAll("[id]")].filter((element) => {
+            const id = element.id.toLowerCase();
+            return id.includes("cheat") || id.includes("console");
+        });
+
+        const groups = new Map();
+        candidates.forEach((element) => {
+            const key = element.id.toLowerCase();
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key).push(element);
+        });
+
+        groups.forEach((elements) => {
+            elements.slice(1).forEach((element) => element.remove());
+        });
+    };
+
+    removeDuplicateCheatWindows();
+    new MutationObserver(removeDuplicateCheatWindows).observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+})();
+</script>
+<script id="final-global-monster-world-fix">
+(function(){
+  'use strict';
+  if(typeof game === 'undefined' || typeof ZONES === 'undefined') return;
+
+  const worldMonsters = window.__finalGlobalMonsterWorld || (window.__finalGlobalMonsterWorld = new Set());
+  const REGION_CAP = 25;
+  const SPAWN_INTERVAL = 650;
+  const PATROL_RADIUS = 120;
+  let lastSpawn = 0;
+
+  function validMonster(m){
+    return m && !m._dead && m.hp > 0 && Number.isFinite(m.x) && Number.isFinite(m.y);
+  }
+
+  function regionCenter(zone){
+    return [zone.x || 0, zone.y || 0];
+  }
+
+  function remember(){
+    for(const m of (game.monsters || [])){
+      if(!validMonster(m)) continue;
+      if(!m.region) m.region = game.currentZone || 'town';
+      m.homeX ??= m.x;
+      m.homeY ??= m.y;
+      m.patrolAngle ??= Math.random() * Math.PI * 2;
+      m.nextPatrol ??= performance.now() + 500 + Math.random() * 1200;
+      m.attackCooldown = Math.min(m.attackCooldown || 900, 650);
+      worldMonsters.add(m);
+    }
+    for(const m of [...worldMonsters]) if(!validMonster(m)) worldMonsters.delete(m);
+  }
+
+  function exposeAll(){
+    remember();
+    game.monsters = [...worldMonsters].filter(validMonster);
+  }
+
+  function countRegion(region){
+    let count = 0;
+    for(const m of worldMonsters) if(validMonster(m) && m.region === region) count++;
+    return count;
+  }
+
+  function spawnInRegion(region){
+    const zone = ZONES[region];
+    if(!zone || region === 'town' || !zone.spawns?.length || countRegion(region) >= REGION_CAP) return;
+
+    const type = zone.spawns[Math.floor(Math.random() * zone.spawns.length)];
+    const data = MONSTERS[type];
+    if(!data) return;
+
+    const [cx, cy] = regionCenter(zone);
+    const safe = zone.safeRadius || 300;
+
+    for(let attempt = 0; attempt < 30; attempt++){
+      const angle = Math.random() * Math.PI * 2;
+      const distanceFromCenter = safe + 280 + Math.random() * 650;
+      const x = clamp(cx + Math.cos(angle) * distanceFromCenter, 40, currentWorldSize - 40);
+      const y = clamp(cy + Math.sin(angle) * distanceFromCenter, 40, currentWorldSize - 40);
+
+      const monster = {
+        type, x, y,
+        radius: data.isElite ? 30 : 22,
+        hp: data.hp, maxHp: data.hp,
+        damage: data.damage,
+        speed: Math.min(data.speed || 1, 1.35),
+        exp: data.exp, color: data.color, emoji: data.emoji,
+        vision: data.vision, attackRange: data.attackRange,
+        loot: data.loot, isElite: !!data.isElite,
+        lastAttack: 0,
+        attackCooldown: 650,
+        region,
+        homeX: x, homeY: y,
+        patrolAngle: Math.random() * Math.PI * 2,
+        nextPatrol: performance.now() + 700 + Math.random() * 1200,
+        state: 'patrol'
+      };
+      worldMonsters.add(monster);
+      return;
+    }
+  }
+
+  /* 사냥터마다 독립적으로 보충하므로 플레이어가 없는 지역도 유지됩니다. */
+  function spawnAllRegions(){
+    if(!gameStarted || gameOver || isPaused) return;
+    const now = performance.now();
+    if(now - lastSpawn < SPAWN_INTERVAL) return;
+    lastSpawn = now;
+    for(const region of Object.keys(ZONES)){
+      if(region !== 'town' && countRegion(region) < REGION_CAP) spawnInRegion(region);
+    }
+    exposeAll();
+  }
+
+  /* 현재 지역만 추적/공격하고, 나머지는 계속 순찰합니다. */
+  function updateGlobalMonsters(){
+    if(!gameStarted || gameOver || isPaused) return;
+    remember();
+    const now = performance.now();
+    const playerRegion = game.currentZone;
+
+    for(const monster of worldMonsters){
+      if(!validMonster(monster)) continue;
+      const zone = ZONES[monster.region];
+      if(!zone) continue;
+
+      const sameRegion = monster.region === playerRegion;
+      const [cx, cy] = regionCenter(zone);
+      const safe = zone.safeRadius || 0;
+      const distanceToCenter = Math.hypot(monster.x - cx, monster.y - cy);
+
+      /* 지역 밖으로 이탈하지 않도록 자기 지역 중심으로 되돌립니다. */
+      if(distanceToCenter > 1750){
+        const factor = 1750 / distanceToCenter;
+        monster.x = cx + (monster.x - cx) * factor;
+        monster.y = cy + (monster.y - cy) * factor;
+      }
+      if(monster.region !== 'town' && distanceToCenter < safe + 70){
+        const dx = monster.x - cx, dy = monster.y - cy;
+        const length = Math.hypot(dx, dy) || 1;
+        monster.x = cx + dx / length * (safe + 70);
+        monster.y = cy + dy / length * (safe + 70);
+      }
+
+      const distanceToPlayer = Math.hypot(game.player.x - monster.x, game.player.y - monster.y);
+      const playerInSafeZone = sameRegion && Math.hypot(game.player.x - cx, game.player.y - cy) < safe;
+      const canDetect = sameRegion && !playerInSafeZone && distanceToPlayer <= (monster.vision || 500);
+
+      if(canDetect){
+        monster.state = 'chase';
+        if(distanceToPlayer > (monster.attackRange || 45) + game.player.radius){
+          const dx = game.player.x - monster.x, dy = game.player.y - monster.y;
+          const length = Math.hypot(dx, dy) || 1;
+          monster.x += dx / length * Math.min(monster.speed || 1, 1.35);
+          monster.y += dy / length * Math.min(monster.speed || 1, 1.35);
+        }
+      }else{
+        monster.state = 'patrol';
+        monster.target = null;
+        if(now >= (monster.nextPatrol || 0)){
+          monster.patrolAngle = (monster.patrolAngle || 0) + (Math.random() - .5) * 1.4;
+          monster.nextPatrol = now + 700 + Math.random() * 1400;
+        }
+        const tx = monster.homeX + Math.cos(monster.patrolAngle || 0) * PATROL_RADIUS;
+        const ty = monster.homeY + Math.sin(monster.patrolAngle || 0) * PATROL_RADIUS;
+        const dx = tx - monster.x, dy = ty - monster.y;
+        const length = Math.hypot(dx, dy) || 1;
+        monster.x += dx / length * Math.min(monster.speed || 1, 1.35) * .42;
+        monster.y += dy / length * Math.min(monster.speed || 1, 1.35) * .42;
+      }
+
+      /* 다른 지역에서는 감지·공격하지 않습니다. */
+      if(sameRegion && monster.region !== 'town' && !playerInSafeZone &&
+         distanceToPlayer <= (monster.attackRange || 45) + game.player.radius &&
+         now - monster.lastAttack >= 650){
+        monster.lastAttack = now;
+        if(typeof damagePlayer === 'function') damagePlayer(monster.damage || 1);
+        else game.player.hp = Math.max(0, game.player.hp - (monster.damage || 1));
+      }
+    }
+    exposeAll();
+  }
+
+  const originalKillMonster = killMonster;
+  killMonster = function(monster){
+    if(monster) monster._dead = true;
+    worldMonsters.delete(monster);
+    return originalKillMonster(monster);
+  };
+
+  /* 기존 AI는 대체하여 중복 이동/공격을 막습니다. */
+  updateMonsters = updateGlobalMonsters;
+
+  /* 공격 모션과 기본 공격 쿨타임을 빠르게 합니다. */
+  const originalPlayerAttack = playerAttack;
+  playerAttack = function(){
+    const before = game.player.attackAnimation;
+    const result = originalPlayerAttack.apply(this, arguments);
+    const animation = game.player.attackAnimation;
+    if(animation && animation.start){
+      animation.duration = Math.max(90, Math.round((animation.duration || 250) * .55));
+    }
+    return result;
+  };
+
+  setInterval(spawnAllRegions, 100);
+  setInterval(()=>{ if(gameStarted && !gameOver) exposeAll(); }, 120);
+  remember();
+  exposeAll();
+})();
+</script>
+<script id="single-cheat-panel-final-fix">
+(function(){
+  'use strict';
+
+  /* 모든 기존 치트/콘솔 창을 제거하고 하나만 생성합니다. */
+  document.querySelectorAll('[id]').forEach(function(element){
+    var id = element.id.toLowerCase();
+    if(id.includes('cheat') || id.includes('console')) element.remove();
+  });
+
+  var panel = document.createElement('div');
+  panel.id = 'cheat-console';
+  panel.style.cssText = 'display:none;position:fixed;left:50%;top:10%;transform:translateX(-50%);width:min(560px,92vw);max-height:80vh;overflow:auto;background:rgba(0,0,0,.97);border:2px solid #00f5ff;border-radius:10px;padding:14px;z-index:2147483647;color:#fff;font-family:Arial,sans-serif;box-shadow:0 0 25px rgba(0,245,255,.3)';
+  panel.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <b style="color:#00f5ff;font-size:18px">⌘ 치트 콘솔</b>
+      <button id="single-cheat-close" style="background:#ff4757;color:#fff;border:0;border-radius:4px;padding:6px 10px;cursor:pointer">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px">
+      <button data-cheat="god-on">🛡️ 무적 켜기</button>
+      <button data-cheat="god-off">💥 무적 끄기</button>
+      <button data-cheat="max-level">🏆 만렙 Lv.100</button>
+      <button data-cheat="speed-normal">🏃 속도 기본</button>
+      <button data-cheat="speed-2">⚡ 속도 x2</button>
+      <button data-cheat="speed-5">🚀 속도 x5</button>
+      <button data-cheat="heal">❤️ HP 회복</button>
+      <button data-cheat="mana">💧 MP 회복</button>
+      <button data-cheat="gold">💰 금화 +99999</button>
+      <button data-cheat="killall">☠️ 지역 제거</button>
+    </div>
+    <div id="single-cheat-status" style="margin-top:11px;color:#aaa;font-size:12px;text-align:center">버튼을 눌러 치트를 적용하세요.</div>
+    <input id="single-cheat-input" autocomplete="off" placeholder="추가 명령어: tp forest / spawn wolf 5" style="width:100%;margin-top:10px;padding:9px;background:#111;color:#fff;border:1px solid #555;border-radius:5px;outline:none;font-family:monospace">
+  `;
+  document.body.appendChild(panel);
+
+  var status = panel.querySelector('#single-cheat-status');
+  function done(message){
+    if(typeof updateUI === 'function') updateUI();
+    status.textContent = message;
+  }
+
+  function apply(command){
+    var args = String(command).trim().split(/\s+/);
+    var name = (args.shift() || '').toLowerCase();
+    var value;
+
+    if(name === 'god'){
+      game._cheatGod = args[0] !== 'off';
+      game.player.invincibleUntil = game._cheatGod ? Infinity : 0;
+      done(game._cheatGod ? '🛡️ 무적 ON' : '💥 무적 OFF');
+    } else if(name === 'max-level'){
+      game.player.level = 100;
+      game.player.exp = 0;
+      game.player.maxExp = Math.max(game.player.maxExp || 100, 100);
+      done('🏆 레벨 100 적용');
+    } else if(name === 'speed'){
+      value = Number(args[0]);
+      if(Number.isFinite(value)){
+        game._cheatSpeed = Math.max(.1, Math.min(10, value));
+        done(`🏃 속도 x${game._cheatSpeed} 적용`);
+      }
+    } else if(name === 'heal'){
+      game.player.hp = game.player.maxHp;
+      done('❤️ HP 회복 완료');
+    } else if(name === 'mana'){
+      game.player.mana = game.player.maxMana;
+      done('💧 MP 회복 완료');
+    } else if(name === 'gold'){
+      game.player.gold += 99999;
+      if(typeof syncGoldInventory === 'function') syncGoldInventory();
+      done('💰 금화 +99999');
+    } else if(name === 'killall'){
+      (game.monsters || []).slice().forEach(function(monster){
+        if(monster.region === game.currentZone || !monster.region){
+          if(typeof killMonster === 'function') killMonster(monster);
+        }
+      });
+      done('☠️ 현재 지역 몬스터 제거');
+    } else if(name === 'tp' && ZONES[args[0]]){
+      var zone = ZONES[args[0]];
+      game.currentZone = args[0];
+      currentWorldSize = Math.max(Number(window.__RPG_WORLD_FINAL_V2 || 30000), zone.worldSize || 0);
+      game.player.x = zone.x;
+      game.player.y = zone.y;
+      if(typeof updateCamera === 'function') updateCamera();
+      if(typeof initZoneSelect === 'function') initZoneSelect();
+      done(`📍 ${zone.name} 이동 완료`);
+    } else if(name === 'spawn' && MONSTERS[args[0]]){
+      var amount = Math.max(1, Math.min(25, Number(args[1]) || 1));
+      for(var i=0;i<amount;i++) if(typeof spawnMonster === 'function') spawnMonster();
+      done(`👾 ${MONSTERS[args[0]].name} 스폰 요청`);
+    } else {
+      done('알 수 없는 명령어입니다.');
+    }
+  }
+
+  panel.querySelectorAll('[data-cheat]').forEach(function(button){
+    button.style.cssText = 'padding:9px 5px;background:#222;color:#fff;border:1px solid #666;border-radius:5px;cursor:pointer;font-weight:bold';
+    button.addEventListener('click', function(){
+      var command = button.dataset.cheat;
+      if(command === 'god-on') apply('god on');
+      else if(command === 'god-off') apply('god off');
+      else if(command === 'max-level') apply('max-level');
+      else if(command === 'speed-normal') apply('speed 1');
+      else if(command === 'speed-2') apply('speed 2');
+      else if(command === 'speed-5') apply('speed 5');
+      else apply(command);
+    });
+  });
+
+  panel.querySelector('#single-cheat-close').onclick = function(){ panel.style.display = 'none'; };
+  panel.querySelector('#single-cheat-input').addEventListener('keydown', function(event){
+    if(event.key === 'Enter'){
+      apply(event.target.value);
+      event.target.value = '';
+    }
+    event.stopImmediatePropagation();
+  }, true);
+
+  window.toggleCheatConsole = function(){
+    if(!gameStarted) return;
+    panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+    if(panel.style.display === 'block') panel.querySelector('#single-cheat-input').focus();
+  };
+  window.toggleCheatV6 = window.toggleCheatConsole;
+
+  document.addEventListener('keydown', function(event){
+    if((event.key === 'F2' || event.key === '`') && !event.repeat){
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      window.toggleCheatConsole();
+    }
+  }, true);
+})();
+</script>
+<script id="final-stable-gameplay-fix">
+(function(){
+  'use strict';
+  if(typeof game === 'undefined') return;
+
+  const WORLD = 30000;
+  const held = Object.create(null);
+  const keyMap = {
+    KeyW:'w', KeyA:'a', KeyS:'s', KeyD:'d',
+    ArrowUp:'arrowup', ArrowDown:'arrowdown',
+    ArrowLeft:'arrowleft', ArrowRight:'arrowright'
+  };
+
+  function joystickMode(){
+    return localStorage.getItem('rpg_control') === 'joystick';
+  }
+
+  function setHeld(event, value){
+    const key = keyMap[event.code];
+    if(!key || joystickMode()) return;
+    held[key] = value;
+    game.keys[key] = value;
+    event.preventDefault();
+  }
+
+  window.addEventListener('keydown', event => setHeld(event, true), true);
+  window.addEventListener('keyup', event => setHeld(event, false), true);
+  window.addEventListener('blur', () => {
+    Object.keys(keyMap).forEach(code => { held[keyMap[code]] = false; });
+    ['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright']
+      .forEach(key => game.keys[key] = false);
+  });
+
+  /* 키를 누른 상태 자체를 기준으로 이동합니다. keydown 반복 이벤트에 의존하지 않습니다. */
+  window.updatePlayer = function(){
+    if(!gameStarted || gameOver || isPaused || returnChannelStart) return;
+
+    const keys = joystickMode() ? game.keys : held;
+    let dx = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0);
+    let dy = (keys.s || keys.arrowdown ? 1 : 0) - (keys.w || keys.arrowup ? 1 : 0);
+    if(!dx && !dy) return;
+
+    if(returnChannelStart && typeof cancelReturnChannel === 'function') return;
+    const length = Math.hypot(dx, dy) || 1;
+    const speed = (game.player.speed || 2.4) * (game._cheatSpeed || 1);
+    const oldX = game.player.x;
+    const oldY = game.player.y;
+    const nextX = clamp(oldX + dx / length * speed, game.player.radius, WORLD - game.player.radius);
+    const nextY = clamp(oldY + dy / length * speed, game.player.radius, WORLD - game.player.radius);
+
+    const before = game.currentZone || 'town';
+    const region = typeof authoritativeRegion === 'function'
+      ? authoritativeRegion(nextX, nextY)
+      : before;
+    const target = ZONES[region];
+
+    /* 잠긴 지역만 진입을 막고, 해금된 지역은 자연스럽게 통과시킵니다. */
+    if(target && region !== before && game.player.level < (target.minLevel || 1)) return;
+
+    game.player.x = nextX;
+    game.player.y = nextY;
+    game.currentZone = region;
+    currentWorldSize = WORLD;
+    game.player.facingAngle = Math.atan2(dy, dx);
+    game.player.movementAnimation = (game.player.movementAnimation || 0) +
+      Math.hypot(game.player.x - oldX, game.player.y - oldY) * 0.055;
+
+    if(region !== before){
+      game.effects = (game.effects || []).filter(effect => effect.type !== 'zoneSpawn');
+      game.effects.push({type:'zoneSpawn', x:game.player.x, y:game.player.y,
+        start:performance.now(), duration:1100});
+      nearbyStructure = null;
+      if(typeof initZoneSelect === 'function') initZoneSelect();
+    }
+  };
+
+  window.updateCamera = function(){
+    currentWorldSize = WORLD;
+    game.camera.x = clamp(game.player.x - canvas.width / 2, 0, Math.max(0, WORLD - canvas.width));
+    game.camera.y = clamp(game.player.y - canvas.height / 2, 0, Math.max(0, WORLD - canvas.height));
+  };
+
+  /* 귀환은 정확히 2초 동안 정지하고, 이동 입력으로 취소되지 않게 합니다. */
+  window.startReturnToTown = function(){
+    if(!gameStarted || gameOver || isPaused || game.currentZone === 'town' || returnChannelStart) return;
+    const now = performance.now();
+    if(now - lastReturnTime < RETURN_COOLDOWN){
+      showDropNotification(`🏠 귀환 쿨타임 ${Math.ceil((RETURN_COOLDOWN - (now - lastReturnTime)) / 1000)}초`);
+      const zonePanel = document.getElementById('zone-select');
+      if(zonePanel) zonePanel.style.display = 'none';
+      return;
+    }
+    const zonePanel = document.getElementById('zone-select');
+    if(zonePanel) zonePanel.style.display = 'none';
+    returnChannelStart = now;
+    returnChannelX = game.player.x;
+    returnChannelY = game.player.y;
+    held.w = held.a = held.s = held.d = false;
+    const channel = document.getElementById('return-channel');
+    if(channel){ channel.style.display = 'block'; channel.textContent = '🏠 귀환 중... 2.0초'; }
+    updateReturnButton();
+  };
+
+  window.updateReturnChannel = function(){
+    if(!returnChannelStart) return;
+    const elapsed = performance.now() - returnChannelStart;
+    const remain = Math.max(0, RETURN_CHANNEL - elapsed);
+    const channel = document.getElementById('return-channel');
+    if(channel) channel.textContent = `🏠 귀환 중... ${(remain / 1000).toFixed(1)}초`;
+    if(elapsed < RETURN_CHANNEL) return;
+
+    returnChannelStart = 0;
+    lastReturnTime = performance.now();
+    game.currentZone = 'town';
+    currentWorldSize = WORLD;
+    game.player.x = ZONES.town.x;
+    game.player.y = ZONES.town.y;
+    game.bullets = [];
+    game.groundItems = [];
+    nearbyStructure = null;
+    if(channel) channel.style.display = 'none';
+    const zonePanel = document.getElementById('zone-select');
+    if(zonePanel) zonePanel.style.display = 'none';
+    game.effects = (game.effects || []).filter(effect => effect.type !== 'zoneSpawn');
+    game.effects.push({type:'zoneSpawn', x:game.player.x, y:game.player.y,
+      start:performance.now(), duration:1100});
+    updateCamera();
+    if(typeof initZoneSelect === 'function') initZoneSelect();
+    updateUI();
+    showDropNotification('🏠 마을에 도착했습니다!');
+  };
+
+  /* 모든 지역 몬스터를 하나의 월드 풀에서 관리합니다. */
+  const monsters = window.__stableMonsterWorld || (window.__stableMonsterWorld = new Set());
+  const CAP = 25;
+  const valid = monster => monster && !monster._dead && monster.hp > 0 &&
+    Number.isFinite(monster.x) && Number.isFinite(monster.y);
+  const regionOf = (x, y) => typeof authoritativeRegion === 'function'
+    ? authoritativeRegion(x, y) : game.currentZone;
+
+  function absorb(){
+    for(const monster of game.monsters || []){
+      if(!valid(monster)) continue;
+      monster.region ||= game.currentZone;
+      monster.homeX ??= monster.x;
+      monster.homeY ??= monster.y;
+      monster.patrolAngle ??= Math.random() * Math.PI * 2;
+      monster.nextPatrol ??= performance.now() + 700 + Math.random() * 1200;
+      monsters.add(monster);
+    }
+    for(const monster of [...monsters]) if(!valid(monster)) monsters.delete(monster);
+  }
+
+  function expose(){
+    absorb();
+    game.monsters = [...monsters].filter(valid);
+  }
+
+  function count(region){
+    let total = 0;
+    for(const monster of monsters) if(valid(monster) && monster.region === region) total++;
+    return total;
+  }
+
+  function spawnInRegion(region){
+    const zone = ZONES[region];
+    if(!zone || region === 'town' || !zone.spawns?.length || count(region) >= CAP) return;
+    const type = zone.spawns[Math.floor(Math.random() * zone.spawns.length)];
+    const data = MONSTERS[type];
+    if(!data) return;
+    for(let attempt = 0; attempt < 40; attempt++){
+      const angle = Math.random() * Math.PI * 2;
+      const distance = (zone.safeRadius || 300) + 350 + Math.random() * 800;
+      const x = clamp(zone.x + Math.cos(angle) * distance, 40, WORLD - 40);
+      const y = clamp(zone.y + Math.sin(angle) * distance, 40, WORLD - 40);
+      if(regionOf(x, y) !== region) continue;
+      const monster = {
+        type, x, y, region,
+        radius: data.isElite ? 30 : 22,
+        hp: data.hp, maxHp: data.hp, damage: data.damage,
+        speed: Math.min(data.speed || 1, 1.35), exp: data.exp,
+        color: data.color, emoji: data.emoji, vision: data.vision,
+        attackRange: data.attackRange, loot: data.loot,
+        isElite: !!data.isElite, lastAttack: 0, attackCooldown: 650,
+        homeX:x, homeY:y, patrolAngle:Math.random()*Math.PI*2,
+        nextPatrol:performance.now()+800, state:'patrol'
+      };
+      monsters.add(monster);
+      return;
+    }
+  }
+
+  window.spawnMonster = function(){
+    if(!gameStarted || gameOver || isPaused) return;
+    spawnInRegion(game.currentZone);
+    expose();
+  };
+
+  window.updateMonsters = function(){
+    if(!gameStarted || gameOver || isPaused) return;
+    absorb();
+    const now = performance.now();
+    const playerRegion = game.currentZone;
+
+    for(const monster of monsters){
+      if(!valid(monster)) continue;
+      const region = monster.region;
+      const zone = ZONES[region];
+      if(!zone) continue;
+      const sameRegion = region === playerRegion;
+      const distanceToPlayer = Math.hypot(game.player.x - monster.x, game.player.y - monster.y);
+      const safe = Math.hypot(game.player.x - zone.x, game.player.y - zone.y) < (zone.safeRadius || 0);
+      let chasing = sameRegion && !safe && distanceToPlayer <= (monster.vision || 500);
+
+      if(chasing){
+        monster.state = 'chase';
+        if(distanceToPlayer > monster.attackRange + game.player.radius){
+          const length = distanceToPlayer || 1;
+          monster.x += (game.player.x - monster.x) / length * monster.speed;
+          monster.y += (game.player.y - monster.y) / length * monster.speed;
+        }
+      }else{
+        monster.state = 'patrol';
+        monster.target = null;
+        if(now >= (monster.nextPatrol || 0)){
+          monster.patrolAngle += (Math.random() - .5) * 1.4;
+          monster.nextPatrol = now + 700 + Math.random() * 1300;
+        }
+        const targetX = monster.homeX + Math.cos(monster.patrolAngle) * 120;
+        const targetY = monster.homeY + Math.sin(monster.patrolAngle) * 120;
+        const dx = targetX - monster.x, dy = targetY - monster.y;
+        const length = Math.hypot(dx, dy) || 1;
+        monster.x += dx / length * monster.speed * .42;
+        monster.y += dy / length * monster.speed * .42;
+      }
+
+      /* 자기 지역 밖으로는 절대 이동하지 않습니다. */
+      if(regionOf(monster.x, monster.y) !== region){
+        monster.x = monster.homeX;
+        monster.y = monster.homeY;
+      }
+
+      if(sameRegion && !safe && distanceToPlayer <= monster.attackRange + game.player.radius &&
+         now - monster.lastAttack >= (monster.attackCooldown || 650)){
+        monster.lastAttack = now;
+        if(typeof damagePlayer === 'function') damagePlayer(monster.damage || 1);
+      }
+    }
+    expose();
+  };
+
+  const baseKill = killMonster;
+  window.killMonster = function(monster){
+    if(monster) monster._dead = true;
+    if(monster) monsters.delete(monster);
+    return baseKill.apply(this, arguments);
+  };
+
+  /* 플레이어가 없는 지역도 계속 독립적으로 생성됩니다. */
+  setInterval(() => {
+    if(!gameStarted || gameOver || isPaused) return;
+    for(const region of Object.keys(ZONES)) if(region !== 'town' && count(region) < CAP) spawnInRegion(region);
+    expose();
+  }, 650);
+
+  /* 공격 모션과 다음 공격까지의 간격을 함께 줄입니다. */
+  const baseAttack = playerAttack;
+  window.playerAttack = function(){
+    const before = game.player.lastAttack;
+    const result = baseAttack.apply(this, arguments);
+    if(game.player.lastAttack !== before){
+      const animation = game.player.attackAnimation;
+      if(animation) animation.duration = Math.max(90, Math.round((animation.duration || 250) * .55));
+      const weapon = getEquippedWeapon && getEquippedWeapon();
+      const cooldown = weapon?.cooldown || 500;
+      game.player.lastAttack = performance.now() - cooldown * .45;
+    }
+    return result;
+  };
+
+  expose();
+})();
+</script>
+<script id="final-authoritative-gameplay-fix">
+(function(){
+  'use strict';
+
+  const WORLD = 30000;
+  const movement = Object.create(null);
+  const keyMap = {
+    KeyW:'w', KeyA:'a', KeyS:'s', KeyD:'d',
+    ArrowUp:'arrowup', ArrowDown:'arrowdown',
+    ArrowLeft:'arrowleft', ArrowRight:'arrowright'
+  };
+
+  function keyboardMode(){
+    return (localStorage.getItem('rpg_control') || 'keyboard') !== 'joystick';
+  }
+
+  window.addEventListener('keydown', e => {
+    const key = keyMap[e.code];
+    if(key && keyboardMode()) {
+      movement[key] = true;
+      e.preventDefault();
+    }
+  }, true);
+
+  window.addEventListener('keyup', e => {
+    const key = keyMap[e.code];
+    if(key) {
+      movement[key] = false;
+      e.preventDefault();
+    }
+  }, true);
+
+  window.addEventListener('blur', () => {
+    Object.keys(movement).forEach(key => movement[key] = false);
+  });
+
+  function clearZoneWindow(){
+    const panel = document.getElementById('zone-select');
+    if(panel) panel.style.display = 'none';
+  }
+
+  function zoneCenter(zone){
+    return [Number(zone?.x) || 0, Number(zone?.y) || 0];
+  }
+
+  function regionForPoint(x, y){
+    if(typeof authoritativeRegion === 'function') return authoritativeRegion(x, y);
+    let result = game.currentZone || 'town';
+    let nearest = Infinity;
+    for(const [key, zone] of Object.entries(ZONES)) {
+      const [zx, zy] = zoneCenter(zone);
+      const d = Math.hypot(x - zx, y - zy);
+      if(d < nearest) { nearest = d; result = key; }
+    }
+    return result;
+  }
+
+  function updateMovement(){
+    if(!gameStarted || gameOver || isPaused || returnChannelStart) return;
+
+    const keys = keyboardMode() ? movement : (game.keys || {});
+    let dx = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0);
+    let dy = (keys.s || keys.arrowdown ? 1 : 0) - (keys.w || keys.arrowup ? 1 : 0);
+    if(!dx && !dy) return;
+
+    const length = Math.hypot(dx, dy) || 1;
+    const speed = (game.player.speed || 2.4) * (game._cheatSpeed || 1);
+    const oldX = game.player.x;
+    const oldY = game.player.y;
+    const nextX = clamp(oldX + dx / length * speed, game.player.radius, WORLD - game.player.radius);
+    const nextY = clamp(oldY + dy / length * speed, game.player.radius, WORLD - game.player.radius);
+    const nextRegion = regionForPoint(nextX, nextY);
+    const nextZone = ZONES[nextRegion];
+
+    if(nextZone && nextRegion !== game.currentZone && game.player.level < (nextZone.minLevel || 1)) return;
+
+    game.player.x = nextX;
+    game.player.y = nextY;
+    game.currentZone = nextRegion;
+    game.player.facingAngle = Math.atan2(dy, dx);
+    game.player.movementAnimation += Math.hypot(nextX - oldX, nextY - oldY) * .055;
+    currentWorldSize = WORLD;
+
+    if(nextRegion !== game.currentZoneBeforeFinalFix) {
+      game.currentZoneBeforeFinalFix = nextRegion;
+      clearZoneWindow();
+      game.effects = (game.effects || []).filter(effect => effect.type !== 'zoneSpawn');
+      game.effects.push({type:'zoneSpawn', x:nextX, y:nextY, start:performance.now(), duration:900});
+      if(typeof initZoneSelect === 'function') initZoneSelect();
+    }
+  }
+
+  window.updatePlayer = updateMovement;
+  window.updateCamera = function(){
+    currentWorldSize = WORLD;
+    game.camera.x = clamp(game.player.x - canvas.width / 2, 0, Math.max(0, WORLD - canvas.width));
+    game.camera.y = clamp(game.player.y - canvas.height / 2, 0, Math.max(0, WORLD - canvas.height));
+  };
+
+  window.startReturnToTown = function(){
+    if(!gameStarted || gameOver || isPaused || game.currentZone === 'town' || returnChannelStart) return;
+    const now = performance.now();
+    if(now - lastReturnTime < RETURN_COOLDOWN) {
+      showDropNotification(`🏠 귀환 쿨타임 ${Math.ceil((RETURN_COOLDOWN - (now - lastReturnTime)) / 1000)}초`);
+      clearZoneWindow();
+      return;
+    }
+    clearZoneWindow();
+    returnChannelStart = now;
+    returnChannelX = game.player.x;
+    returnChannelY = game.player.y;
+    const channel = document.getElementById('return-channel');
+    if(channel) { channel.style.display = 'block'; channel.textContent = '🏠 귀환 중... 2.0초'; }
+    updateReturnButton();
+  };
+
+  window.updateReturnChannel = function(){
+    if(!returnChannelStart) return;
+    const elapsed = performance.now() - returnChannelStart;
+    const channel = document.getElementById('return-channel');
+    if(channel) channel.textContent = `🏠 귀환 중... ${Math.max(0, (RETURN_CHANNEL - elapsed) / 1000).toFixed(1)}초`;
+    if(elapsed < RETURN_CHANNEL) return;
+
+    returnChannelStart = 0;
+    lastReturnTime = performance.now();
+    game.currentZone = 'town';
+    currentWorldSize = WORLD;
+    game.player.x = ZONES.town.x;
+    game.player.y = ZONES.town.y;
+    game.bullets = [];
+    game.groundItems = [];
+    clearZoneWindow();
+    if(channel) channel.style.display = 'none';
+    game.effects = (game.effects || []).filter(effect => effect.type !== 'zoneSpawn');
+    game.effects.push({type:'zoneSpawn', x:game.player.x, y:game.player.y, start:performance.now(), duration:900});
+    updateCamera();
+    if(typeof initZoneSelect === 'function') initZoneSelect();
+    updateUI();
+    showDropNotification('🏠 마을에 도착했습니다!');
+  };
+
+  /* 지역별 영구 몬스터 저장소 */
+  const worldMonsters = window.__authoritativeMonsterWorld || (window.__authoritativeMonsterWorld = new Set());
+  const CAP = 25;
+
+  function validMonster(monster){
+    return monster && !monster._dead && monster.hp > 0 && Number.isFinite(monster.x) && Number.isFinite(monster.y);
+  }
+
+  function absorbMonsters(){
+    for(const monster of game.monsters || []) {
+      if(!validMonster(monster)) continue;
+      monster.region ||= game.currentZone || regionForPoint(monster.x, monster.y);
+      monster.homeX ??= monster.x;
+      monster.homeY ??= monster.y;
+      monster.patrolAngle ??= Math.random() * Math.PI * 2;
+      monster.nextPatrol ??= performance.now() + 800;
+      worldMonsters.add(monster);
+    }
+    for(const monster of [...worldMonsters]) if(!validMonster(monster)) worldMonsters.delete(monster);
+  }
+
+  function exposeMonsters(){
+    absorbMonsters();
+    game.monsters = [...worldMonsters].filter(validMonster);
+  }
+
+  function countRegion(region){
+    let count = 0;
+    for(const monster of worldMonsters) if(validMonster(monster) && monster.region === region) count++;
+    return count;
+  }
+
+  function spawnInRegion(region){
+    const zone = ZONES[region];
+    if(!zone || region === 'town' || !zone.spawns?.length || countRegion(region) >= CAP) return;
+    const type = zone.spawns[Math.floor(Math.random() * zone.spawns.length)];
+    const data = MONSTERS[type];
+    if(!data) return;
+    const [cx, cy] = zoneCenter(zone);
+    const safe = zone.safeRadius || 300;
+
+    for(let attempt = 0; attempt < 40; attempt++) {
+      const angle = Math.random() * Math.PI * 2;
+      const distance = safe + 350 + Math.random() * 900;
+      const x = clamp(cx + Math.cos(angle) * distance, 40, WORLD - 40);
+      const y = clamp(cy + Math.sin(angle) * distance, 40, WORLD - 40);
+      if(regionForPoint(x, y) !== region) continue;
+
+      const monster = {
+        type, x, y, region,
+        radius: data.isElite ? 30 : 22,
+        hp: data.hp, maxHp: data.hp, damage: data.damage,
+        speed: Math.min(data.speed || 1, 1.35), exp: data.exp,
+        color: data.color, emoji: data.emoji, vision: data.vision,
+        attackRange: data.attackRange, loot: data.loot,
+        isElite: !!data.isElite, lastAttack: 0,
+        attackCooldown: 650, homeX:x, homeY:y,
+        patrolAngle: Math.random() * Math.PI * 2,
+        nextPatrol: performance.now() + 800
+      };
+      worldMonsters.add(monster);
+      return;
+    }
+  }
+
+  window.spawnMonster = function(){ spawnInRegion(game.currentZone || 'town'); exposeMonsters(); };
+
+  window.updateMonsters = function(){
+    if(!gameStarted || gameOver || isPaused) return;
+    absorbMonsters();
+    const now = performance.now();
+    const playerRegion = game.currentZone;
+
+    for(const monster of worldMonsters) {
+      if(!validMonster(monster)) continue;
+      const region = monster.region;
+      const zone = ZONES[region];
+      if(!zone) continue;
+      const sameRegion = region === playerRegion;
+      const [cx, cy] = zoneCenter(zone);
+      const playerSafe = sameRegion && Math.hypot(game.player.x - cx, game.player.y - cy) < (zone.safeRadius || 0);
+      const distance = Math.hypot(game.player.x - monster.x, game.player.y - monster.y);
+      const detect = sameRegion && !playerSafe && distance <= (monster.vision || 500);
+
+      if(detect && distance > monster.attackRange + game.player.radius) {
+        monster.state = 'chase';
+        const length = distance || 1;
+        monster.x += (game.player.x - monster.x) / length * monster.speed;
+        monster.y += (game.player.y - monster.y) / length * monster.speed;
+      } else {
+        monster.state = 'patrol';
+        if(now >= monster.nextPatrol) {
+          monster.patrolAngle += (Math.random() - .5) * 1.4;
+          monster.nextPatrol = now + 700 + Math.random() * 1400;
+        }
+        const tx = monster.homeX + Math.cos(monster.patrolAngle) * 120;
+        const ty = monster.homeY + Math.sin(monster.patrolAngle) * 120;
+        const dx = tx - monster.x, dy = ty - monster.y;
+        const length = Math.hypot(dx, dy) || 1;
+        monster.x += dx / length * monster.speed * .42;
+        monster.y += dy / length * monster.speed * .42;
+      }
+
+      /* 다른 지역 몬스터는 감지/공격하지 않으며, 자기 지역 밖으로 이동하지 않습니다. */
+      if(regionForPoint(monster.x, monster.y) !== region) {
+        monster.x = monster.homeX;
+        monster.y = monster.homeY;
+      }
+      if(detect && distance <= monster.attackRange + game.player.radius && now - monster.lastAttack >= 650) {
+        monster.lastAttack = now;
+        if(typeof damagePlayer === 'function') damagePlayer(monster.damage || 1);
+      }
+    }
+    exposeMonsters();
+  };
+
+  const originalKill = killMonster;
+  window.killMonster = function(monster){
+    if(monster) monster._dead = true;
+    worldMonsters.delete(monster);
+    return originalKill.apply(this, arguments);
+  };
+
+  /* 플레이어가 없는 지역도 독립적으로 계속 스폰 */
+  setInterval(() => {
+    if(!gameStarted || gameOver || isPaused) return;
+    for(const region of Object.keys(ZONES)) if(region !== 'town') spawnInRegion(region);
+    exposeMonsters();
+  }, 650);
+
+  /* 공격 모션과 공격 간격을 빠르게 조정 */
+  const originalAttack = playerAttack;
+  window.playerAttack = function(){
+    const before = game.player.lastAttack;
+    const result = originalAttack.apply(this, arguments);
+    if(game.player.lastAttack !== before) {
+      if(game.player.attackAnimation) game.player.attackAnimation.duration = Math.max(90, Math.round((game.player.attackAnimation.duration || 250) * .55));
+      const weapon = getEquippedWeapon();
+      game.player.lastAttack = performance.now() - (weapon?.cooldown || 500) * .45;
+    }
+    return result;
+  };
+
+  game.currentZoneBeforeFinalFix = game.currentZone;
+  exposeMonsters();
+})();
+</script>
+
+
+<script id="absolute-final-gameplay-fix">
+(function(){
+  'use strict';
+  const WORLD = 30000;
+  const REGION_CAP = 25;
+  const monsterWorld = window.__absoluteMonsterWorld || (window.__absoluteMonsterWorld = new Set());
+  const held = Object.create(null);
+  const keyMap = {KeyW:'w',KeyA:'a',KeyS:'s',KeyD:'d',ArrowUp:'arrowup',ArrowDown:'arrowdown',ArrowLeft:'arrowleft',ArrowRight:'arrowright'};
+
+  function zoneAt(x,y){
+    let result='town', best=Infinity;
+    for(const [id,z] of Object.entries(ZONES)){
+      if(!z || !Number.isFinite(z.x) || !Number.isFinite(z.y)) continue;
+      const d=(x-z.x)**2+(y-z.y)**2;
+      if(d<best){best=d;result=id;}
+    }
+    return result;
+  }
+  function closeZoneWindow(){
+    const el=document.getElementById('zone-select');
+    if(el) el.style.display='none';
+  }
+  function valid(m){return m && !m._dead && m.hp>0 && Number.isFinite(m.x) && Number.isFinite(m.y);}
+  function absorb(){
+    for(const m of game.monsters||[]){
+      if(!valid(m)) continue;
+      m.region ||= game.currentZone || zoneAt(m.x,m.y);
+      m.homeX ??= m.x; m.homeY ??= m.y;
+      m.patrolAngle ??= Math.random()*Math.PI*2;
+      m.nextPatrol ??= performance.now()+700+Math.random()*1000;
+      monsterWorld.add(m);
+    }
+    for(const m of [...monsterWorld]) if(!valid(m)) monsterWorld.delete(m);
+  }
+  function expose(){
+    absorb();
+    /* drawMonsters는 이 배열을 사용하므로 모든 지역 몬스터를 항상 노출한다. */
+    game.monsters=[...monsterWorld].filter(valid);
+  }
+  function count(region){let n=0;for(const m of monsterWorld)if(valid(m)&&m.region===region)n++;return n;}
+
+  /* 키를 누른 상태 자체로 이동: keydown 반복 이벤트에 의존하지 않는다. */
+  addEventListener('keydown',e=>{
+    const k=keyMap[e.code];
+    if(k && localStorage.getItem('rpg_control')!=='joystick'){
+      held[k]=true; e.preventDefault();
+    }
+  },true);
+  addEventListener('keyup',e=>{
+    const k=keyMap[e.code];
+    if(k){held[k]=false; e.preventDefault();}
+  },true);
+  addEventListener('blur',()=>Object.keys(keyMap).forEach(code=>{held[keyMap[code]]=false;}),true);
+
+  updatePlayer=function(){
+    if(!gameStarted||gameOver||isPaused||returnChannelStart) return;
+    const keys=localStorage.getItem('rpg_control')==='joystick' ? game.keys : held;
+    let dx=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0);
+    let dy=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0);
+    if(!dx&&!dy) return;
+    const len=Math.hypot(dx,dy), speed=(game.player.speed||2.4)*(game._cheatSpeed||1);
+    const oldX=game.player.x, oldY=game.player.y;
+    const nx=clamp(oldX+dx/len*speed,game.player.radius,WORLD-game.player.radius);
+    const ny=clamp(oldY+dy/len*speed,game.player.radius,WORLD-game.player.radius);
+    const next=zoneAt(nx,ny), data=ZONES[next];
+    if(data && next!==game.currentZone && game.player.level<(data.minLevel||1)) return;
+    game.player.x=nx; game.player.y=ny; game.currentZone=next; currentWorldSize=WORLD;
+    game.player.facingAngle=Math.atan2(dy,dx);
+    game.player.movementAnimation=(game.player.movementAnimation||0)+Math.hypot(nx-oldX,ny-oldY)*.055;
+    if(next!==zoneAt(oldX,oldY)){
+      closeZoneWindow(); nearbyStructure=null;
+      game.effects=(game.effects||[]).filter(e=>e.type!=='zoneSpawn');
+      game.effects.push({type:'zoneSpawn',x:nx,y:ny,start:performance.now(),duration:900});
+      if(typeof initZoneSelect==='function') initZoneSelect();
+    }
+  };
+
+  updateCamera=function(){
+    currentWorldSize=WORLD;
+    game.camera.x=clamp(game.player.x-canvas.width/2,0,Math.max(0,WORLD-canvas.width));
+    game.camera.y=clamp(game.player.y-canvas.height/2,0,Math.max(0,WORLD-canvas.height));
+  };
+
+  /* 귀환: 이동 입력과 관계없이 정확히 2초 고정 후 쿨타임 시작 */
+  startReturnToTown=function(){
+    if(!gameStarted||gameOver||isPaused||game.currentZone==='town'||returnChannelStart)return;
+    const now=performance.now();
+    if(now-lastReturnTime<RETURN_COOLDOWN){
+      showDropNotification(`🏠 귀환 쿨타임 ${Math.ceil((RETURN_COOLDOWN-(now-lastReturnTime))/1000)}초`);
+      closeZoneWindow(); return;
+    }
+    closeZoneWindow(); returnChannelStart=now;
+    returnChannelX=game.player.x; returnChannelY=game.player.y;
+    const el=document.getElementById('return-channel');
+    if(el){el.style.display='block';el.textContent='🏠 귀환 중... 2.0초';}
+    updateReturnButton();
+  };
+  updateReturnChannel=function(){
+    if(!returnChannelStart)return;
+    const remain=Math.max(0,RETURN_CHANNEL-(performance.now()-returnChannelStart));
+    const el=document.getElementById('return-channel');
+    if(el)el.textContent=`🏠 귀환 중... ${(remain/1000).toFixed(1)}초`;
+    if(remain>0)return;
+    returnChannelStart=0; lastReturnTime=performance.now(); closeZoneWindow();
+    game.currentZone='town'; currentWorldSize=WORLD;
+    game.player.x=ZONES.town.x; game.player.y=ZONES.town.y;
+    game.bullets=[]; game.groundItems=[]; nearbyStructure=null;
+    if(el)el.style.display='none';
+    game.effects=(game.effects||[]).filter(e=>e.type!=='zoneSpawn');
+    game.effects.push({type:'zoneSpawn',x:game.player.x,y:game.player.y,start:performance.now(),duration:900});
+    updateCamera(); initZoneSelect(); updateUI();
+    showDropNotification('🏠 마을에 도착했습니다!');
+  };
+
+  changeZone=function(key){
+    const z=ZONES[key]; if(!z||!gameStarted||gameOver)return;
+    closeZoneWindow();
+    if(key==='town'){startReturnToTown();return;}
+    if(game.player.level<(z.minLevel||1)){showDropNotification(`🔒 ${z.name}은(는) Lv.${z.minLevel}부터 이동할 수 있습니다.`);return;}
+    game.currentZone=key; currentWorldSize=WORLD;
+    game.player.x=z.x; game.player.y=z.y; nearbyStructure=null;
+    game.effects=(game.effects||[]).filter(e=>e.type!=='zoneSpawn');
+    game.effects.push({type:'zoneSpawn',x:z.x,y:z.y,start:performance.now(),duration:900});
+    initZoneSelect(); updateCamera(); updateUI();
+  };
+
+  function spawnRegion(region){
+    const z=ZONES[region];
+    if(!z||region==='town'||!z.spawns?.length||count(region)>=REGION_CAP)return;
+    const type=z.spawns[Math.floor(Math.random()*z.spawns.length)], data=MONSTERS[type];
+    if(!data)return;
+    for(let i=0;i<40;i++){
+      const a=Math.random()*Math.PI*2, d=(z.safeRadius||300)+350+Math.random()*900;
+      const x=clamp(z.x+Math.cos(a)*d,40,WORLD-40), y=clamp(z.y+Math.sin(a)*d,40,WORLD-40);
+      if(zoneAt(x,y)!==region)continue;
+      const m={type,x,y,region,radius:data.isElite?30:22,hp:data.hp,maxHp:data.hp,damage:data.damage,speed:Math.min(data.speed||1,1.35),exp:data.exp,color:data.color,emoji:data.emoji,vision:data.vision,attackRange:data.attackRange,loot:data.loot,isElite:!!data.isElite,lastAttack:0,attackCooldown:650,homeX:x,homeY:y,patrolAngle:Math.random()*Math.PI*2,nextPatrol:performance.now()+800};
+      monsterWorld.add(m); return;
+    }
+  }
+
+  /* 모든 지역을 동시에 보충 */
+  setInterval(()=>{
+    if(!gameStarted||gameOver||isPaused)return;
+    for(const region of Object.keys(ZONES))spawnRegion(region);
+    expose();
+  },650);
+
+  updateMonsters=function(){
+    if(!gameStarted||gameOver||isPaused)return;
+    absorb(); const now=performance.now(), playerRegion=game.currentZone;
+    for(const m of monsterWorld){
+      if(!valid(m))continue;
+      const region=m.region,z=ZONES[region]; if(!z)continue;
+      const same=region===playerRegion;
+      const dist=Math.hypot(game.player.x-m.x,game.player.y-m.y);
+      const playerSafe=same&&Math.hypot(game.player.x-z.x,game.player.y-z.y)<(z.safeRadius||0);
+      if(same&&!playerSafe&&dist<=(m.vision||500)){
+        if(dist>(m.attackRange||45)+game.player.radius){m.x+=(game.player.x-m.x)/(dist||1)*m.speed;m.y+=(game.player.y-m.y)/(dist||1)*m.speed;}
+      }else{
+        if(now>=(m.nextPatrol||0)){m.patrolAngle+=(Math.random()-.5)*1.4;m.nextPatrol=now+700+Math.random()*1400;}
+        const tx=m.homeX+Math.cos(m.patrolAngle)*120,ty=m.homeY+Math.sin(m.patrolAngle)*120;
+        const dx=tx-m.x,dy=ty-m.y,l=Math.hypot(dx,dy)||1;
+        m.x+=dx/l*m.speed*.42;m.y+=dy/l*m.speed*.42;
+      }
+      /* 순찰/추격 모두 자기 지역 밖으로 나가지 않음 */
+      if(zoneAt(m.x,m.y)!==region){m.x=m.homeX;m.y=m.homeY;}
+      if(same&&!playerSafe&&dist<=(m.attackRange||45)+game.player.radius&&now-m.lastAttack>=(m.attackCooldown||650)){
+        m.lastAttack=now; if(typeof damagePlayer==='function')damagePlayer(m.damage||1);
+      }
+    }
+    expose();
+  };
+
+  /* 적절한 처치만 월드 저장소에서 제거 */
+  const oldKill=killMonster;
+  killMonster=function(m){if(m){m._dead=true;monsterWorld.delete(m);}return oldKill(m);};
+
+  /* 일반 공격 모션과 다음 공격 가능 시점을 빠르게 */
+  const oldAttack=playerAttack;
+  playerAttack=function(){
+    const before=game.player.lastAttack; const result=oldAttack();
+    if(game.player.lastAttack!==before){
+      if(game.player.attackAnimation)game.player.attackAnimation.duration=Math.max(80,Math.round((game.player.attackAnimation.duration||250)*.45));
+      const w=getEquippedWeapon(); game.player.lastAttack=performance.now()-(w?.cooldown||500)*.55;
+    }
+    return result;
+  };
+
+  /* 시작 시에만 월드 초기화, 지역 이동에서는 절대 삭제하지 않음 */
+  const oldStart=startGame, oldRestart=restartGame, oldMenu=goToMenu;
+  startGame=function(){
+    monsterWorld.clear();
+    const r=oldStart.apply(this,arguments);
+    expose();
+    return r;
+  };
+  restartGame=function(){
+    monsterWorld.clear();
+    const r=oldRestart.apply(this,arguments);
+    expose();
+    return r;
+  };
+  goToMenu=function(){
+    const r=oldMenu.apply(this,arguments);
+    monsterWorld.clear();
+    return r;
+  };
+
+  expose();
+})();
+</script>
+
+<script id="final-region-aim-monster-fix">
+(function(){
+  'use strict';
+
+  const WORLD_LIMIT = 30000;
+  const REGION_CAP = 25;
+  const heldKeys = Object.create(null);
+  const keyMap = {
+    KeyW:'w', KeyA:'a', KeyS:'s', KeyD:'d',
+    ArrowUp:'arrowup', ArrowDown:'arrowdown',
+    ArrowLeft:'arrowleft', ArrowRight:'arrowright'
+  };
+  let lastBoundaryNotice = 0;
+  let lastBoundaryRegion = '';
+
+  const getRegion = (x, y) => {
+    if(typeof authoritativeRegion === 'function') return authoritativeRegion(x, y);
+    let result = game.currentZone || 'town';
+    let nearest = Infinity;
+    for(const [key, zone] of Object.entries(ZONES)){
+      if(!zone || !Number.isFinite(zone.x) || !Number.isFinite(zone.y)) continue;
+      const d = (x-zone.x) ** 2 + (y-zone.y) ** 2;
+      if(d < nearest){ nearest = d; result = key; }
+    }
+    return result;
+  };
+
+  window.addEventListener('keydown', event => {
+    const key = keyMap[event.code];
+    if(!key || localStorage.getItem('rpg_control') === 'joystick') return;
+    heldKeys[key] = true;
+    event.preventDefault();
+  }, true);
+
+  window.addEventListener('keyup', event => {
+    const key = keyMap[event.code];
+    if(!key) return;
+    heldKeys[key] = false;
+    event.preventDefault();
+  }, true);
+
+  window.addEventListener('blur', () => {
+    Object.keys(heldKeys).forEach(key => { heldKeys[key] = false; });
+  });
+
+  function notifyLockedRegion(region){
+    const zone = ZONES[region];
+    if(!zone) return;
+    const now = performance.now();
+    if(region === lastBoundaryRegion && now - lastBoundaryNotice < 900) return;
+    lastBoundaryRegion = region;
+    lastBoundaryNotice = now;
+    showDropNotification(`🚧 ${zone.name}은(는) Lv.${zone.minLevel || 1}부터 입장할 수 있습니다.`);
+  }
+
+  /* 이동은 이 함수 하나만 담당한다. 이동 방향으로 조준각을 바꾸지 않는다. */
+  window.updatePlayer = function(){
+    if(!gameStarted || gameOver || isPaused || returnChannelStart) return;
+
+    const keys = localStorage.getItem('rpg_control') === 'joystick'
+      ? (game.keys || {})
+      : heldKeys;
+    let dx = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0);
+    let dy = (keys.s || keys.arrowdown ? 1 : 0) - (keys.w || keys.arrowup ? 1 : 0);
+    if(!dx && !dy) return;
+
+    const length = Math.hypot(dx, dy) || 1;
+    const speed = (game.player.speed || 2.4) * (game._cheatSpeed || 1);
+    const oldX = game.player.x;
+    const oldY = game.player.y;
+    const nextX = clamp(oldX + dx / length * speed, game.player.radius, WORLD_LIMIT - game.player.radius);
+    const nextY = clamp(oldY + dy / length * speed, game.player.radius, WORLD_LIMIT - game.player.radius);
+    const currentRegion = game.currentZone || getRegion(oldX, oldY);
+    const nextRegion = getRegion(nextX, nextY);
+    const nextZone = ZONES[nextRegion];
+
+    if(nextRegion !== currentRegion && nextZone && game.player.level < (nextZone.minLevel || 1)){
+      notifyLockedRegion(nextRegion);
+      return;
+    }
+
+    game.player.x = nextX;
+    game.player.y = nextY;
+    game.currentZone = nextRegion;
+    currentWorldSize = WORLD_LIMIT;
+    game.player.movementAnimation = (game.player.movementAnimation || 0) +
+      Math.hypot(nextX-oldX, nextY-oldY) * 0.055;
+
+    if(nextRegion !== currentRegion){
+      nearbyStructure = null;
+      const zoneWindow = document.getElementById('zone-select');
+      if(zoneWindow) zoneWindow.style.display = 'none';
+      initZoneSelect();
+      updateUI();
+    }
+  };
+
+  window.updateCamera = function(){
+    currentWorldSize = WORLD_LIMIT;
+    game.camera.x = clamp(game.player.x - canvas.width / 2, 0, Math.max(0, WORLD_LIMIT - canvas.width));
+    game.camera.y = clamp(game.player.y - canvas.height / 2, 0, Math.max(0, WORLD_LIMIT - canvas.height));
+  };
+
+  /* 잠긴 인접 지역의 경계를 붉은 벽으로 표시한다. */
+  const previousDrawWorld = window.drawWorld;
+  window.drawWorld = function(){
+    previousDrawWorld();
+    if(!gameStarted || gameOver) return;
+    const current = game.currentZone;
+    const here = ZONES[current];
+    if(!here) return;
+
+    for(const [key, zone] of Object.entries(ZONES)){
+      if(key === current || !zone || game.player.level >= (zone.minLevel || 1)) continue;
+      const dx = zone.x - here.x;
+      const dy = zone.y - here.y;
+      const midX = (here.x + zone.x) / 2;
+      const midY = (here.y + zone.y) / 2;
+      const len = Math.hypot(dx, dy) || 1;
+      const nx = dx / len;
+      const ny = dy / len;
+      const tx = -ny;
+      const ty = nx;
+      const extent = WORLD_LIMIT;
+
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,65,65,0)';
+      ctx.shadowColor = 'rgba(255,48,48,0)';
+      ctx.shadowBlur = 12;
+      ctx.lineWidth = 18;
+      ctx.setLineDash([28, 18]);
+      ctx.beginPath();
+      ctx.moveTo(midX - tx * extent, midY - ty * extent);
+      ctx.lineTo(midX + tx * extent, midY + ty * extent);
+      ctx.stroke();
+      ctx.restore();
+    }
+  };
+
+  const monsters = window.__regionLockedMonsterWorld || (window.__regionLockedMonsterWorld = new Set());
+
+  function validMonster(monster){
+    return monster && !monster._dead && monster.hp > 0 &&
+      Number.isFinite(monster.x) && Number.isFinite(monster.y);
+  }
+
+  function absorbMonsters(){
+    for(const monster of game.monsters || []){
+      if(!validMonster(monster)) continue;
+      monster.region ||= game.currentZone || getRegion(monster.x, monster.y);
+      monster.homeX ??= monster.x;
+      monster.homeY ??= monster.y;
+      monster.patrolAngle ??= Math.random() * Math.PI * 2;
+      monster.nextPatrol ??= performance.now() + 700 + Math.random() * 1200;
+      monsters.add(monster);
+    }
+    for(const monster of [...monsters]) if(!validMonster(monster)) monsters.delete(monster);
+  }
+
+  function exposeMonsters(){
+    absorbMonsters();
+    game.monsters = [...monsters].filter(validMonster);
+  }
+
+  function countRegion(region){
+    let count = 0;
+    for(const monster of monsters){
+      if(validMonster(monster) && monster.region === region) count++;
+    }
+    return count;
+  }
+
+  function spawnInRegion(region){
+    const zone = ZONES[region];
+    if(!zone || region === 'town' || !zone.spawns?.length || countRegion(region) >= REGION_CAP) return;
+    const type = zone.spawns[Math.floor(Math.random() * zone.spawns.length)];
+    const data = MONSTERS[type];
+    if(!data) return;
+
+    for(let attempt=0; attempt<50; attempt++){
+      const angle = Math.random() * Math.PI * 2;
+      const distanceFromCenter = (zone.safeRadius || 300) + 350 + Math.random() * 900;
+      const x = clamp(zone.x + Math.cos(angle) * distanceFromCenter, 40, WORLD_LIMIT - 40);
+      const y = clamp(zone.y + Math.sin(angle) * distanceFromCenter, 40, WORLD_LIMIT - 40);
+      if(getRegion(x, y) !== region) continue;
+
+      monsters.add({
+        type, x, y, region,
+        radius: data.isElite ? 30 : 22,
+        hp: data.hp, maxHp: data.hp, damage: data.damage,
+        speed: Math.min(data.speed || 1, 1.35), exp: data.exp,
+        color: data.color, emoji: data.emoji, vision: data.vision,
+        attackRange: data.attackRange, loot: data.loot, isElite: !!data.isElite,
+        lastAttack: 0, attackCooldown: 650,
+        homeX: x, homeY: y,
+        patrolAngle: Math.random() * Math.PI * 2,
+        nextPatrol: performance.now() + 700 + Math.random() * 1200
+      });
+      return;
+    }
+  }
+
+  /* 플레이어가 다른 지역에 있어도 모든 지역에서 독립적으로 스폰 */
+  window.spawnMonster = function(){
+    if(!gameStarted || gameOver || isPaused) return;
+    spawnInRegion(game.currentZone || 'town');
+    exposeMonsters();
+  };
+
+  window.updateMonsters = function(){
+    if(!gameStarted || gameOver || isPaused) return;
+    absorbMonsters();
+    const now = performance.now();
+    const playerRegion = game.currentZone;
+
+    for(const monster of monsters){
+      if(!validMonster(monster)) continue;
+      const region = monster.region;
+      const zone = ZONES[region];
+      if(!zone) continue;
+      const sameRegion = region === playerRegion;
+      const distanceToPlayer = Math.hypot(game.player.x-monster.x, game.player.y-monster.y);
+      const playerSafe = sameRegion && Math.hypot(game.player.x-zone.x, game.player.y-zone.y) < (zone.safeRadius || 0);
+      const detectsPlayer = sameRegion && !playerSafe && distanceToPlayer <= (monster.vision || 500);
+
+      if(detectsPlayer && distanceToPlayer > monster.attackRange + game.player.radius){
+        monster.state = 'chase';
+        const length = distanceToPlayer || 1;
+        monster.x += (game.player.x-monster.x) / length * monster.speed;
+        monster.y += (game.player.y-monster.y) / length * monster.speed;
+      }else{
+        /* 다른 지역 몬스터는 플레이어와 무관하게 계속 순찰 */
+        monster.state = 'patrol';
+        if(now >= (monster.nextPatrol || 0)){
+          monster.patrolAngle += (Math.random() - .5) * 1.4;
+          monster.nextPatrol = now + 700 + Math.random() * 1400;
+        }
+        const targetX = monster.homeX + Math.cos(monster.patrolAngle) * 120;
+        const targetY = monster.homeY + Math.sin(monster.patrolAngle) * 120;
+        const dx = targetX-monster.x;
+        const dy = targetY-monster.y;
+        const length = Math.hypot(dx, dy) || 1;
+        monster.x += dx / length * monster.speed * .42;
+        monster.y += dy / length * monster.speed * .42;
+      }
+
+      /* 지정 지역을 벗어나면 원래 지역의 순찰 지점으로 되돌린다. */
+      if(getRegion(monster.x, monster.y) !== region){
+        monster.x = monster.homeX;
+        monster.y = monster.homeY;
+      }
+
+      if(sameRegion && !playerSafe && distanceToPlayer <= monster.attackRange + game.player.radius &&
+         now - monster.lastAttack >= (monster.attackCooldown || 650)){
+        monster.lastAttack = now;
+        if(typeof damagePlayer === 'function') damagePlayer(monster.damage || 1);
+      }
+    }
+    exposeMonsters();
+  };
+
+  const previousKillMonster = window.killMonster;
+  window.killMonster = function(monster){
+    if(monster) monster._dead = true;
+    monsters.delete(monster);
+    return previousKillMonster.apply(this, arguments);
+  };
+
+  /* 지역에 관계없이 0.65초마다 부족한 지역을 보충 */
+  setInterval(() => {
+    if(!gameStarted || gameOver || isPaused) return;
+    for(const region of Object.keys(ZONES)){
+      if(region !== 'town') spawnInRegion(region);
+    }
+    exposeMonsters();
+  }, 650);
+
+  absorbMonsters();
+  exposeMonsters();
+})();
+</script>
+
+
+
+<!-- FINAL KEYBOARD HOLD FIX V2 -->
+<script>
+(function(){
+  'use strict';
+  if(typeof game==='undefined' || !game.player) return;
+
+  var held = {w:false,a:false,s:false,d:false,arrowup:false,arrowdown:false,arrowleft:false,arrowright:false};
+  var codes = {
+    KeyW:'w', KeyA:'a', KeyS:'s', KeyD:'d',
+    ArrowUp:'arrowup', ArrowDown:'arrowdown', ArrowLeft:'arrowleft', ArrowRight:'arrowright'
+  };
+
+  function isJoystickMode(){
+    return localStorage.getItem('rpg_control') === 'joystick';
+  }
+
+  function setHeld(e, value){
+    var k=codes[e.code];
+    if(!k) return;
+    held[k]=value;
+    if(!game.keys) game.keys={};
+    game.keys[k]=value;
+    // Prevent browser page scrolling / repeated synthetic behavior.
+    e.preventDefault();
+  }
+
+  window.addEventListener('keydown', function(e){
+    if(isJoystickMode()) return;
+    setHeld(e,true);
+  }, true);
+
+  window.addEventListener('keyup', function(e){
+    if(isJoystickMode()) return;
+    setHeld(e,false);
+  }, true);
+
+  window.addEventListener('blur', function(){
+    for(var k in held) held[k]=false;
+    if(game.keys){ for(var q in held) game.keys[q]=false; }
+  }, true);
+
+  function clearKeyboardState(){
+    for(var k in held) held[k]=false;
+    if(game.keys){
+      ['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].forEach(function(k){ game.keys[k]=false; });
+    }
+  }
+
+  // On game/menu reset, never leave a key stuck.
+  ['startGame','restartGame','goToMenu'].forEach(function(name){
+    var fn=window[name];
+    if(typeof fn==='function' && !fn.__kbFinalFix){
+      var wrap=function(){ clearKeyboardState(); return fn.apply(this,arguments); };
+      wrap.__kbFinalFix=true;
+      window[name]=wrap;
+      try { window[name] && (window[name].__kbFinalFix=true); } catch(_){}
+    }
+  });
+
+  function keyboardIntent(){
+    var dx=0,dy=0;
+    if(held.w || held.arrowup) dy-=1;
+    if(held.s || held.arrowdown) dy+=1;
+    if(held.a || held.arrowleft) dx-=1;
+    if(held.d || held.arrowright) dx+=1;
+    return [dx,dy];
+  }
+
+  function joystickIntent(){
+    var k=game.keys||{},dx=0,dy=0;
+    if(k.w) dy-=1; if(k.s) dy+=1; if(k.a) dx-=1; if(k.d) dx+=1;
+    return [dx,dy];
+  }
+
+  // Final authoritative movement. Keyboard is never dependent on key-repeat events.
+  updatePlayer = function(){
+    if(!gameStarted || gameOver || isPaused) return;
+
+    var it = isJoystickMode() ? joystickIntent() : keyboardIntent();
+    var dx=it[0], dy=it[1];
+    if(dx===0 && dy===0) return;
+
+    if(typeof returnChannelStart!=='undefined' && returnChannelStart && typeof cancelReturnChannel==='function'){
+      cancelReturnChannel();
+    }
+
+    var len=Math.hypot(dx,dy)||1;
+    dx/=len; dy/=len;
+    var step=Math.max(0, Number(game.player.speed)||2.4);
+    var mult=(Number(game._cheatSpeed)||1);
+    step*=mult;
+
+    var bx=game.player.x, by=game.player.y;
+    var nx=bx+dx*step, ny=by+dy*step;
+    var world=Number(window.__RPG_BIG_WORLD_FINAL||window.__RPG_BIG_WORLD||currentWorldSize||30000);
+    var r=Number(game.player.radius)||18;
+    nx=Math.max(r,Math.min(world-r,nx));
+    ny=Math.max(r,Math.min(world-r,ny));
+
+    // Level gates are checked only when crossing into another region.
+    var before=game.currentZone||'town';
+    var next=before;
+    try {
+      if(typeof authoritativeRegion==='function') next=authoritativeRegion(nx,ny)||before;
+      else if(typeof regionAt==='function') next=regionAt(nx,ny)||before;
+    } catch(_){}
+
+    if(next!==before && typeof ZONES!=='undefined' && ZONES[next]){
+      var min=Number(ZONES[next].minLevel)||1;
+      if((Number(game.player.level)||1)<min){
+        return;
+      }
+    }
+
+    game.player.x=nx;
+    game.player.y=ny;
+    currentWorldSize=world;
+
+    if(next!==before){
+      game.currentZone=next;
+      if(typeof initZoneSelect==='function') initZoneSelect();
+      if(typeof drawMinimap==='function') drawMinimap();
+      if(typeof drawBigMap==='function') drawBigMap();
+      if(game.effects){
+        game.effects.push({type:'zoneSpawn',x:nx,y:ny,start:performance.now(),duration:500});
+      }
+    } else {
+      game.currentZone=next;
+    }
+
+    game.player.facingAngle=Math.atan2(dy,dx);
+    game.player.movementAnimation=(game.player.movementAnimation||0)+Math.hypot(dx*step,dy*step)*0.035;
+  };
+
+  // Keep current camera centered on the player without reintroducing small world clamps.
+  updateCamera = function(){
+    var world=Number(window.__RPG_BIG_WORLD_FINAL||window.__RPG_BIG_WORLD||currentWorldSize||30000);
+    currentWorldSize=world;
+    var maxX=Math.max(0,world-canvas.width), maxY=Math.max(0,world-canvas.height);
+    game.camera.x=Math.max(0,Math.min(maxX,game.player.x-canvas.width/2));
+    game.camera.y=Math.max(0,Math.min(maxY,game.player.y-canvas.height/2));
+  };
+
+  // Expose for debugging without changing gameplay.
+  window.__keyboardHeldState=held;
+  window.__keyboardFinalFix=true;
+})();
+</script>
+
+<script id="final-unlocked-region-wall-fix">
+(function(){
+  'use strict';
+  if(typeof game==='undefined' || typeof ZONES==='undefined') return;
+
+  /* 지역 이동은 이 함수 하나만 사용한다. 잠금 레벨을 달성한 지역에는
+     기존 패치의 오래된 월드/셀 경계가 이동을 막지 못하게 한다. */
+  window.updatePlayer=function(){
+    if(!gameStarted || gameOver || isPaused) return;
+
+    const keys=game.keys||{};
+    let dx=0,dy=0;
+    if(keys.w || keys.arrowup) dy--;
+    if(keys.s || keys.arrowdown) dy++;
+    if(keys.a || keys.arrowleft) dx--;
+    if(keys.d || keys.arrowright) dx++;
+    if(!dx && !dy) return;
+
+    if(returnChannelStart) cancelReturnChannel();
+
+    const length=Math.hypot(dx,dy)||1;
+    dx/=length;
+    dy/=length;
+
+    const world=Math.max(
+      30000,
+      Number(window.__RPG_WORLD_FINAL_V2||window.__RPG_BIG_WORLD_FINAL||currentWorldSize||30000)
+    );
+    const radius=game.player.radius||18;
+    /* 프레임 간격에 따라 이동량을 보정해 저주사율에서도 속도가 튀지 않게 합니다. */
+    const now=performance.now();
+    const previousTime=game._smoothMoveTime || now;
+    const frameScale=Math.min(2, Math.max(0.5, (now-previousTime)/16.6667));
+    game._smoothMoveTime=now;
+    const speed=(game.player.speed||2.4)*(game._cheatSpeed||1)*frameScale;
+    const oldX=game.player.x;
+    const oldY=game.player.y;
+    const nextX=clamp(oldX+dx*speed,radius,world-radius);
+    const nextY=clamp(oldY+dy*speed,radius,world-radius);
+
+    const region=(x,y)=>{
+      if(typeof authoritativeRegion==='function') return authoritativeRegion(x,y);
+      if(typeof regionAt==='function') return regionAt(x,y);
+      return game.currentZone||'town';
+    };
+
+    const before=game.currentZone||region(oldX,oldY);
+    const target=region(nextX,nextY);
+    const targetZone=ZONES[target];
+
+    /* 아직 잠긴 지역만 막고, 레벨이 충분하면 무조건 통과시킨다. */
+    if(targetZone && target!==before && game.player.level < (targetZone.minLevel||1)) return;
+
+    game.player.x=nextX;
+    game.player.y=nextY;
+    game.currentZone=target;
+    currentWorldSize=world;
+    game.player.facingAngle=Math.atan2(dy,dx);
+    game.player.movementAnimation=(game.player.movementAnimation||0)+Math.hypot(game.player.x-oldX,game.player.y-oldY)*0.055;
+
+    if(target!==before){
+      game.monsters=[];
+      game.bullets=[];
+      game.groundItems=[];
+      game.effects=[];
+      nearbyStructure=null;
+      lastSpawnTime=performance.now()+500;
+      if(typeof initZoneSelect==='function') initZoneSelect();
+      if(typeof drawMinimap==='function') drawMinimap();
+      if(typeof drawBigMap==='function') drawBigMap();
+    }
+  };
+
+  /* 카메라도 같은 대형 월드 기준을 사용해 끝부분에서 멈추지 않게 한다. */
+  window.updateCamera=function(){
+    const world=Math.max(30000,Number(currentWorldSize)||30000);
+    currentWorldSize=world;
+    game.camera.x=clamp(game.player.x-canvas.width/2,0,Math.max(0,world-canvas.width));
+    game.camera.y=clamp(game.player.y-canvas.height/2,0,Math.max(0,world-canvas.height));
+  };
+})();
+</script>
+
+<script id="continuous-movement-final-fix">
+(function(){
+  'use strict';
+  if(typeof game === 'undefined') return;
+
+  const held = Object.create(null);
+  const keyMap = {
+    KeyW:'w', KeyA:'a', KeyS:'s', KeyD:'d',
+    ArrowUp:'arrowup', ArrowDown:'arrowdown',
+    ArrowLeft:'arrowleft', ArrowRight:'arrowright'
+  };
+  const movementKeys = Object.values(keyMap);
+
+  function keyboardMode(){
+    return (localStorage.getItem('rpg_control') || 'keyboard') !== 'joystick';
+  }
+
+  function setMovementKey(event, value){
+    const key = keyMap[event.code];
+    if(!key || !keyboardMode()) return;
+    held[key] = value;
+    game.keys[key] = value;
+    event.preventDefault();
+  }
+
+  window.addEventListener('keydown', event => setMovementKey(event, true), true);
+  window.addEventListener('keyup', event => setMovementKey(event, false), true);
+  window.addEventListener('blur', () => {
+    movementKeys.forEach(key => {
+      held[key] = false;
+      game.keys[key] = false;
+    });
+  });
+
+  /* 오래된 조이스틱 래퍼가 키 상태를 지워도 held 상태를 복원한다. */
+  window.updatePlayer = function(){
+    if(!gameStarted || gameOver || isPaused) return;
+
+    /* 마을 귀환 채널링 중에는 2초 동안 플레이어를 완전히 고정한다. */
+    if(returnChannelStart) return;
+
+    let dx = 0;
+    let dy = 0;
+    if(keyboardMode()){
+      if(held.w || held.arrowup) dy--;
+      if(held.s || held.arrowdown) dy++;
+      if(held.a || held.arrowleft) dx--;
+      if(held.d || held.arrowright) dx++;
+    }else{
+      if(game.keys.w || game.keys.arrowup) dy--;
+      if(game.keys.s || game.keys.arrowdown) dy++;
+      if(game.keys.a || game.keys.arrowleft) dx--;
+      if(game.keys.d || game.keys.arrowright) dx++;
+    }
+
+    if(!dx && !dy) return;
+
+    const length = Math.hypot(dx, dy);
+    const speed = (game.player.speed || 2.4) * (game._cheatSpeed || 1);
+    const oldX = game.player.x;
+    const oldY = game.player.y;
+    const world = Math.max(30000, Number(currentWorldSize) || 30000);
+
+    game.player.x = clamp(oldX + dx / length * speed, game.player.radius, world - game.player.radius);
+    game.player.y = clamp(oldY + dy / length * speed, game.player.radius, world - game.player.radius);
+    game.player.movementAnimation = (game.player.movementAnimation || 0) + Math.hypot(game.player.x - oldX, game.player.y - oldY) * 0.055;
+    updateCamera();
+  };
+})();
+</script>
+
+<script id="final-travel-ui-fix">
+(function(){
+  'use strict';
+  const WORLD = 30000;
+  let lastZone = game.currentZone;
+  let returnLocked = false;
+
+  function closeZoneWindow(){
+    const panel = document.getElementById('zone-select');
+    if(panel) panel.style.display = 'none';
+  }
+
+  function zoneImpact(){
+    if(!gameStarted || gameOver) return;
+    game.effects = (game.effects || []).filter(e => e.type !== 'zoneSpawn');
+    game.effects.push({
+      type:'zoneSpawn', x:game.player.x, y:game.player.y,
+      start:performance.now(), duration:1100,
+      particles:Array.from({length:24},(_,i)=>({
+        angle:i*Math.PI*2/24, distance:45+Math.random()*45,
+        size:2+Math.random()*3, speed:.7+Math.random()*.5
+      }))
+    });
+  }
+
+  function finishReturn(){
+    returnChannelStart = 0;
+    const channel = document.getElementById('return-channel');
+    if(channel) channel.style.display = 'none';
+    lastReturnTime = performance.now();
+    game.currentZone = 'town';
+    currentWorldSize = WORLD;
+    game.player.x = ZONES.town.x;
+    game.player.y = ZONES.town.y;
+    game.monsters = [];
+    game.bullets = [];
+    game.groundItems = [];
+    nearbyStructure = null;
+    closeZoneWindow();
+    updateCamera();
+    initZoneSelect();
+    updateUI();
+    zoneImpact();
+    showDropNotification('🏠 마을에 도착했습니다!');
+  }
+
+  /* 귀환은 항상 2초 채널링이며, 시작 즉시 지역 선택창을 닫는다. */
+  window.startReturnToTown = function(){
+    if(!gameStarted || gameOver || isPaused || game.currentZone === 'town' || returnChannelStart) return;
+    const now = performance.now();
+    if(now - lastReturnTime < RETURN_COOLDOWN){
+      showDropNotification(`🏠 귀환 쿨타임 ${Math.ceil((RETURN_COOLDOWN-(now-lastReturnTime))/1000)}초`);
+      closeZoneWindow();
+      return;
+    }
+    closeZoneWindow();
+    returnChannelStart = now;
+    returnChannelX = game.player.x;
+    returnChannelY = game.player.y;
+    const channel = document.getElementById('return-channel');
+    if(channel){ channel.style.display = 'block'; channel.textContent = '🏠 귀환 준비 중... 2.0초'; }
+    updateReturnButton();
+  };
+
+  /* 채널링 중에는 이동으로 취소되지 않고, 플레이어는 고정된다. */
+  window.updateReturnChannel = function(){
+    if(!returnChannelStart) return;
+    const elapsed = performance.now() - returnChannelStart;
+    const remain = Math.max(0, RETURN_CHANNEL - elapsed);
+    const channel = document.getElementById('return-channel');
+    if(channel) channel.textContent = `🏠 귀환 중... ${(remain/1000).toFixed(1)}초`;
+    if(elapsed >= RETURN_CHANNEL) finishReturn();
+  };
+
+  /* 지역 선택창의 모든 이동은 즉시 닫히고, 마을은 귀환 채널링을 사용한다. */
+  window.changeZone = function(key){
+    const zone = ZONES[key];
+    if(!zone || !gameStarted || gameOver) return;
+    closeZoneWindow();
+    if(key === 'town'){
+      startReturnToTown();
+      return;
+    }
+    if((game.player.level || 1) < (zone.minLevel || 1)){
+      showDropNotification(`🔒 ${zone.name}은(는) Lv.${zone.minLevel}부터 이동할 수 있습니다.`);
+      return;
+    }
+    const previous = game.currentZone;
+    game.currentZone = key;
+    currentWorldSize = WORLD;
+    game.player.x = clamp(zone.x, game.player.radius, WORLD-game.player.radius);
+    game.player.y = clamp(zone.y, game.player.radius, WORLD-game.player.radius);
+    game.monsters = [];
+    game.bullets = [];
+    game.groundItems = [];
+    nearbyStructure = null;
+    lastSpawnTime = performance.now() + 500;
+    initZoneSelect();
+    updateCamera();
+    updateUI();
+    if(previous !== key) zoneImpact();
+  };
+
+  /* 최종 이동 함수: 귀환 중 고정 + 큰 월드 경계 안에서만 이동. */
+  window.updatePlayer = function(){
+    if(!gameStarted || gameOver || isPaused || returnChannelStart) return;
+    const keys = game.keys || {};
+    let dx = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0);
+    let dy = (keys.s || keys.arrowdown ? 1 : 0) - (keys.w || keys.arrowup ? 1 : 0);
+    if(!dx && !dy) return;
+    const len = Math.hypot(dx,dy) || 1;
+    const oldX = game.player.x, oldY = game.player.y;
+    const speed = (game.player.speed || 2.4) * (game._cheatSpeed || 1);
+    game.player.x = clamp(oldX + dx/len*speed, game.player.radius, WORLD-game.player.radius);
+    game.player.y = clamp(oldY + dy/len*speed, game.player.radius, WORLD-game.player.radius);
+    game.player.movementAnimation = (game.player.movementAnimation || 0) + Math.hypot(game.player.x-oldX,game.player.y-oldY)*.055;
+    updateCamera();
+  };
+
+  /* 위치가 30,000 x 30,000 월드 밖으로 절대 나가지 않도록 유지한다. */
+  const oldCamera = updateCamera;
+  window.updateCamera = function(){
+    currentWorldSize = WORLD;
+    game.player.x = clamp(game.player.x, game.player.radius, WORLD-game.player.radius);
+    game.player.y = clamp(game.player.y, game.player.radius, WORLD-game.player.radius);
+    game.camera.x = clamp(game.player.x-canvas.width/2,0,Math.max(0,WORLD-canvas.width));
+    game.camera.y = clamp(game.player.y-canvas.height/2,0,Math.max(0,WORLD-canvas.height));
+  };
+
+  /* UI 겹침 방지용 최종 배치. */
+  const css = document.createElement('style');
+  css.id = 'final-travel-ui-layout';
+  css.textContent = `
+    #zone-select{top:50%!important;left:50%!important;transform:translate(-50%,-50%)!important;max-height:78vh!important;overflow-y:auto!important;}
+    #return-town-button{top:248px!important;right:20px!important;z-index:80!important;}
+    #return-channel{top:288px!important;right:20px!important;z-index:81!important;}
+    #structure-interact{bottom:160px!important;z-index:250!important;}
+    #active-quest-tracker{top:194px!important;max-height:112px!important;overflow:hidden!important;}
+    #minimap-container{top:20px!important;right:20px!important;}
+    #map-toggle,#inventory-toggle,#skill-toggle{top:194px!important;z-index:80!important;}
+    #map-toggle{right:190px!important}#inventory-toggle{right:104px!important}#skill-toggle{right:20px!important}
+    @media(max-width:700px){
+      #return-town-button{top:190px!important;right:10px!important}
+      #return-channel{top:226px!important;right:10px!important}
+      #structure-interact{bottom:150px!important}
+      #active-quest-tracker{top:168px!important;max-height:90px!important}
+      #map-toggle,#inventory-toggle,#skill-toggle{top:150px!important}
+    }
+  `;
+  document.head.appendChild(css);
+
+  /* 외부 호출로 지역이 바뀌는 경우에도 임팩트와 창 닫기를 보장한다. */
+    setInterval(()=>{
+    if(!gameStarted || gameOver) return;
+    currentWorldSize = WORLD;
+    if(game.currentZone !== lastZone){
+      closeZoneWindow();
+      zoneImpact();
+      lastZone = game.currentZone;
+    }
+    updateReturnButton();
+  },120);
+})();
+</script>
+
+<script id="authoritative-final-gameplay-fix">
+/* 충돌하던 마지막 이동/귀환/몬스터 래퍼를 이 로직 하나로 통합합니다. */
+(function(){
+  'use strict';
+  if(typeof game === 'undefined') return;
+
+  const WORLD = 30000;
+  const RETURN_MS = 2000;
+  const RETURN_CD = 30000;
+  const CAP = 25;
+  const held = Object.create(null);
+  const monsterWorld = window.__authoritativeFinalMonsterWorld ||
+    (window.__authoritativeFinalMonsterWorld = new Set());
+
+  const keyMap = {
+    KeyW:'w', KeyA:'a', KeyS:'s', KeyD:'d',
+    ArrowUp:'arrowup', ArrowDown:'arrowdown',
+    ArrowLeft:'arrowleft', ArrowRight:'arrowright'
+  };
+
+  function keyboardMode(){
+    return (localStorage.getItem('rpg_control') || 'keyboard') !== 'joystick';
+  }
+
+  window.addEventListener('keydown', event => {
+    const key = keyMap[event.code];
+    if(key && keyboardMode()){
+      held[key] = true;
+      event.preventDefault();
+    }
+  }, true);
+
+  window.addEventListener('keyup', event => {
+    const key = keyMap[event.code];
+    if(key){
+      held[key] = false;
+      event.preventDefault();
+    }
+  }, true);
+
+  window.addEventListener('blur', () => {
+    Object.keys(held).forEach(key => { held[key] = false; });
+  });
+
+  function closeZoneWindow(){
+    const panel = document.getElementById('zone-select');
+    if(panel) panel.style.display = 'none';
+  }
+
+  function showImpact(){
+    if(!gameStarted || gameOver) return;
+    game.effects = (game.effects || []).filter(effect => effect.type !== 'zoneSpawn');
+    game.effects.push({
+      type:'zoneSpawn', x:game.player.x, y:game.player.y,
+      start:performance.now(), duration:1100
+    });
+  }
+
+  function setWorldCamera(){
+    currentWorldSize = WORLD;
+    game.camera.x = clamp(game.player.x - canvas.width / 2, 0, Math.max(0, WORLD - canvas.width));
+    game.camera.y = clamp(game.player.y - canvas.height / 2, 0, Math.max(0, WORLD - canvas.height));
+  }
+
+  function movementVector(){
+    const keys = keyboardMode() ? held : (game.keys || {});
+    return [
+      (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0),
+      (keys.s || keys.arrowdown ? 1 : 0) - (keys.w || keys.arrowup ? 1 : 0)
+    ];
+  }
+
+  /* 마지막 이동 함수: 이전 updatePlayer를 호출하지 않아 오래된 벽/래퍼가 개입하지 않습니다. */
+  window.updatePlayer = function(){
+    if(!gameStarted || gameOver || isPaused || returnChannelStart) return;
+    let [dx,dy] = movementVector();
+    if(!dx && !dy) return;
+    const length = Math.hypot(dx,dy) || 1;
+    const speed = (game.player.speed || 2.4) * (game._cheatSpeed || 1);
+    const oldX = game.player.x;
+    const oldY = game.player.y;
+    const nextX = clamp(oldX + dx / length * speed, game.player.radius, WORLD - game.player.radius);
+    const nextY = clamp(oldY + dy / length * speed, game.player.radius, WORLD - game.player.radius);
+    game.player.x = nextX;
+    game.player.y = nextY;
+    game.player.facingAngle = Math.atan2(dy,dx);
+    game.player.movementAnimation = (game.player.movementAnimation || 0) +
+      Math.hypot(nextX-oldX,nextY-oldY) * .055;
+    setWorldCamera();
+  };
+
+  window.updateCamera = setWorldCamera;
+
+  /* 지역 이동: 마을은 반드시 귀환 채널링을 사용합니다. */
+  window.changeZone = function(key){
+    const zone = ZONES[key];
+    if(!zone || !gameStarted || gameOver) return;
+    closeZoneWindow();
+    if(key === 'town'){
+      window.startReturnToTown();
+      return;
+    }
+    if(game.player.level < (zone.minLevel || 1)){
+      showDropNotification(`🔒 ${zone.name}은(는) Lv.${zone.minLevel}부터 이동할 수 있습니다.`);
+      return;
+    }
+    game.currentZone = key;
+    game.player.x = clamp(zone.x, game.player.radius, WORLD-game.player.radius);
+    game.player.y = clamp(zone.y, game.player.radius, WORLD-game.player.radius);
+    game.bullets = [];
+    game.groundItems = [];
+    nearbyStructure = null;
+    closeZoneWindow();
+    setWorldCamera();
+    initZoneSelect();
+    showImpact();
+    updateUI();
+  };
+
+  window.startReturnToTown = function(){
+    if(!gameStarted || gameOver || isPaused || game.currentZone === 'town' || returnChannelStart) return;
+    const now = performance.now();
+    if(now - lastReturnTime < RETURN_CD){
+      showDropNotification(`🏠 귀환 쿨타임 ${Math.ceil((RETURN_CD-(now-lastReturnTime))/1000)}초`);
+      closeZoneWindow();
+      return;
+    }
+    closeZoneWindow();
+    returnChannelStart = now;
+    returnChannelX = game.player.x;
+    returnChannelY = game.player.y;
+    const channel = document.getElementById('return-channel');
+    if(channel){
+      channel.style.display = 'block';
+      channel.textContent = '🏠 귀환 중... 2.0초';
+    }
+    updateReturnButton();
+  };
+
+  window.updateReturnChannel = function(){
+    if(!returnChannelStart) return;
+    const elapsed = performance.now() - returnChannelStart;
+    const remain = Math.max(0, RETURN_MS - elapsed);
+    const channel = document.getElementById('return-channel');
+    if(channel) channel.textContent = `🏠 귀환 중... ${(remain/1000).toFixed(1)}초`;
+    if(elapsed < RETURN_MS) return;
+
+    returnChannelStart = 0;
+    lastReturnTime = performance.now();
+    game.currentZone = 'town';
+    game.player.x = ZONES.town.x;
+    game.player.y = ZONES.town.y;
+    game.bullets = [];
+    game.groundItems = [];
+    nearbyStructure = null;
+    closeZoneWindow();
+    if(channel) channel.style.display = 'none';
+    setWorldCamera();
+    initZoneSelect();
+    showImpact();
+    updateUI();
+    showDropNotification('🏠 마을에 도착했습니다!');
+  };
+
+  function validMonster(monster){
+    return monster && !monster._dead && monster.hp > 0 &&
+      Number.isFinite(monster.x) && Number.isFinite(monster.y);
+  }
+
+  function rememberMonsters(){
+    for(const monster of game.monsters || []){
+      if(!validMonster(monster)) continue;
+      monster.region ||= game.currentZone || 'town';
+      monster.homeX ??= monster.x;
+      monster.homeY ??= monster.y;
+      monster.patrolAngle ??= Math.random() * Math.PI * 2;
+      monster.nextPatrol ??= performance.now() + 700;
+      monsterWorld.add(monster);
+    }
+    for(const monster of [...monsterWorld]){
+      if(!validMonster(monster)) monsterWorld.delete(monster);
+    }
+  }
+
+  function exposeMonsters(){
+    rememberMonsters();
+    game.monsters = [...monsterWorld].filter(validMonster);
+  }
+
+  function countRegion(region){
+    let count = 0;
+    for(const monster of monsterWorld){
+      if(validMonster(monster) && monster.region === region) count++;
+    }
+    return count;
+  }
+
+  function spawnInRegion(region){
+    const zone = ZONES[region];
+    if(!zone || region === 'town' || !zone.spawns?.length || countRegion(region) >= CAP) return;
+    const type = zone.spawns[Math.floor(Math.random()*zone.spawns.length)];
+    const data = MONSTERS[type];
+    if(!data) return;
+    const safe = zone.safeRadius || 300;
+    for(let attempt=0; attempt<50; attempt++){
+      const angle = Math.random()*Math.PI*2;
+      const distanceFromCenter = safe + 350 + Math.random()*900;
+      const x = clamp(zone.x + Math.cos(angle)*distanceFromCenter, 40, WORLD-40);
+      const y = clamp(zone.y + Math.sin(angle)*distanceFromCenter, 40, WORLD-40);
+      /* 지역 중심/지정된 spawns만 사용하고, 플레이어 위치는 스폰 계산에 사용하지 않습니다. */
+      if(Math.hypot(x-zone.x,y-zone.y) < safe) continue;
+      const monster = {
+        type, x, y, region, radius:data.isElite ? 30 : 22,
+        hp:data.hp, maxHp:data.hp, damage:data.damage, speed:Math.min(data.speed || 1,1.35),
+        exp:data.exp, color:data.color, emoji:data.emoji, vision:data.vision,
+        attackRange:data.attackRange, loot:data.loot, isElite:!!data.isElite,
+        lastAttack:0, attackCooldown:650, homeX:x, homeY:y,
+        patrolAngle:Math.random()*Math.PI*2, nextPatrol:performance.now()+800
+      };
+      monsterWorld.add(monster);
+      return;
+    }
+  }
+
+  window.spawnMonster = function(){
+    if(!gameStarted || gameOver || isPaused) return;
+    spawnInRegion(game.currentZone || 'town');
+    exposeMonsters();
+  };
+
+  /* 모든 지역을 독립적으로 보충하고, 현재 지역이 아닌 몬스터도 계속 순찰합니다. */
+  window.updateMonsters = function(){
+    if(!gameStarted || gameOver || isPaused) return;
+    rememberMonsters();
+    const now = performance.now();
+    const playerRegion = game.currentZone;
+
+    for(const monster of monsterWorld){
+      if(!validMonster(monster)) continue;
+      const region = monster.region;
+      const zone = ZONES[region];
+      if(!zone) continue;
+      const sameRegion = region === playerRegion;
+      const distanceToPlayer = Math.hypot(game.player.x-monster.x, game.player.y-monster.y);
+      const playerSafe = sameRegion && Math.hypot(game.player.x-zone.x,game.player.y-zone.y) < (zone.safeRadius || 0);
+      const detectsPlayer = sameRegion && !playerSafe && distanceToPlayer <= (monster.vision || 500);
+
+      if(detectsPlayer){
+        monster.state = 'chase';
+        if(distanceToPlayer > monster.attackRange + game.player.radius){
+          const length = distanceToPlayer || 1;
+          monster.x += (game.player.x-monster.x)/length * monster.speed;
+          monster.y += (game.player.y-monster.y)/length * monster.speed;
+        }
+      }else{
+        monster.state = 'patrol';
+        if(now >= (monster.nextPatrol || 0)){
+          monster.patrolAngle += (Math.random()-.5)*1.4;
+          monster.nextPatrol = now + 700 + Math.random()*1400;
+        }
+        const tx = monster.homeX + Math.cos(monster.patrolAngle)*120;
+        const ty = monster.homeY + Math.sin(monster.patrolAngle)*120;
+        const dx = tx-monster.x, dy = ty-monster.y;
+        const length = Math.hypot(dx,dy) || 1;
+        monster.x += dx/length * monster.speed * .42;
+        monster.y += dy/length * monster.speed * .42;
+      }
+
+      /* 다른 지역 몬스터는 플레이어를 절대 감지/공격하지 않습니다. */
+      if(sameRegion && !playerSafe && distanceToPlayer <= monster.attackRange + game.player.radius &&
+         now-monster.lastAttack >= (monster.attackCooldown || 650)){
+        monster.lastAttack = now;
+        if(typeof damagePlayer === 'function') damagePlayer(monster.damage || 1);
+      }
+    }
+    exposeMonsters();
+  };
+
+  const baseKillMonster = window.killMonster;
+  window.killMonster = function(monster){
+    if(monster){ monster._dead = true; monsterWorld.delete(monster); }
+    return baseKillMonster.apply(this, arguments);
+  };
+
+  /* 0.65초마다 모든 지역을 검사하므로 플레이어가 없는 지역도 스폰됩니다. */
+  setInterval(() => {
+    if(!gameStarted || gameOver || isPaused) return;
+    for(const region of Object.keys(ZONES)){
+      if(region !== 'town') spawnInRegion(region);
+    }
+    exposeMonsters();
+  }, 650);
+
+  /* 일반 공격의 시각 모션과 공격 간격을 빠르게 합니다. */
+  const baseAttack = window.playerAttack;
+  window.playerAttack = function(){
+    const previousAttackTime = game.player.lastAttack;
+    const result = baseAttack.apply(this, arguments);
+    if(game.player.lastAttack !== previousAttackTime){
+      if(game.player.attackAnimation){
+        game.player.attackAnimation.duration = Math.max(90, Math.round((game.player.attackAnimation.duration || 250) * .55));
+      }
+      const weapon = getEquippedWeapon();
+      game.player.lastAttack = performance.now() - (weapon?.cooldown || 500) * .45;
+    }
+    return result;
+  };
+
+  setWorldCamera();
+  exposeMonsters();
+})();
+</script>
+<script id="independent-region-patrol-fix">
+(function(){
+  'use strict';
+  if(typeof game === 'undefined' || typeof ZONES === 'undefined') return;
+
+  const patrolWorld = window.__independentRegionPatrolWorld ||
+    (window.__independentRegionPatrolWorld = new Set());
+  const REGION_CAP = 25;
+  const WORLD_LIMIT = 30000;
+
+  function valid(monster){
+    return monster && !monster._dead && monster.hp > 0 &&
+      Number.isFinite(monster.x) && Number.isFinite(monster.y);
+  }
+
+  function regionOf(x,y){
+    if(typeof authoritativeRegion === 'function') return authoritativeRegion(x,y);
+    let result = 'town', nearest = Infinity;
+    for(const [id,zone] of Object.entries(ZONES)){
+      if(!zone || !Number.isFinite(zone.x) || !Number.isFinite(zone.y)) continue;
+      const distance = (x-zone.x)**2 + (y-zone.y)**2;
+      if(distance < nearest){ nearest = distance; result = id; }
+    }
+    return result;
+  }
+
+  function absorb(){
+    for(const monster of game.monsters || []){
+      if(!valid(monster)) continue;
+      monster.region ||= game.currentZone || regionOf(monster.x,monster.y);
+      monster.homeX ??= monster.x;
+      monster.homeY ??= monster.y;
+      monster.patrolAngle ??= Math.random() * Math.PI * 2;
+      monster.nextPatrol ??= performance.now() + 700 + Math.random() * 1200;
+      monster.speed = Math.min(monster.speed || 1, 1.35);
+      patrolWorld.add(monster);
+    }
+    for(const monster of [...patrolWorld]){
+      if(!valid(monster)) patrolWorld.delete(monster);
+    }
+  }
+
+  function expose(){
+    absorb();
+    game.monsters = [...patrolWorld].filter(valid);
+  }
+
+  function countRegion(region){
+    let count = 0;
+    for(const monster of patrolWorld){
+      if(valid(monster) && monster.region === region) count++;
+    }
+    return count;
+  }
+
+  function spawnInRegion(region){
+    const zone = ZONES[region];
+    if(!zone || region === 'town' || !zone.spawns?.length || countRegion(region) >= REGION_CAP) return;
+
+    const type = zone.spawns[Math.floor(Math.random() * zone.spawns.length)];
+    const data = MONSTERS[type];
+    if(!data) return;
+
+    for(let attempt=0; attempt<40; attempt++){
+      const angle = Math.random() * Math.PI * 2;
+      const distance = (zone.safeRadius || 300) + 350 + Math.random() * 900;
+      const x = clamp(zone.x + Math.cos(angle) * distance, 40, WORLD_LIMIT - 40);
+      const y = clamp(zone.y + Math.sin(angle) * distance, 40, WORLD_LIMIT - 40);
+      if(regionOf(x,y) !== region) continue;
+
+      const monster = {
+        type, x, y, region,
+        radius: data.isElite ? 30 : 22,
+        hp: data.hp, maxHp: data.hp, damage: data.damage,
+        speed: Math.min(data.speed || 1, 1.35), exp: data.exp,
+        color: data.color, emoji: data.emoji, vision: data.vision,
+        attackRange: data.attackRange, loot: data.loot,
+        isElite: !!data.isElite, lastAttack: 0, attackCooldown: 650,
+        homeX: x, homeY: y,
+        patrolAngle: Math.random() * Math.PI * 2,
+        nextPatrol: performance.now() + 800
+      };
+      patrolWorld.add(monster);
+      return;
+    }
+  }
+
+  /* 모든 지역을 동시에 보충하므로 플레이어가 없는 지역도 살아 있습니다. */
+  function fillRegions(){
+    if(!gameStarted || gameOver || isPaused) return;
+    for(const region of Object.keys(ZONES)) spawnInRegion(region);
+    expose();
+  }
+
+  /* 현재 지역만 추적하고, 나머지 지역은 플레이어와 무관하게 순찰합니다. */
+  updateMonsters = function(){
+    if(!gameStarted || gameOver || isPaused) return;
+    absorb();
+    const now = performance.now();
+    const playerRegion = game.currentZone;
+
+    for(const monster of patrolWorld){
+      if(!valid(monster)) continue;
+      const region = monster.region;
+      const zone = ZONES[region];
+      if(!zone) continue;
+
+      const sameRegion = region === playerRegion;
+      const distanceToPlayer = Math.hypot(game.player.x-monster.x, game.player.y-monster.y);
+      const playerSafe = sameRegion &&
+        Math.hypot(game.player.x-zone.x, game.player.y-zone.y) < (zone.safeRadius || 0);
+      const detectsPlayer = sameRegion && !playerSafe &&
+        distanceToPlayer <= (monster.vision || 500);
+
+      if(detectsPlayer && distanceToPlayer > (monster.attackRange || 45) + game.player.radius){
+        monster.state = 'chase';
+        const length = distanceToPlayer || 1;
+        monster.x += (game.player.x-monster.x) / length * monster.speed;
+        monster.y += (game.player.y-monster.y) / length * monster.speed;
+      }else{
+        monster.state = 'patrol';
+        if(now >= (monster.nextPatrol || 0)){
+          monster.patrolAngle = (monster.patrolAngle || 0) + (Math.random()-.5) * 1.4;
+          monster.nextPatrol = now + 700 + Math.random() * 1400;
+        }
+        const targetX = monster.homeX + Math.cos(monster.patrolAngle || 0) * 120;
+        const targetY = monster.homeY + Math.sin(monster.patrolAngle || 0) * 120;
+        const dx = targetX-monster.x, dy = targetY-monster.y;
+        const length = Math.hypot(dx,dy) || 1;
+        monster.x += dx/length * monster.speed * .42;
+        monster.y += dy/length * monster.speed * .42;
+      }
+
+      /* 순찰과 추격 모두 생성 지역 밖으로 나가지 않습니다. */
+      if(regionOf(monster.x,monster.y) !== region){
+        monster.x = monster.homeX;
+        monster.y = monster.homeY;
+      }
+
+      if(sameRegion && !playerSafe &&
+         distanceToPlayer <= (monster.attackRange || 45) + game.player.radius &&
+         now - (monster.lastAttack || 0) >= (monster.attackCooldown || 650)){
+        monster.lastAttack = now;
+        if(typeof damagePlayer === 'function') damagePlayer(monster.damage || 1);
+      }
+    }
+    expose();
+  };
+
+  setInterval(fillRegions, 650);
+  fillRegions();
+})();
+</script>
+
+
+
+
+
+
