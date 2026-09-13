@@ -19472,7 +19472,7 @@ if(typeof oldPlayerAttack==='function' && !oldPlayerAttack.__keyboardStable){
 (function(){
 'use strict';
 
-const API_URL = window.RPG_API_URL || (location.protocol === 'file:' ? 'https://sainttropas-site.onrender.com/' : location.origin);
+const API_URL = "https://sainttropas-site.onrender.com";
 let authToken = localStorage.getItem('rpgAuthToken') || '';
 let accountUser = null;
 let currentPlayerId = localStorage.getItem('rpgCurrentPlayerId') || '';
